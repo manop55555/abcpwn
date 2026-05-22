@@ -11,3 +11,14 @@ target_link_libraries(abcpwn_test_common
         Catch2::Catch2WithMain
 )
 target_compile_features(abcpwn_test_common INTERFACE cxx_std_20)
+
+function(abcpwn_add_unit_test name)
+    add_executable(${name} ${ARGN})
+    target_link_libraries(${name} PRIVATE abcpwn_test_common)
+    catch_discover_tests(${name}
+        PROPERTIES
+            ENVIRONMENT "ABCPWN_BANNER_SNAPSHOT=${ABCPWN_TESTS_SNAPSHOTS_DIR}/banner.txt"
+    )
+endfunction()
+
+abcpwn_add_unit_test(test_banner test_banner.cpp)

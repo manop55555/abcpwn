@@ -1,0 +1,13 @@
+        P
+        W           ┌─┐┌┐ ┌─┐┌─┐┬ ┬┌┐┌
+        N           ├─┤├┴┐│  ├─┘│││││││
+     ___|___        ┴ ┴└─┘└─┘┴  └┴┘┘└┘
+       |A|
+       |B|          binary exploitation toolkit  ·  v0.1.0
+       |C|
+       |0|          static analysis, ROP chain synthesis, shellcode
+       |1|          generation, format string primitives, glibc heap
+       |1|          exploitation, seccomp BPF analysis, libc fingerprint
+       |0|          resolution, GOT/PLT inspection, sigreturn-oriented
+       \ /          programming, and ret2dlresolve - all in a single
+        '           static C++ binary. zero runtime deps. zero telemetry.

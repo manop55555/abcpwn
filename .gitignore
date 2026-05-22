@@ -59,10 +59,10 @@ oom-*
 leak-*
 timeout-*
 
-# Binary outputs
-abcpwn
-abcpwn-full
-abcpwn-debug
+# Binary outputs (anchored to repo root so include/abcpwn/ is not affected)
+/abcpwn
+/abcpwn-full
+/abcpwn-debug
 
 # Editors / OS
 .vscode/
