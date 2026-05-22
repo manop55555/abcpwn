@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 //
-// libc command. Per CLAUDE.md this file is one of two source files
-// allowed to contain network code (the other being pwninit). Network
-// access is additionally compile-time gated by ABCPWN_WITH_NETWORK
-// and run-time gated by --allow-network on the context.
+// libc command. Per the project's source-code rules this file is one
+// of two allowed to contain network code (the other being pwninit).
+// Network access is additionally compile-time gated by
+// ABCPWN_WITH_NETWORK and run-time gated by --allow-network on the
+// context.
 
 #include "abcpwn/commands/libc.hpp"
 
