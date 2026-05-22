@@ -27,8 +27,16 @@ jobs:
       - uses: actions/checkout@v4
       - name: Install lint tooling
         run: |
+          # Add the official LLVM apt repo so we can install
+          # clang-format-21 (matches the local maintainer
+          # toolchain; v0.1 source is formatted to that version).
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo gpg --dearmor -o /usr/share/keyrings/llvm.gpg
+          codename=$(lsb_release -cs)
+          echo "deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/${codename}/ llvm-toolchain-${codename}-21 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm21.list
           sudo apt update
-          sudo apt install -y clang-format-18 clang-tidy-18 cppcheck shellcheck
+          sudo apt install -y clang-format-21 clang-tidy-18 cppcheck shellcheck
       - name: Run orchestrator (no-emoji / no-system / no-attribution / no-spec-leak / spdx)
         run: scripts/check-all.sh
       - name: Run no-telemetry / urls / format
