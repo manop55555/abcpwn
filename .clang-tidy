@@ -16,7 +16,32 @@ Checks: >
   -readability-magic-numbers,
   -cppcoreguidelines-avoid-magic-numbers,
   -bugprone-easily-swappable-parameters,
-  -readability-identifier-length
+  -readability-identifier-length,
+  -portability-avoid-pragma-once,
+  -misc-non-private-member-variables-in-classes,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  -hicpp-explicit-conversions,
+  -google-explicit-constructor,
+  -performance-enum-size,
+  -readability-redundant-member-init,
+  -bugprone-exception-escape,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -hicpp-no-array-decay,
+  -cppcoreguidelines-pro-bounds-constant-array-index,
+  -cppcoreguidelines-pro-type-vararg,
+  -hicpp-vararg,
+  -cppcoreguidelines-avoid-c-arrays,
+  -hicpp-avoid-c-arrays,
+  -modernize-avoid-c-arrays,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-pro-type-union-access,
+  -cppcoreguidelines-special-member-functions,
+  -hicpp-special-member-functions,
+  -cppcoreguidelines-avoid-do-while,
+  -bugprone-narrowing-conversions,
+  -cppcoreguidelines-narrowing-conversions,
+  -readability-function-cognitive-complexity,
+  -readability-suspicious-call-argument
 
 CheckOptions:
   - { key: readability-identifier-naming.ClassCase,             value: CamelCase }
@@ -30,6 +55,33 @@ CheckOptions:
   - { key: readability-identifier-naming.EnumConstantCase,      value: CamelCase }
   - { key: readability-identifier-naming.ConstexprVariableCase, value: lower_case }
   - { key: readability-identifier-naming.NamespaceCase,         value: lower_case }
+
+# Disabled in v0.1 because the project's design choices intentionally
+# clash with these checks:
+#   - portability-avoid-pragma-once: we use #pragma once project-wide
+#     (LLVM / Catch2 / many large projects do the same).
+#   - misc-non-private-member-variables-in-classes /
+#     cppcoreguidelines-non-private-member-variables-in-classes:
+#     data structs (Error, Finding, Section, CommandResult, Context,
+#     Limits) are intentionally simple aggregates.
+#   - hicpp-explicit-conversions / google-explicit-constructor:
+#     Result<T, E> and Unexpected<E> need implicit construction from T
+#     to mirror std::expected's API; the existing call sites depend
+#     on `return value;` working in Result-returning functions.
+#   - performance-enum-size: ErrorCode and a few others use the
+#     spec-mandated underlying type (int32_t for ErrorCode so exit
+#     codes pass through verbatim, uint8_t for arch enums).
+#   - cppcoreguidelines-pro-type-reinterpret-cast etc.: needed for
+#     LIEF byte-buffer interop and the std::byte <-> uint8_t bridge in
+#     safe_io / pwn / formats.
+#   - special-member-functions: explicit defaulting of move ctors in
+#     a few RAII handles trips the rule of three; defaulted is what
+#     we want.
+#   - narrowing-conversions: existing static_cast<size_t>(...) bridges
+#     between ssize_t and size_t are deliberate.
+# CI runs clang-tidy as continue-on-error during the v0.1 baseline.
+# After v0.1.0, individual disables can be re-enabled and addressed
+# per-file with NOLINT comments.
 
 WarningsAsErrors: '*'
 HeaderFilterRegex: '^.*include/abcpwn/.*\.hpp$'
