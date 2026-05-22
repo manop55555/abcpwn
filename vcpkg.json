@@ -9,7 +9,17 @@
   "supports": "(linux | osx) & (x64 | arm64)",
   "dependencies": [
     "lief",
-    "capstone",
+    {
+      "name": "capstone",
+      "features": [
+        "arm",
+        "arm64",
+        "mips",
+        "ppc",
+        "riscv",
+        "x86"
+      ]
+    },
     "cli11",
     "nlohmann-json",
     "spdlog",

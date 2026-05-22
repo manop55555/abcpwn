@@ -6,6 +6,10 @@
 # so CMake will accept the library target.
 
 target_sources(abcpwn_core PRIVATE
+    "${CMAKE_CURRENT_SOURCE_DIR}/arch/arch.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/arch/asm.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/arch/disasm.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/arch/syscalls.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/build_marker.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/config.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/progress.cpp"
@@ -22,4 +26,14 @@ target_link_libraries(abcpwn_core PUBLIC
     nlohmann_json::nlohmann_json
     spdlog::spdlog
     LIEF::LIEF
+    capstone::capstone
 )
+
+if(ABCPWN_WITH_KEYSTONE)
+    target_compile_definitions(abcpwn_core PUBLIC ABCPWN_WITH_KEYSTONE=1)
+    if(TARGET keystone::keystone)
+        target_link_libraries(abcpwn_core PUBLIC keystone::keystone)
+    elseif(TARGET keystone)
+        target_link_libraries(abcpwn_core PUBLIC keystone)
+    endif()
+endif()
