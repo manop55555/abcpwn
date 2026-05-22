@@ -38,6 +38,11 @@ jobs:
 
       - name: Install prereqs
         run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo gpg --dearmor -o /usr/share/keyrings/llvm.gpg
+          codename=$(lsb_release -cs)
+          echo "deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/${codename}/ llvm-toolchain-${codename}-18 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm18.list
           sudo apt update
           sudo apt install -y ninja-build clang-18
           git clone https://github.com/microsoft/vcpkg ${{ runner.temp }}/vcpkg

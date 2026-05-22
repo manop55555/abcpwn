@@ -54,16 +54,26 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          - { os: ubuntu-24.04, cc: gcc-13,   cxx: g++-13,     name: "linux-x64-gcc"   }
-          - { os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, name: "linux-x64-clang" }
+          - { os: ubuntu-24.04, cc: gcc-13,   cxx: g++-13,     apt_pkgs: "gcc-13 g++-13", name: "linux-x64-gcc"   }
+          - { os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, apt_pkgs: "clang-18",      name: "linux-x64-clang" }
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
 
+      - name: Add LLVM apt repo (clang-18)
+        if: matrix.cc == 'clang-18'
+        run: |
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key \
+            | sudo gpg --dearmor -o /usr/share/keyrings/llvm.gpg
+          codename=$(lsb_release -cs)
+          echo "deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/${codename}/ llvm-toolchain-${codename}-18 main" \
+            | sudo tee /etc/apt/sources.list.d/llvm18.list
+          sudo apt update
+
       - name: Install prereqs
         run: |
           sudo apt update
-          sudo apt install -y ninja-build cppcheck clang-tidy-18 ${{ matrix.cc }} ${{ matrix.cxx }}
+          sudo apt install -y ninja-build cppcheck clang-tidy-18 ${{ matrix.apt_pkgs }}
 
       - name: Setup vcpkg
         run: |
