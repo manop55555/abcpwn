@@ -32,5 +32,9 @@ function(abcpwn_apply_sanitizer target)
     endif()
 
     target_compile_options(${target} PRIVATE ${_flags})
-    target_link_options(${target} PRIVATE ${_flags})
+    # PUBLIC link options so downstream targets (tests linking
+    # abcpwn_core) pull in the sanitizer runtime symbols. Without
+    # this the test binaries link instrumented object files without
+    # the corresponding __asan_*/__ubsan_* runtime and fail at link.
+    target_link_options(${target} PUBLIC ${_flags})
 endfunction()
