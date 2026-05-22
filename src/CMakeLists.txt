@@ -7,5 +7,9 @@
 
 target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/core/build_marker.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/config.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/progress.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/safe_io.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/core/signal.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/output/banner.cpp"
 )

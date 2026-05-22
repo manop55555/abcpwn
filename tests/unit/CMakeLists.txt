@@ -22,3 +22,6 @@ function(abcpwn_add_unit_test name)
 endfunction()
 
 abcpwn_add_unit_test(test_banner test_banner.cpp)
+abcpwn_add_unit_test(test_safe_io test_safe_io.cpp)
+abcpwn_add_unit_test(test_context test_context.cpp)
+abcpwn_add_unit_test(test_progress test_progress.cpp)
