@@ -1,0 +1,8 @@
+cff-version: 1.2.0
+title: abcpwn
+message: "If you use this software, please cite it as below."
+authors:
+  - alias: manop55555
+repository-code: "https://github.com/manop55555/abcpwn"
+license: Apache-2.0
+version: 0.1.0

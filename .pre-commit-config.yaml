@@ -1,0 +1,44 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 manop55555
+repos:
+  - repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v4.6.0
+    hooks:
+      - id: check-yaml
+      - id: check-json
+      - id: check-merge-conflict
+      - id: check-added-large-files
+        args: ['--maxkb=100']
+      - id: end-of-file-fixer
+      - id: trailing-whitespace
+      - id: mixed-line-ending
+        args: ['--fix=lf']
+  - repo: local
+    hooks:
+      - id: check-no-emoji
+        name: check-no-emoji
+        entry: scripts/check-no-emoji.sh
+        language: script
+        pass_filenames: false
+      - id: check-spdx
+        name: check-spdx-headers
+        entry: scripts/check-spdx.sh
+        language: script
+        pass_filenames: false
+        files: '\.(cpp|hpp|cmake|sh|yml)$'
+      - id: check-no-system
+        name: check-no-system-calls
+        entry: scripts/check-no-system.sh
+        language: script
+        pass_filenames: false
+        files: '\.(cpp|hpp)$'
+      - id: check-no-telemetry
+        name: check-no-telemetry
+        entry: scripts/check-no-telemetry.sh
+        language: script
+        pass_filenames: false
+      - id: shellcheck
+        name: shellcheck
+        entry: shellcheck
+        language: system
+        files: '\.sh$'

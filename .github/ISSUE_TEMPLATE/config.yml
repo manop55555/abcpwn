@@ -1,0 +1,10 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 manop55555
+blank_issues_enabled: false
+contact_links:
+  - name: Security vulnerability
+    url: https://github.com/manop55555/abcpwn/security/advisories/new
+    about: Report security issues privately via GitHub Security Advisories. Do not open a public issue.
+  - name: Question / discussion
+    url: https://github.com/manop55555/abcpwn/discussions
+    about: Usage questions, workflow ideas, and general discussion.
