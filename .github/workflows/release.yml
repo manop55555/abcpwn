@@ -1,0 +1,103 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 manop55555
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to release (e.g., v0.1.0)'
+        required: true
+
+permissions:
+  contents: write       # create the GitHub Release
+  id-token: write       # for attestations
+  attestations: write
+
+jobs:
+  build:
+    name: build-${{ matrix.artifact }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, artifact: "linux-x86_64" }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install prereqs
+        run: |
+          sudo apt update
+          sudo apt install -y ninja-build
+          git clone https://github.com/microsoft/vcpkg ${{ runner.temp }}/vcpkg
+          ${{ runner.temp }}/vcpkg/bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=${{ runner.temp }}/vcpkg" >> $GITHUB_ENV
+
+      - name: Reproducible build env
+        run: echo "SOURCE_DATE_EPOCH=$(git log -1 --pretty=%ct)" >> $GITHUB_ENV
+
+      - name: Configure (release)
+        run: cmake --preset release
+
+      - name: Build
+        run: cmake --build --preset release --parallel
+
+      - name: Stage artifact
+        run: |
+          mkdir -p staging/abcpwn-${{ matrix.artifact }}
+          cp build/release/abcpwn staging/abcpwn-${{ matrix.artifact }}/
+          cp LICENSE             staging/abcpwn-${{ matrix.artifact }}/
+          cp README.md           staging/abcpwn-${{ matrix.artifact }}/
+          if [ -d completions ]; then
+            cp -r completions    staging/abcpwn-${{ matrix.artifact }}/
+          fi
+          tar -C staging -czf abcpwn-${{ matrix.artifact }}.tar.gz \
+              abcpwn-${{ matrix.artifact }}
+
+      - name: Compute SHA-256
+        run: sha256sum abcpwn-${{ matrix.artifact }}.tar.gz > SHA256SUMS-${{ matrix.artifact }}
+
+      - name: Attest provenance
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-path: abcpwn-${{ matrix.artifact }}.tar.gz
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: artifacts-${{ matrix.artifact }}
+          path: |
+            abcpwn-${{ matrix.artifact }}.tar.gz
+            SHA256SUMS-${{ matrix.artifact }}
+          retention-days: 14
+
+  release:
+    name: publish
+    needs: build
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+          merge-multiple: true
+
+      - name: Aggregate SHA256SUMS
+        run: cat artifacts/SHA256SUMS-* > artifacts/SHA256SUMS
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            artifacts/abcpwn-*.tar.gz
+            artifacts/SHA256SUMS
+          generate_release_notes: true
+          draft: false
+          prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}

@@ -1,0 +1,67 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 manop55555
+
+name: Coverage
+
+on:
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: coverage-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  coverage:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install prereqs
+        run: |
+          sudo apt update
+          sudo apt install -y ninja-build lcov gcc-13 g++-13 python3
+          git clone https://github.com/microsoft/vcpkg ${{ runner.temp }}/vcpkg
+          ${{ runner.temp }}/vcpkg/bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=${{ runner.temp }}/vcpkg" >> $GITHUB_ENV
+
+      - name: Configure (coverage)
+        env:
+          CC: gcc-13
+          CXX: g++-13
+        run: cmake --preset coverage
+
+      - name: Build
+        run: cmake --build --preset coverage --parallel
+
+      - name: Run tests
+        run: ctest --test-dir build/coverage --output-on-failure
+
+      - name: Collect coverage
+        run: |
+          lcov --capture --directory build/coverage --output-file coverage.info \
+               --ignore-errors mismatch --ignore-errors source
+          lcov --remove coverage.info '/usr/*' '*/_deps/*' '*/tests/*' \
+               --output-file coverage-filtered.info
+          lcov --list coverage-filtered.info
+
+      - name: Coverage gate
+        continue-on-error: true
+        run: |
+          python3 scripts/check-coverage.py coverage-filtered.info \
+              --min-commands 50 \
+              --min-formats  60 \
+              --min-arch     60 \
+              --min-core     70 \
+              --min-output   60
+
+      - name: Upload to codecov
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: coverage-filtered.info
+          fail_ci_if_error: false

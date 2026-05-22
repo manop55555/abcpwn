@@ -1,0 +1,100 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 manop55555
+
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  VCPKG_BINARY_SOURCES: "clear;x-gha,readwrite"
+
+jobs:
+  lint:
+    name: lint
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install lint tooling
+        run: |
+          sudo apt update
+          sudo apt install -y clang-format-18 clang-tidy-18 cppcheck shellcheck
+      - name: Run orchestrator (no-emoji / no-system / no-attribution / no-spec-leak / spdx)
+        run: scripts/check-all.sh
+      - name: Run no-telemetry / urls / format
+        run: |
+          scripts/check-no-telemetry.sh
+          scripts/check-urls.sh
+          scripts/check-format.sh
+      - name: shellcheck
+        run: shellcheck scripts/*.sh tests/fixtures/*.sh tests/integration/*.sh
+
+  build:
+    name: ${{ matrix.name }}
+    needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - { os: ubuntu-24.04, cc: gcc-13,   cxx: g++-13,     name: "linux-x64-gcc"   }
+          - { os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, name: "linux-x64-clang" }
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install prereqs
+        run: |
+          sudo apt update
+          sudo apt install -y ninja-build cppcheck clang-tidy-18 ${{ matrix.cc }} ${{ matrix.cxx }}
+
+      - name: Setup vcpkg
+        run: |
+          git clone https://github.com/microsoft/vcpkg ${{ runner.temp }}/vcpkg
+          ${{ runner.temp }}/vcpkg/bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=${{ runner.temp }}/vcpkg" >> $GITHUB_ENV
+
+      - name: Configure
+        env:
+          CC: ${{ matrix.cc }}
+          CXX: ${{ matrix.cxx }}
+        run: cmake --preset debug
+
+      - name: Build
+        run: cmake --build --preset debug --parallel
+
+      - name: clang-tidy
+        if: matrix.cc == 'clang-18'
+        continue-on-error: true
+        run: |
+          find src include -name '*.cpp' -print0 \
+            | xargs -0 clang-tidy-18 -p build/debug --quiet
+
+      - name: cppcheck
+        continue-on-error: true
+        run: |
+          cppcheck --enable=all --inconclusive --error-exitcode=1 \
+                   --suppress=missingIncludeSystem \
+                   --suppressions-list=.cppcheck-suppress \
+                   -I include/ \
+                   src/ 2>&1 | tail -50
+
+      - name: Run tests
+        run: ctest --preset debug --output-on-failure
+
+      - name: Upload build on failure
+        uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: build-${{ matrix.name }}-${{ github.run_id }}
+          path: build/debug/
+          retention-days: 7
