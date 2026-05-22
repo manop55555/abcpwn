@@ -1,0 +1,85 @@
+# Spec / memory (local only)
+CLAUDE.md
+STEP/
+STEP.*
+.claude/
+.claude*
+
+# Local design log
+docs/DECISIONS.md
+
+# Build directories
+build/
+build-*/
+out/
+cmake-build-*/
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+CMakeUserPresets.json
+CTestTestfile.cmake
+Testing/
+compile_commands.json
+*.o
+*.obj
+*.a
+*.so
+*.so.*
+*.dylib
+*.dll
+*.exe
+*.exp
+*.lib
+*.pdb
+*.ilk
+*.idb
+
+# vcpkg
+vcpkg_installed/
+.vcpkg/
+.vcpkg-root
+
+# Coverage / profiling
+*.gcov
+*.gcda
+*.gcno
+*.profraw
+*.profdata
+coverage/
+*.info
+
+# Generated docs
+docs/html/
+docs/latex/
+
+# Fuzzer corpus (large, regenerable)
+tests/fuzz/corpus/
+crash-*
+oom-*
+leak-*
+timeout-*
+
+# Binary outputs
+abcpwn
+abcpwn-full
+abcpwn-debug
+
+# Editors / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs / temp
+*.log
+*.tmp
+tmp/
+
+# Python (if any tooling)
+.venv/
+__pycache__/
+*.pyc
