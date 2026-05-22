@@ -1,0 +1,87 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 manop55555
+
+#include "abcpwn/core/context.hpp"
+#include "abcpwn/core/result.hpp"
+#include "abcpwn/output/json_writer.hpp"
+
+#include <catch2/catch_test_macros.hpp>
+
+#include <nlohmann/json.hpp>
+
+#include <chrono>
+#include <sstream>
+
+using nlohmann::json;
+
+namespace {
+
+abcpwn::core::CommandResult sample_result() {
+    abcpwn::core::CommandResult res;
+    res.duration = std::chrono::milliseconds{12};
+    auto& s = res.sections.emplace_back();
+    s.title = "Mitigations";
+    s.findings.emplace_back(abcpwn::core::Severity::Info, "NX", "yes");
+    s.findings.emplace_back(abcpwn::core::Severity::High, "Fortify", "no");
+    s.findings.emplace_back(abcpwn::core::Severity::Low,  "Stripped", "no");
+    return res;
+}
+
+}  // namespace
+
+TEST_CASE("json envelope carries required envelope fields", "[json]") {
+    abcpwn::core::Context ctx;
+    ctx.format = abcpwn::core::OutputFormat::Json;
+    abcpwn::output::JsonWriter w(ctx);
+    std::ostringstream oss;
+    w.write(oss, "info", sample_result(), {{"binary", std::string("/bin/ls")}});
+
+    const auto j = json::parse(oss.str());
+    REQUIRE(j["abcpwn_version"].get<std::string>() == "0.1.0");
+    REQUIRE(j["schema_version"].get<int>() == 1);
+    REQUIRE(j["command"].get<std::string>() == "info");
+    REQUIRE(j["args"]["binary"].get<std::string>() == "/bin/ls");
+    REQUIRE(j["duration_ms"].get<int>() == 12);
+    REQUIRE(j.contains("result"));
+    REQUIRE(j.contains("findings"));
+    REQUIRE(j.contains("summary"));
+}
+
+TEST_CASE("json summary counts findings by severity", "[json]") {
+    abcpwn::core::Context ctx;
+    abcpwn::output::JsonWriter w(ctx);
+    std::ostringstream oss;
+    w.write(oss, "info", sample_result());
+    const auto j = json::parse(oss.str());
+
+    REQUIRE(j["summary"]["info"].get<int>()     == 1);
+    REQUIRE(j["summary"]["low"].get<int>()      == 1);
+    REQUIRE(j["summary"]["high"].get<int>()     == 1);
+    REQUIRE(j["summary"]["medium"].get<int>()   == 0);
+    REQUIRE(j["summary"]["critical"].get<int>() == 0);
+}
+
+TEST_CASE("json findings array preserves order and severity strings", "[json]") {
+    abcpwn::core::Context ctx;
+    abcpwn::output::JsonWriter w(ctx);
+    std::ostringstream oss;
+    w.write(oss, "info", sample_result());
+    const auto j = json::parse(oss.str());
+
+    const auto& f = j["findings"];
+    REQUIRE(f.size() == 3);
+    REQUIRE(f[0]["severity"].get<std::string>() == "info");
+    REQUIRE(f[1]["severity"].get<std::string>() == "high");
+    REQUIRE(f[2]["severity"].get<std::string>() == "low");
+    REQUIRE(f[0]["title"].get<std::string>() == "NX");
+}
+
+TEST_CASE("json result.exit_code defaults to zero", "[json]") {
+    abcpwn::core::Context ctx;
+    abcpwn::output::JsonWriter w(ctx);
+    std::ostringstream oss;
+    abcpwn::core::CommandResult res;
+    w.write(oss, "noop", res);
+    const auto j = json::parse(oss.str());
+    REQUIRE(j["result"]["exit_code"].get<int>() == 0);
+}

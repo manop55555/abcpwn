@@ -12,4 +12,12 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/core/safe_io.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/signal.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/output/banner.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/output/json_writer.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/output/log.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/output/pretty.cpp"
+)
+
+target_link_libraries(abcpwn_core PUBLIC
+    nlohmann_json::nlohmann_json
+    spdlog::spdlog
 )
