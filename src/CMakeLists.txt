@@ -21,6 +21,7 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/errno_cmd.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/fmt.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/gadget.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/got.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/hash.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/hex.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/info.cpp"
