@@ -3,8 +3,6 @@
 
 #include "abcpwn/output/pretty.hpp"
 
-#include "abcpwn/output/markers.hpp"
-
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
@@ -12,8 +10,10 @@
 #include <string>
 #include <string_view>
 
+#include "abcpwn/output/markers.hpp"
+
 #if defined(__unix__) || defined(__APPLE__)
-#  include <unistd.h>
+#include <unistd.h>
 #endif
 
 namespace abcpwn::output {
@@ -22,8 +22,10 @@ namespace {
 
 [[nodiscard]] bool stream_is_tty(std::ostream& os) noexcept {
 #if defined(__unix__) || defined(__APPLE__)
-    if (&os == &std::cout) return ::isatty(1) != 0;
-    if (&os == &std::cerr) return ::isatty(2) != 0;
+    if (&os == &std::cout)
+        return ::isatty(1) != 0;
+    if (&os == &std::cerr)
+        return ::isatty(2) != 0;
 #endif
     (void) os;
     return false;
@@ -54,7 +56,7 @@ void print_finding_line(std::ostream& os, const core::Finding& f, bool color) {
     const auto m = marker_for_severity(f.severity);
     std::string left;
     left.reserve(80);
-    left.append("    ");                // 4-space body indent
+    left.append("    "); // 4-space body indent
     if (color) {
         left.append(color_for_marker(m));
     }
@@ -72,9 +74,8 @@ void print_finding_line(std::ostream& os, const core::Finding& f, bool color) {
     // We need the visible width to right-align the severity tag. Track
     // visible width separately from byte length so embedded ANSI codes
     // do not shift the alignment.
-    const auto visible_width = static_cast<int>(
-        4 + m.size() + 1 + f.title.size()
-        + (f.detail.empty() ? 0 : 2 + f.detail.size()));
+    const auto visible_width = static_cast<int>(4 + m.size() + 1 + f.title.size()
+                                                + (f.detail.empty() ? 0 : 2 + f.detail.size()));
 
     emit(os, left);
 
@@ -91,21 +92,20 @@ void print_finding_line(std::ostream& os, const core::Finding& f, bool color) {
     os << '\n';
 }
 
-}  // namespace
+} // namespace
 
-PrettyPrinter::PrettyPrinter(const core::Context& ctx)
-    : ctx_(ctx) {}
+PrettyPrinter::PrettyPrinter(const core::Context& ctx) : ctx_(ctx) {}
 
-bool PrettyPrinter::should_color(
-    const core::Context& ctx,
-    std::ostream&        os) noexcept
-{
-    if (ctx.format == core::OutputFormat::Json) return false;
-    if (ctx.color == core::ColorMode::Never)    return false;
+bool PrettyPrinter::should_color(const core::Context& ctx, std::ostream& os) noexcept {
+    if (ctx.format == core::OutputFormat::Json)
+        return false;
+    if (ctx.color == core::ColorMode::Never)
+        return false;
     if (const char* nc = std::getenv("NO_COLOR"); nc != nullptr && *nc != '\0') {
         return false;
     }
-    if (ctx.color == core::ColorMode::Always)   return true;
+    if (ctx.color == core::ColorMode::Always)
+        return true;
     return stream_is_tty(os);
 }
 
@@ -163,4 +163,4 @@ void PrettyPrinter::print_command_result(std::ostream& os, const core::CommandRe
     }
 }
 
-}  // namespace abcpwn::output
+} // namespace abcpwn::output

@@ -3,16 +3,18 @@
 
 #pragma once
 
+#include <string>
+
 #include "abcpwn/commands/encoding.hpp"
 #include "abcpwn/core/command.hpp"
-
-#include <string>
 
 namespace abcpwn::commands {
 
 class ErrnoCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "errno"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "errno";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "look up POSIX errno by number or name";
     }
@@ -22,4 +24,4 @@ public:
     std::string query{};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

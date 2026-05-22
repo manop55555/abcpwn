@@ -23,11 +23,11 @@ public:
     using TickCallback = std::function<void(std::uint64_t current, std::uint64_t total)>;
 
     struct Options {
-        std::string             label{"working"};
-        std::uint64_t           total{0};        // 0 = indeterminate
+        std::string label{"working"};
+        std::uint64_t total{0}; // 0 = indeterminate
         std::chrono::milliseconds min_interval{std::chrono::milliseconds{120}};
-        bool                    use_stderr{true};
-        TickCallback            on_tick{};
+        bool use_stderr{true};
+        TickCallback on_tick{};
     };
 
     ProgressReporter();
@@ -58,4 +58,4 @@ private:
     std::unique_ptr<Impl> impl_;
 };
 
-}  // namespace abcpwn::core
+} // namespace abcpwn::core

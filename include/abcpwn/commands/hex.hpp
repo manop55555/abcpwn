@@ -3,16 +3,18 @@
 
 #pragma once
 
+#include <string>
+
 #include "abcpwn/commands/encoding.hpp"
 #include "abcpwn/core/command.hpp"
-
-#include <string>
 
 namespace abcpwn::commands {
 
 class HexCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "hex"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "hex";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "encode raw input as hex bytes";
     }
@@ -25,7 +27,9 @@ public:
 
 class UnhexCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "unhex"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "unhex";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "decode hex bytes into raw output";
     }
@@ -35,4 +39,4 @@ public:
     std::string input{};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

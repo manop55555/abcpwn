@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/arch/disasm.hpp"
-#include "abcpwn/arch/syscalls.hpp"
+#include <array>
+#include <cstdint>
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <array>
-#include <cstdint>
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/arch/disasm.hpp"
+#include "abcpwn/arch/syscalls.hpp"
 
 TEST_CASE("arch_from_string handles common aliases", "[arch]") {
     using namespace abcpwn::arch;
@@ -24,7 +24,7 @@ TEST_CASE("disasm x86_64 nop chain", "[arch][disasm]") {
     // 5 x86_64 NOPs.
     const std::array<std::uint8_t, 5> bytes{0x90, 0x90, 0x90, 0x90, 0x90};
     DisasmOptions opts;
-    opts.arch         = Arch::X86_64;
+    opts.arch = Arch::X86_64;
     opts.base_address = 0x1000;
     auto r = disassemble(bytes, opts);
     REQUIRE(r);

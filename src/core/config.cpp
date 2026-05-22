@@ -3,8 +3,6 @@
 
 #include "abcpwn/core/config.hpp"
 
-#include "abcpwn/core/safe_io.hpp"
-
 #include <algorithm>
 #include <cctype>
 #include <charconv>
@@ -12,16 +10,20 @@
 #include <string>
 #include <string_view>
 
+#include "abcpwn/core/safe_io.hpp"
+
 namespace abcpwn::core::config {
 
 namespace {
 
 struct Cursor {
     std::string_view text;
-    std::size_t      pos{0};
-    std::size_t      line{1};
+    std::size_t pos{0};
+    std::size_t line{1};
 
-    [[nodiscard]] bool eof() const noexcept { return pos >= text.size(); }
+    [[nodiscard]] bool eof() const noexcept {
+        return pos >= text.size();
+    }
     [[nodiscard]] char peek() const noexcept {
         return pos < text.size() ? text[pos] : '\0';
     }
@@ -84,15 +86,26 @@ Result<std::string> parse_string(Cursor& cur) {
             }
             const char esc = cur.text[cur.pos + 1];
             switch (esc) {
-                case '"':  out.push_back('"');  break;
-                case '\\': out.push_back('\\'); break;
-                case 'n':  out.push_back('\n'); break;
-                case 't':  out.push_back('\t'); break;
-                case 'r':  out.push_back('\r'); break;
-                case '0':  out.push_back('\0'); break;
-                default:
-                    return err(make_parse_error(cur,
-                        std::string("unknown escape '\\") + esc + "'"));
+            case '"':
+                out.push_back('"');
+                break;
+            case '\\':
+                out.push_back('\\');
+                break;
+            case 'n':
+                out.push_back('\n');
+                break;
+            case 't':
+                out.push_back('\t');
+                break;
+            case 'r':
+                out.push_back('\r');
+                break;
+            case '0':
+                out.push_back('\0');
+                break;
+            default:
+                return err(make_parse_error(cur, std::string("unknown escape '\\") + esc + "'"));
             }
             cur.pos += 2;
         } else {
@@ -133,23 +146,23 @@ Result<Value> parse_value(Cursor& cur) {
             ++cur.pos;
         }
         int base = 10;
-        if (cur.pos + 1 < cur.text.size()
-            && cur.text[cur.pos] == '0'
-            && (cur.text[cur.pos + 1] == 'x' || cur.text[cur.pos + 1] == 'X'))
-        {
+        if (cur.pos + 1 < cur.text.size() && cur.text[cur.pos] == '0'
+            && (cur.text[cur.pos + 1] == 'x' || cur.text[cur.pos + 1] == 'X')) {
             base = 16;
             cur.pos += 2;
         }
         while (!cur.eof()) {
             const char d = cur.text[cur.pos];
             const auto ud = static_cast<unsigned char>(d);
-            if (base == 16 && std::isxdigit(ud) == 0) break;
-            if (base == 10 && std::isdigit(ud) == 0) break;
+            if (base == 16 && std::isxdigit(ud) == 0)
+                break;
+            if (base == 10 && std::isdigit(ud) == 0)
+                break;
             ++cur.pos;
         }
         std::int64_t val = 0;
         const auto* begin = cur.text.data() + start;
-        const auto* end   = cur.text.data() + cur.pos;
+        const auto* end = cur.text.data() + cur.pos;
         // std::from_chars does not accept a leading + in the input; if we
         // saw one, advance past it for parsing only.
         if (*begin == '+') {
@@ -159,8 +172,9 @@ Result<Value> parse_value(Cursor& cur) {
         if (base == 16) {
             // Skip "[+-]0x" (we already moved past it)
             begin = cur.text.data() + start;
-            if (*begin == '+' || *begin == '-') ++begin;
-            begin += 2;  // skip 0x
+            if (*begin == '+' || *begin == '-')
+                ++begin;
+            begin += 2; // skip 0x
         }
         const auto conv = std::from_chars(begin, end, val, base);
         if (conv.ec != std::errc{} || conv.ptr != end) {
@@ -176,38 +190,41 @@ Result<Value> parse_value(Cursor& cur) {
     return err(make_parse_error(cur, "unrecognized value"));
 }
 
-}  // namespace
+} // namespace
 
-std::optional<std::string> Config::get_string(
-    std::string_view table, std::string_view key) const
-{
+std::optional<std::string> Config::get_string(std::string_view table, std::string_view key) const {
     const auto t = tables.find(std::string(table));
-    if (t == tables.end()) return std::nullopt;
+    if (t == tables.end())
+        return std::nullopt;
     const auto k = t->second.find(std::string(key));
-    if (k == t->second.end()) return std::nullopt;
-    if (const auto* s = std::get_if<std::string>(&k->second)) return *s;
+    if (k == t->second.end())
+        return std::nullopt;
+    if (const auto* s = std::get_if<std::string>(&k->second))
+        return *s;
     return std::nullopt;
 }
 
-std::optional<std::int64_t> Config::get_int(
-    std::string_view table, std::string_view key) const
-{
+std::optional<std::int64_t> Config::get_int(std::string_view table, std::string_view key) const {
     const auto t = tables.find(std::string(table));
-    if (t == tables.end()) return std::nullopt;
+    if (t == tables.end())
+        return std::nullopt;
     const auto k = t->second.find(std::string(key));
-    if (k == t->second.end()) return std::nullopt;
-    if (const auto* v = std::get_if<std::int64_t>(&k->second)) return *v;
+    if (k == t->second.end())
+        return std::nullopt;
+    if (const auto* v = std::get_if<std::int64_t>(&k->second))
+        return *v;
     return std::nullopt;
 }
 
-std::optional<bool> Config::get_bool(
-    std::string_view table, std::string_view key) const
-{
+std::optional<bool> Config::get_bool(std::string_view table, std::string_view key) const {
     const auto t = tables.find(std::string(table));
-    if (t == tables.end()) return std::nullopt;
+    if (t == tables.end())
+        return std::nullopt;
     const auto k = t->second.find(std::string(key));
-    if (k == t->second.end()) return std::nullopt;
-    if (const auto* v = std::get_if<bool>(&k->second)) return *v;
+    if (k == t->second.end())
+        return std::nullopt;
+    if (const auto* v = std::get_if<bool>(&k->second))
+        return *v;
     return std::nullopt;
 }
 
@@ -218,7 +235,8 @@ Result<Config> parse(std::string_view source) {
 
     while (!cur.eof()) {
         skip_inline_ws(cur);
-        if (cur.eof()) break;
+        if (cur.eof())
+            break;
 
         const char c = cur.peek();
         if (c == '\n') {
@@ -239,16 +257,15 @@ Result<Config> parse(std::string_view source) {
             if (cur.eof() || cur.peek() == '\n') {
                 return err(make_parse_error(cur, "unterminated table header"));
             }
-            current_table = std::string(
-                cur.text.substr(name_start, cur.pos - name_start));
+            current_table = std::string(cur.text.substr(name_start, cur.pos - name_start));
             // trim whitespace
             const auto first = current_table.find_first_not_of(" \t");
-            const auto last  = current_table.find_last_not_of(" \t");
+            const auto last = current_table.find_last_not_of(" \t");
             if (first == std::string::npos) {
                 return err(make_parse_error(cur, "empty table header"));
             }
             current_table = current_table.substr(first, last - first + 1);
-            ++cur.pos;  // skip ']'
+            ++cur.pos; // skip ']'
             // optional trailing comment / whitespace
             skip_inline_ws(cur);
             if (!cur.eof() && cur.peek() == '#') {
@@ -295,7 +312,7 @@ Result<Config> parse(std::string_view source) {
 
 Result<Config> load(const std::filesystem::path& path) {
     safe_io::ReadOptions opts;
-    opts.max_bytes = 1ULL << 20;  // 1 MiB cap for config
+    opts.max_bytes = 1ULL << 20; // 1 MiB cap for config
     auto text = safe_io::read_text_file(path, opts);
     if (!text) {
         return err(text.error());
@@ -337,4 +354,4 @@ void apply_to_context(const Config& cfg, Context& ctx) {
     }
 }
 
-}  // namespace abcpwn::core::config
+} // namespace abcpwn::core::config

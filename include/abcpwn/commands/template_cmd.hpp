@@ -3,22 +3,22 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-
 #include <string>
+
+#include "abcpwn/core/command.hpp"
 
 namespace abcpwn::commands::tmpl {
 
 // Render an exploit-skeleton pwntools script for the given strategy
 // against the given binary. The string is plain text suitable for
 // `--output solve.py`.
-[[nodiscard]] std::string render_template(
-    std::string_view strategy,
-    std::string_view binary_path);
+[[nodiscard]] std::string render_template(std::string_view strategy, std::string_view binary_path);
 
 class TemplateCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "template"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "template";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "emit a pwntools exploit skeleton for a strategy";
     }
@@ -30,4 +30,4 @@ public:
     std::string output_path{};
 };
 
-}  // namespace abcpwn::commands::tmpl
+} // namespace abcpwn::commands::tmpl

@@ -3,15 +3,17 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-
 #include <string>
+
+#include "abcpwn/core/command.hpp"
 
 namespace abcpwn::commands {
 
 class SymsCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "syms"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "syms";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "list symbols (dynamic/static/imports/exports)";
     }
@@ -19,8 +21,8 @@ public:
     [[nodiscard]] core::Result<core::CommandResult> run(const core::Context& ctx) override;
 
     std::string target{};
-    bool        dangerous_only{false};
+    bool dangerous_only{false};
     std::string filter{};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

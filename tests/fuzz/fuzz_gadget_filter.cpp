@@ -7,30 +7,29 @@
 // long gadget sequences are capped via opts.max_depth + max_results
 // so any single iteration stays within the libFuzzer time budget.
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/commands/rop_search.hpp"
-
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
+
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/commands/rop_search.hpp"
 
 extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size) {
     if (size > (64U * 1024U)) {
         return 0;
     }
     abcpwn::commands::rop::ExecutableSection sec;
-    sec.name            = ".text";
+    sec.name = ".text";
     sec.virtual_address = 0x400000;
     sec.bytes.assign(data, data + size);
 
     abcpwn::commands::rop::GadgetSearchOptions opts;
-    opts.arch        = abcpwn::arch::Arch::X86_64;
-    opts.terminator  = abcpwn::commands::rop::Terminator::Ret;
-    opts.max_depth   = 4;
+    opts.arch = abcpwn::arch::Arch::X86_64;
+    opts.terminator = abcpwn::commands::rop::Terminator::Ret;
+    opts.max_depth = 4;
     opts.max_results = 4096;
     (void) abcpwn::commands::rop::find_gadgets(
-        std::span<const abcpwn::commands::rop::ExecutableSection>(&sec, 1),
-        opts);
+        std::span<const abcpwn::commands::rop::ExecutableSection>(&sec, 1), opts);
     return 0;
 }

@@ -21,4 +21,4 @@ namespace abcpwn::output {
 // etc.) per STEP/02 rule 6.
 void print_banner(std::ostream& os, bool color);
 
-}  // namespace abcpwn::output
+} // namespace abcpwn::output

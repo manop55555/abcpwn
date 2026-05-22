@@ -3,11 +3,11 @@
 
 #include "abcpwn/commands/hex.hpp"
 
-#include <CLI/CLI.hpp>
-
 #include <cstdint>
 #include <span>
 #include <string>
+
+#include <CLI/CLI.hpp>
 
 namespace abcpwn::commands {
 
@@ -40,4 +40,4 @@ core::Result<core::CommandResult> UnhexCommand::run(const core::Context& /*ctx*/
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

@@ -29,7 +29,7 @@ constexpr std::string_view kBanner = R"BANNER(        P
 constexpr std::string_view kCompactHeader =
     " ===[ abcpwn v0.1.0 ]=== binary exploitation toolkit ===";
 
-}  // namespace
+} // namespace
 
 std::string_view banner_text() noexcept {
     return kBanner;
@@ -52,4 +52,4 @@ void print_banner(std::ostream& os, bool color) {
     }
 }
 
-}  // namespace abcpwn::output
+} // namespace abcpwn::output

@@ -3,55 +3,55 @@
 
 #include "abcpwn/commands/gadget.hpp"
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/commands/encoding.hpp"
-#include "abcpwn/commands/rop_search.hpp"
-#include "abcpwn/formats/binary_loader.hpp"
-
-#include <LIEF/LIEF.hpp>
-
-#include <CLI/CLI.hpp>
-
 #include <cstdint>
 #include <cstdio>
 #include <span>
 #include <string>
 #include <vector>
 
+#include <CLI/CLI.hpp>
+#include <LIEF/LIEF.hpp>
+
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/commands/encoding.hpp"
+#include "abcpwn/commands/rop_search.hpp"
+#include "abcpwn/formats/binary_loader.hpp"
+
 namespace abcpwn::commands {
 
 namespace {
 
 rop::Terminator parse_terminator(const std::string& s) noexcept {
-    if (s == "jmp")     return rop::Terminator::Jmp;
-    if (s == "call")    return rop::Terminator::Call;
-    if (s == "syscall") return rop::Terminator::Syscall;
-    if (s == "all")     return rop::Terminator::All;
+    if (s == "jmp")
+        return rop::Terminator::Jmp;
+    if (s == "call")
+        return rop::Terminator::Call;
+    if (s == "syscall")
+        return rop::Terminator::Syscall;
+    if (s == "all")
+        return rop::Terminator::All;
     return rop::Terminator::Ret;
 }
 
-std::vector<rop::ExecutableSection> collect_executable_sections(
-    const formats::LoadedBinary& lb)
-{
+std::vector<rop::ExecutableSection> collect_executable_sections(const formats::LoadedBinary& lb) {
     std::vector<rop::ExecutableSection> out;
     const auto* binary = lb.binary();
     if (binary == nullptr) {
         return out;
     }
-    auto emit = [&](std::string name, std::uint64_t va,
-                    std::vector<std::uint8_t> bytes) {
+    auto emit = [&](std::string name, std::uint64_t va, std::vector<std::uint8_t> bytes) {
         rop::ExecutableSection s;
-        s.name            = std::move(name);
+        s.name = std::move(name);
         s.virtual_address = va;
-        s.bytes           = std::move(bytes);
+        s.bytes = std::move(bytes);
         out.push_back(std::move(s));
     };
     if (const auto* e = dynamic_cast<const LIEF::ELF::Binary*>(binary)) {
         for (const auto& sec : e->sections()) {
             const auto flags = static_cast<std::uint64_t>(sec.flags());
-            const auto execflag = static_cast<std::uint64_t>(
-                LIEF::ELF::Section::FLAGS::EXECINSTR);
-            if ((flags & execflag) == 0) continue;
+            const auto execflag = static_cast<std::uint64_t>(LIEF::ELF::Section::FLAGS::EXECINSTR);
+            if ((flags & execflag) == 0)
+                continue;
             const auto raw = sec.content();
             std::vector<std::uint8_t> bytes(raw.begin(), raw.end());
             emit(sec.name(), sec.virtual_address(), std::move(bytes));
@@ -59,9 +59,10 @@ std::vector<rop::ExecutableSection> collect_executable_sections(
     } else if (const auto* p = dynamic_cast<const LIEF::PE::Binary*>(binary)) {
         for (const auto& sec : p->sections()) {
             const auto c = static_cast<std::uint32_t>(sec.characteristics());
-            const auto execflag = static_cast<std::uint32_t>(
-                LIEF::PE::Section::CHARACTERISTICS::MEM_EXECUTE);
-            if ((c & execflag) == 0) continue;
+            const auto execflag =
+                static_cast<std::uint32_t>(LIEF::PE::Section::CHARACTERISTICS::MEM_EXECUTE);
+            if ((c & execflag) == 0)
+                continue;
             const auto raw = sec.content();
             std::vector<std::uint8_t> bytes(raw.begin(), raw.end());
             emit(sec.name(), sec.virtual_address(), std::move(bytes));
@@ -69,7 +70,8 @@ std::vector<rop::ExecutableSection> collect_executable_sections(
     } else if (const auto* m = dynamic_cast<const LIEF::MachO::Binary*>(binary)) {
         for (const auto& seg : m->segments()) {
             const auto init = static_cast<std::uint32_t>(seg.init_protection());
-            if ((init & 0x4) == 0) continue;  // VM_PROT_EXECUTE
+            if ((init & 0x4) == 0)
+                continue; // VM_PROT_EXECUTE
             for (const auto& sec : seg.sections()) {
                 const auto raw = sec.content();
                 std::vector<std::uint8_t> bytes(raw.begin(), raw.end());
@@ -80,7 +82,7 @@ std::vector<rop::ExecutableSection> collect_executable_sections(
     return out;
 }
 
-}  // namespace
+} // namespace
 
 void GadgetCommand::setup(CLI::App& app) {
     app.add_option("target", target, "Binary to scan")->required();
@@ -99,20 +101,19 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
     }
     auto sections = collect_executable_sections(*loaded);
     if (sections.empty()) {
-        return core::err(core::ErrorCode::NotFound,
-            "gadget: no executable sections in target");
+        return core::err(core::ErrorCode::NotFound, "gadget: no executable sections in target");
     }
 
     const auto a = arch::arch_from_string(loaded->info().arch);
     if (!a) {
         return core::err(core::ErrorCode::Unsupported,
-            "gadget: unknown arch '" + loaded->info().arch + "'");
+                         "gadget: unknown arch '" + loaded->info().arch + "'");
     }
 
     rop::GadgetSearchOptions opts;
-    opts.arch        = *a;
-    opts.terminator  = parse_terminator(terminator);
-    opts.max_depth   = depth;
+    opts.arch = *a;
+    opts.terminator = parse_terminator(terminator);
+    opts.max_depth = depth;
     opts.text_filter = filter;
     if (!bad_chars_hex.empty()) {
         auto bc = encoding::hex_decode(bad_chars_hex);
@@ -123,13 +124,14 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
     }
 
     std::uint64_t total_bytes = 0;
-    for (const auto& s : sections) total_bytes += s.bytes.size();
+    for (const auto& s : sections)
+        total_bytes += s.bytes.size();
 
     std::optional<core::ProgressReporter> reporter;
     if (!no_progress && !ctx.quiet() && ctx.format != core::OutputFormat::Json) {
         core::ProgressReporter::Options ropts;
-        ropts.label      = "gadget scan";
-        ropts.total      = total_bytes;
+        ropts.label = "gadget scan";
+        ropts.total = total_bytes;
         ropts.use_stderr = true;
         reporter.emplace(std::move(ropts));
         opts.progress = &*reporter;
@@ -145,7 +147,7 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
 
     if (format != "pretty") {
         return core::err(core::ErrorCode::Unsupported,
-            "gadget: only --format=pretty is implemented in this milestone");
+                         "gadget: only --format=pretty is implemented in this milestone");
     }
 
     core::CommandResult res;
@@ -163,4 +165,4 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

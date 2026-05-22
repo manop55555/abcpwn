@@ -3,19 +3,19 @@
 
 #pragma once
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/core/result.hpp"
-
 #include <cstdint>
 #include <string_view>
 #include <vector>
 
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/core/result.hpp"
+
 namespace abcpwn::arch {
 
 struct AsmOptions {
-    Arch          arch{Arch::X86_64};
-    Endian        endian{Endian::Little};
-    bool          thumb_mode{false};
+    Arch arch{Arch::X86_64};
+    Endian endian{Endian::Little};
+    bool thumb_mode{false};
     std::uint64_t base_address{0};
 };
 
@@ -24,9 +24,8 @@ struct AsmOptions {
 // header is always compiled; calling assemble() in an Apache-2.0 build
 // returns FeatureDisabled with a message pointing at the abcpwn-full
 // release artifact.
-[[nodiscard]] core::Result<std::vector<std::uint8_t>> assemble(
-    std::string_view    source,
-    const AsmOptions&   opts);
+[[nodiscard]] core::Result<std::vector<std::uint8_t>> assemble(std::string_view source,
+                                                               const AsmOptions& opts);
 
 [[nodiscard]] constexpr bool keystone_compiled_in() noexcept {
 #if defined(ABCPWN_WITH_KEYSTONE) && ABCPWN_WITH_KEYSTONE
@@ -36,4 +35,4 @@ struct AsmOptions {
 #endif
 }
 
-}  // namespace abcpwn::arch
+} // namespace abcpwn::arch

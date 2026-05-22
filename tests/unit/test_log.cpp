@@ -1,19 +1,19 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
-#include "abcpwn/core/context.hpp"
-#include "abcpwn/output/log.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
-#include <spdlog/logger.h>
-#include <spdlog/spdlog.h>
-
 #include <filesystem>
 #include <fstream>
 #include <random>
 #include <sstream>
 #include <string>
+
+#include <spdlog/logger.h>
+#include <spdlog/spdlog.h>
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "abcpwn/core/context.hpp"
+#include "abcpwn/output/log.hpp"
 
 namespace {
 
@@ -24,7 +24,7 @@ std::filesystem::path tmp_log_path() {
     return base / ("log-" + std::to_string(rng()) + ".log");
 }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("get_logger never returns null", "[log]") {
     auto l = abcpwn::output::get_logger();
@@ -34,8 +34,8 @@ TEST_CASE("get_logger never returns null", "[log]") {
 TEST_CASE("setup_logging with log_file writes to that file", "[log]") {
     const auto p = tmp_log_path();
     abcpwn::core::Context ctx;
-    ctx.log_file  = p.string();
-    ctx.verbosity = 1;  // debug
+    ctx.log_file = p.string();
+    ctx.verbosity = 1; // debug
     abcpwn::output::setup_logging(ctx);
 
     auto l = abcpwn::output::get_logger();

@@ -5,6 +5,11 @@
 // command against the hello-hardened fixture and threads results
 // from one stage into the next, the way a CTF player would.
 
+#include <filesystem>
+#include <string>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/commands/cyclic.hpp"
 #include "abcpwn/commands/info.hpp"
 #include "abcpwn/commands/rop.hpp"
@@ -12,19 +17,13 @@
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/test_paths.hpp"
 
-#include <catch2/catch_test_macros.hpp>
-
-#include <filesystem>
-#include <string>
-
 namespace {
 
 std::filesystem::path fixture(std::string_view name) {
-    return std::filesystem::path(abcpwn::test_paths::fixtures_dir)
-         / "binaries" / std::string(name);
+    return std::filesystem::path(abcpwn::test_paths::fixtures_dir) / "binaries" / std::string(name);
 }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("ret2win flow chains info -> syms -> rop -> cyclic", "[integration][ret2win]") {
     if (!std::filesystem::exists(fixture("hello-hardened"))) {
@@ -35,7 +34,7 @@ TEST_CASE("ret2win flow chains info -> syms -> rop -> cyclic", "[integration][re
 
     // Stage 1: info reports the binary's mitigations and dangerous funcs.
     std::string arch;
-    bool        info_has_pie = false;
+    bool info_has_pie = false;
     {
         abcpwn::commands::InfoCommand info;
         info.target = fixture("hello-hardened").string();
@@ -43,8 +42,10 @@ TEST_CASE("ret2win flow chains info -> syms -> rop -> cyclic", "[integration][re
         REQUIRE(r);
         for (const auto& s : r->sections) {
             for (const auto& f : s.findings) {
-                if (f.title == "arch") arch = f.detail;
-                if (f.title == "PIE" && f.detail == "yes") info_has_pie = true;
+                if (f.title == "arch")
+                    arch = f.detail;
+                if (f.title == "PIE" && f.detail == "yes")
+                    info_has_pie = true;
             }
         }
     }
@@ -55,14 +56,15 @@ TEST_CASE("ret2win flow chains info -> syms -> rop -> cyclic", "[integration][re
     // make the ret2win path viable for this fixture.
     {
         abcpwn::commands::SymsCommand syms;
-        syms.target         = fixture("hello-hardened").string();
+        syms.target = fixture("hello-hardened").string();
         syms.dangerous_only = true;
         auto r = syms.run(ctx);
         REQUIRE(r);
         bool any_dangerous = false;
         for (const auto& s : r->sections) {
             for (const auto& f : s.findings) {
-                if (f.title == "gets" || f.title == "strcpy") any_dangerous = true;
+                if (f.title == "gets" || f.title == "strcpy")
+                    any_dangerous = true;
             }
         }
         REQUIRE(any_dangerous);
@@ -74,9 +76,9 @@ TEST_CASE("ret2win flow chains info -> syms -> rop -> cyclic", "[integration][re
     // CTF player needs to switch strategies.
     {
         abcpwn::commands::RopCommand rop;
-        rop.target         = fixture("hello-hardened").string();
+        rop.target = fixture("hello-hardened").string();
         rop.syscall_number = 59;
-        rop.syscall_args   = {0x600000};
+        rop.syscall_args = {0x600000};
         auto r = rop.run(ctx);
         // Either the fixture has enough gadgets -> Ok, or it does not
         // -> NotFound with "missing gadgets" message. Both are valid

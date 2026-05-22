@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "abcpwn/core/context.hpp"
-#include "abcpwn/core/result.hpp"
-
 #include <iosfwd>
 #include <string>
 #include <string_view>
+
+#include "abcpwn/core/context.hpp"
+#include "abcpwn/core/result.hpp"
 
 namespace abcpwn::output {
 
@@ -23,9 +23,7 @@ public:
 
     // Decide whether color is applied for `os` based on ctx + TTY +
     // NO_COLOR env. Visible for tests.
-    [[nodiscard]] static bool should_color(
-        const core::Context& ctx,
-        std::ostream&        os) noexcept;
+    [[nodiscard]] static bool should_color(const core::Context& ctx, std::ostream& os) noexcept;
 
     void print_command_header(std::ostream& os);
     void print_target(std::ostream& os, std::string_view target);
@@ -34,7 +32,7 @@ public:
 
 private:
     const core::Context& ctx_;
-    bool                 color_active_{false};
+    bool color_active_{false};
 };
 
-}  // namespace abcpwn::output
+} // namespace abcpwn::output

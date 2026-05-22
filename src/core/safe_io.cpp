@@ -34,13 +34,21 @@ Error make_error_from_errno(const std::filesystem::path& path, std::string_view 
     const int captured = errno;
     ErrorCode code = ErrorCode::IoError;
     switch (captured) {
-        case ENOENT: code = ErrorCode::NotFound;         break;
-        case EACCES:
-        case EPERM:  code = ErrorCode::PermissionDenied; break;
-        case EISDIR:
-        case ENOTDIR:
-        case ELOOP:  code = ErrorCode::InvalidInput;     break;
-        default:     code = ErrorCode::IoError;          break;
+    case ENOENT:
+        code = ErrorCode::NotFound;
+        break;
+    case EACCES:
+    case EPERM:
+        code = ErrorCode::PermissionDenied;
+        break;
+    case EISDIR:
+    case ENOTDIR:
+    case ELOOP:
+        code = ErrorCode::InvalidInput;
+        break;
+    default:
+        code = ErrorCode::IoError;
+        break;
     }
     return Error{
         code,
@@ -59,7 +67,7 @@ std::string random_suffix() {
     return out;
 }
 
-}  // namespace
+} // namespace
 
 Result<std::uintmax_t> file_size(const std::filesystem::path& path) {
     std::error_code ec;
@@ -69,8 +77,7 @@ Result<std::uintmax_t> file_size(const std::filesystem::path& path) {
         return err(make_error_from_errno(path, "stat"));
     }
     if (!std::filesystem::is_regular_file(kind)) {
-        return err(ErrorCode::InvalidInput,
-                   path.string() + ": not a regular file");
+        return err(ErrorCode::InvalidInput, path.string() + ": not a regular file");
     }
     const std::uintmax_t size = std::filesystem::file_size(path, ec);
     if (ec) {
@@ -80,18 +87,15 @@ Result<std::uintmax_t> file_size(const std::filesystem::path& path) {
     return size;
 }
 
-Result<std::vector<std::byte>> read_file(
-    const std::filesystem::path& path,
-    const ReadOptions&           opts)
-{
+Result<std::vector<std::byte>> read_file(const std::filesystem::path& path,
+                                         const ReadOptions& opts) {
     const auto sz = safe_io::file_size(path);
     if (!sz) {
         return err(sz.error());
     }
     if (opts.max_bytes > 0 && *sz > opts.max_bytes) {
         return err(ErrorCode::SizeExceeded,
-                   path.string() + ": file is " + std::to_string(*sz)
-                       + " bytes, exceeds limit of "
+                   path.string() + ": file is " + std::to_string(*sz) + " bytes, exceeds limit of "
                        + std::to_string(opts.max_bytes));
     }
 
@@ -103,20 +107,15 @@ Result<std::vector<std::byte>> read_file(
     std::vector<std::byte> buf;
     buf.resize(static_cast<std::size_t>(*sz));
     if (*sz > 0) {
-        in.read(reinterpret_cast<char*>(buf.data()),
-                static_cast<std::streamsize>(*sz));
+        in.read(reinterpret_cast<char*>(buf.data()), static_cast<std::streamsize>(*sz));
         if (in.gcount() != static_cast<std::streamsize>(*sz)) {
-            return err(ErrorCode::IoError,
-                       path.string() + ": short read");
+            return err(ErrorCode::IoError, path.string() + ": short read");
         }
     }
     return buf;
 }
 
-Result<std::string> read_text_file(
-    const std::filesystem::path& path,
-    const ReadOptions&           opts)
-{
+Result<std::string> read_text_file(const std::filesystem::path& path, const ReadOptions& opts) {
     auto bytes = read_file(path, opts);
     if (!bytes) {
         return err(bytes.error());
@@ -124,16 +123,13 @@ Result<std::string> read_text_file(
     return std::string(reinterpret_cast<const char*>(bytes->data()), bytes->size());
 }
 
-Result<void> write_file_atomic(
-    const std::filesystem::path& path,
-    std::span<const std::byte>   data)
-{
+Result<void> write_file_atomic(const std::filesystem::path& path, std::span<const std::byte> data) {
     auto parent = path.parent_path();
     if (parent.empty()) {
         parent = ".";
     }
-    const std::filesystem::path tmp = parent
-        / (path.filename().string() + ".tmp." + random_suffix());
+    const std::filesystem::path tmp =
+        parent / (path.filename().string() + ".tmp." + random_suffix());
 
     {
         std::ofstream out(tmp, std::ios::binary | std::ios::trunc);
@@ -157,22 +153,17 @@ Result<void> write_file_atomic(
     if (ec) {
         std::error_code rm_ec;
         std::filesystem::remove(tmp, rm_ec);
-        return err(ErrorCode::IoError,
-                   path.string() + ": rename failed (" + ec.message() + ")");
+        return err(ErrorCode::IoError, path.string() + ": rename failed (" + ec.message() + ")");
     }
     return {};
 }
 
-Result<void> write_text_file_atomic(
-    const std::filesystem::path& path,
-    std::string_view             data)
-{
-    return write_file_atomic(
-        path,
-        std::span<const std::byte>{
-            reinterpret_cast<const std::byte*>(data.data()),
-            data.size(),
-        });
+Result<void> write_text_file_atomic(const std::filesystem::path& path, std::string_view data) {
+    return write_file_atomic(path,
+                             std::span<const std::byte>{
+                                 reinterpret_cast<const std::byte*>(data.data()),
+                                 data.size(),
+                             });
 }
 
-}  // namespace abcpwn::core::safe_io
+} // namespace abcpwn::core::safe_io

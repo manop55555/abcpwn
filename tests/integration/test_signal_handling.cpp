@@ -13,16 +13,16 @@
 // sets the same flag. Testing the post-flag-set path is sufficient;
 // going through the kernel adds flakiness without coverage gain.
 
+#include <cstdint>
+#include <span>
+#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/arch/arch.hpp"
 #include "abcpwn/commands/rop_search.hpp"
 #include "abcpwn/core/result.hpp"
 #include "abcpwn/core/signal.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
-#include <cstdint>
-#include <span>
-#include <vector>
 
 TEST_CASE("signal handlers install idempotently", "[integration][signal]") {
     abcpwn::core::signal::install_handlers();
@@ -44,17 +44,17 @@ TEST_CASE("request_cancellation flag is sticky", "[integration][signal]") {
 TEST_CASE("gadget finder honors cancellation flag", "[integration][signal]") {
     // Build a section large enough that the finder hits the
     // cancellation poll point (every 0x100 offsets) at least once.
-    std::vector<std::uint8_t> bytes(0x800, 0x90);  // 2048 NOPs
-    bytes.back() = 0xc3;                            // trailing ret
+    std::vector<std::uint8_t> bytes(0x800, 0x90); // 2048 NOPs
+    bytes.back() = 0xc3;                          // trailing ret
     abcpwn::commands::rop::ExecutableSection sec;
-    sec.name            = ".text";
+    sec.name = ".text";
     sec.virtual_address = 0x400000;
-    sec.bytes           = bytes;
+    sec.bytes = bytes;
 
     abcpwn::commands::rop::GadgetSearchOptions opts;
-    opts.arch       = abcpwn::arch::Arch::X86_64;
+    opts.arch = abcpwn::arch::Arch::X86_64;
     opts.terminator = abcpwn::commands::rop::Terminator::Ret;
-    opts.max_depth  = 4;
+    opts.max_depth = 4;
 
     // Pre-fire cancellation. The finder must observe it on its next
     // poll point and surface ErrorCode::Cancelled.
@@ -62,10 +62,9 @@ TEST_CASE("gadget finder honors cancellation flag", "[integration][signal]") {
     abcpwn::core::signal::request_cancellation();
 
     auto r = abcpwn::commands::rop::find_gadgets(
-        std::span<const abcpwn::commands::rop::ExecutableSection>(&sec, 1),
-        opts);
+        std::span<const abcpwn::commands::rop::ExecutableSection>(&sec, 1), opts);
 
-    abcpwn::core::signal::reset_for_testing();  // clean up for other tests
+    abcpwn::core::signal::reset_for_testing(); // clean up for other tests
 
     REQUIRE_FALSE(r);
     REQUIRE(r.error().code == abcpwn::core::ErrorCode::Cancelled);

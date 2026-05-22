@@ -3,16 +3,16 @@
 
 #include "abcpwn/commands/asm_cmd.hpp"
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/arch/asm.hpp"
-#include "abcpwn/commands/encoding.hpp"
+#include <cstdint>
+#include <span>
+#include <sstream>
+#include <string>
 
 #include <CLI/CLI.hpp>
 
-#include <cstdint>
-#include <sstream>
-#include <span>
-#include <string>
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/arch/asm.hpp"
+#include "abcpwn/commands/encoding.hpp"
 
 namespace abcpwn::commands {
 
@@ -29,13 +29,12 @@ core::Result<core::CommandResult> AsmCommand::run(const core::Context& /*ctx*/) 
     using namespace abcpwn::arch;
     const auto a = arch_from_string(arch_name);
     if (!a) {
-        return core::err(core::ErrorCode::Unsupported,
-            "asm: unknown arch '" + arch_name + "'");
+        return core::err(core::ErrorCode::Unsupported, "asm: unknown arch '" + arch_name + "'");
     }
     AsmOptions opts;
-    opts.arch         = *a;
-    opts.endian       = big_endian ? Endian::Big : Endian::Little;
-    opts.thumb_mode   = thumb;
+    opts.arch = *a;
+    opts.endian = big_endian ? Endian::Big : Endian::Little;
+    opts.thumb_mode = thumb;
     opts.base_address = base_address;
 
     auto bytes = assemble(source, opts);
@@ -46,8 +45,7 @@ core::Result<core::CommandResult> AsmCommand::run(const core::Context& /*ctx*/) 
     core::CommandResult res;
     const std::span<const std::uint8_t> view(*bytes);
     if (format == "raw") {
-        res.raw_lines.emplace_back(
-            reinterpret_cast<const char*>(view.data()), view.size());
+        res.raw_lines.emplace_back(reinterpret_cast<const char*>(view.data()), view.size());
     } else if (format == "escaped") {
         std::string s;
         s.reserve(view.size() * 4);
@@ -61,7 +59,8 @@ core::Result<core::CommandResult> AsmCommand::run(const core::Context& /*ctx*/) 
         std::ostringstream os;
         os << "unsigned char shellcode[" << view.size() << "] = {";
         for (std::size_t i = 0; i < view.size(); ++i) {
-            if (i > 0) os << ", ";
+            if (i > 0)
+                os << ", ";
             char buf[8];
             std::snprintf(buf, sizeof buf, "0x%02x", view[i]);
             os << buf;
@@ -74,4 +73,4 @@ core::Result<core::CommandResult> AsmCommand::run(const core::Context& /*ctx*/) 
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

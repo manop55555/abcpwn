@@ -3,14 +3,14 @@
 
 #include "abcpwn/commands/cyclic.hpp"
 
-#include <CLI/CLI.hpp>
-
 #include <algorithm>
 #include <cstddef>
 #include <functional>
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include <CLI/CLI.hpp>
 
 namespace abcpwn::commands {
 
@@ -25,34 +25,30 @@ std::string de_bruijn(const std::string& alphabet, std::size_t n) {
     std::string sequence;
     sequence.reserve(1ULL << 16);
 
-    std::function<void(std::size_t, std::size_t)> db =
-        [&](std::size_t t, std::size_t p) {
-            if (t > n) {
-                if (n % p == 0) {
-                    for (std::size_t j = 1; j <= p; ++j) {
-                        sequence.push_back(alphabet[a[j]]);
-                    }
-                }
-            } else {
-                a[t] = a[t - p];
-                db(t + 1, p);
-                for (std::size_t j = a[t - p] + 1; j < k; ++j) {
-                    a[t] = j;
-                    db(t + 1, t);
+    std::function<void(std::size_t, std::size_t)> db = [&](std::size_t t, std::size_t p) {
+        if (t > n) {
+            if (n % p == 0) {
+                for (std::size_t j = 1; j <= p; ++j) {
+                    sequence.push_back(alphabet[a[j]]);
                 }
             }
-        };
+        } else {
+            a[t] = a[t - p];
+            db(t + 1, p);
+            for (std::size_t j = a[t - p] + 1; j < k; ++j) {
+                a[t] = j;
+                db(t + 1, t);
+            }
+        }
+    };
     db(1, 1);
     return sequence;
 }
 
-}  // namespace
+} // namespace
 
-std::string cyclic_generate(
-    std::size_t      length,
-    std::string_view alphabet,
-    std::size_t      subseq_length)
-{
+std::string
+cyclic_generate(std::size_t length, std::string_view alphabet, std::size_t subseq_length) {
     if (alphabet.empty() || subseq_length == 0) {
         return {};
     }
@@ -78,11 +74,8 @@ std::string cyclic_generate(
     return out;
 }
 
-std::optional<std::size_t> cyclic_find(
-    std::string_view needle,
-    std::string_view alphabet,
-    std::size_t      subseq_length)
-{
+std::optional<std::size_t>
+cyclic_find(std::string_view needle, std::string_view alphabet, std::size_t subseq_length) {
     if (needle.empty() || alphabet.empty() || subseq_length == 0) {
         return std::nullopt;
     }
@@ -126,18 +119,17 @@ core::Result<core::CommandResult> CyclicCommand::run(const core::Context& /*ctx*
     if (!find.empty()) {
         auto off = cyclic_find(find, alphabet, subseq_length);
         if (!off) {
-            return core::err(core::ErrorCode::NotFound,
-                "cyclic: subsequence not found");
+            return core::err(core::ErrorCode::NotFound, "cyclic: subsequence not found");
         }
         res.raw_lines.push_back(std::to_string(*off));
         return res;
     }
     if (length == 0) {
         return core::err(core::ErrorCode::UsageError,
-            "cyclic: provide either a length or --find <subseq>");
+                         "cyclic: provide either a length or --find <subseq>");
     }
     res.raw_lines.push_back(cyclic_generate(length, alphabet, subseq_length));
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

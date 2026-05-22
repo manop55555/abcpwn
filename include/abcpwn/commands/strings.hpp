@@ -3,31 +3,32 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <vector>
 
+#include "abcpwn/core/command.hpp"
+
 namespace abcpwn::commands {
 
 struct ExtractedString {
     std::uint64_t offset{0};
-    std::string   value{};
+    std::string value{};
 };
 
 // Scan `data` for printable ASCII strings of at least `min_length`
 // bytes. Returns at most `max_results` hits.
-[[nodiscard]] std::vector<ExtractedString> extract_ascii_strings(
-    std::span<const std::uint8_t> data,
-    std::size_t                   min_length,
-    std::size_t                   max_results);
+[[nodiscard]] std::vector<ExtractedString> extract_ascii_strings(std::span<const std::uint8_t> data,
+                                                                 std::size_t min_length,
+                                                                 std::size_t max_results);
 
 class StringsCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "strings"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "strings";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "list printable strings in a binary";
     }
@@ -39,4 +40,4 @@ public:
     std::size_t max_results{10000};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

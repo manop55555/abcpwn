@@ -3,9 +3,9 @@
 
 #include "abcpwn/commands/xor_cmd.hpp"
 
-#include <CLI/CLI.hpp>
-
 #include <string>
+
+#include <CLI/CLI.hpp>
 
 namespace abcpwn::commands {
 
@@ -34,4 +34,4 @@ core::Result<core::CommandResult> XorCommand::run(const core::Context& /*ctx*/) 
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

@@ -1,6 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
+#include <cstdint>
+#include <filesystem>
+#include <string>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/commands/aslr_bypass.hpp"
 #include "abcpwn/commands/dynelf.hpp"
 #include "abcpwn/commands/ret2dl.hpp"
@@ -8,19 +14,13 @@
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/test_paths.hpp"
 
-#include <catch2/catch_test_macros.hpp>
-
-#include <cstdint>
-#include <filesystem>
-#include <string>
-
 namespace {
 
 std::filesystem::path fixture(std::string_view name) {
     return std::filesystem::path(abcpwn::test_paths::fixtures_dir) / "binaries" / std::string(name);
 }
 
-}  // namespace
+} // namespace
 
 // --- srop --------------------------------------------------------------------
 
@@ -37,9 +37,9 @@ TEST_CASE("serialize_frame is exactly 248 bytes on x86_64", "[srop]") {
 TEST_CASE("SropCommand builds a syscall frame for x86_64", "[srop][command]") {
     abcpwn::core::Context ctx;
     abcpwn::commands::srop::SropCommand cmd;
-    cmd.syscall_number = 59;            // execve
-    cmd.syscall_args   = {0x600000};    // /bin/sh string addr
-    cmd.rip            = 0x401000;      // syscall gadget
+    cmd.syscall_number = 59;       // execve
+    cmd.syscall_args = {0x600000}; // /bin/sh string addr
+    cmd.rip = 0x401000;            // syscall gadget
     auto r = cmd.run(ctx);
     REQUIRE(r);
     REQUIRE(r->raw_lines.size() == 1);
@@ -66,7 +66,7 @@ TEST_CASE("Ret2dlCommand reports plt / dynsym offsets on hello-hardened", "[ret2
     abcpwn::core::Context ctx;
     abcpwn::commands::ret2dl::Ret2dlCommand cmd;
     cmd.target = fixture("hello-hardened").string();
-    cmd.symbol = "strcpy";          // present in the fixture
+    cmd.symbol = "strcpy"; // present in the fixture
     auto r = cmd.run(ctx);
     REQUIRE(r);
     bool seen_plt = false;
@@ -74,9 +74,12 @@ TEST_CASE("Ret2dlCommand reports plt / dynsym offsets on hello-hardened", "[ret2
     bool seen_symbol = false;
     for (const auto& s : r->sections) {
         for (const auto& f : s.findings) {
-            if (f.title == ".plt")     seen_plt = true;
-            if (f.title == ".dynsym")  seen_dynsym = true;
-            if (f.title.find("strcpy") != std::string::npos) seen_symbol = true;
+            if (f.title == ".plt")
+                seen_plt = true;
+            if (f.title == ".dynsym")
+                seen_dynsym = true;
+            if (f.title.find("strcpy") != std::string::npos)
+                seen_symbol = true;
         }
     }
     REQUIRE(seen_plt);
@@ -90,7 +93,7 @@ TEST_CASE("Ret2dlCommand rejects non-ELF", "[ret2dl][command]") {
     }
     abcpwn::core::Context ctx;
     abcpwn::commands::ret2dl::Ret2dlCommand cmd;
-    cmd.target = "/dev/null";  // not a regular file
+    cmd.target = "/dev/null"; // not a regular file
     cmd.symbol = "anything";
     auto r = cmd.run(ctx);
     REQUIRE_FALSE(r);
@@ -135,14 +138,15 @@ TEST_CASE("DynelfCommand without leaks is a usage error", "[dynelf][command]") {
 TEST_CASE("AslrBypassCommand --brute-force reports attempt counts", "[aslr][command]") {
     abcpwn::core::Context ctx;
     abcpwn::commands::aslr_bypass::AslrBypassCommand cmd;
-    cmd.brute_force  = true;
+    cmd.brute_force = true;
     cmd.entropy_bits = 16;
     auto r = cmd.run(ctx);
     REQUIRE(r);
     bool saw_expected = false;
     for (const auto& s : r->sections) {
         for (const auto& f : s.findings) {
-            if (f.title == "expected attempts") saw_expected = true;
+            if (f.title == "expected attempts")
+                saw_expected = true;
         }
     }
     REQUIRE(saw_expected);

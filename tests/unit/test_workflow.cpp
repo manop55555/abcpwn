@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
+#include <cstdint>
+#include <filesystem>
+#include <fstream>
+#include <random>
+#include <string>
+#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/commands/diff.hpp"
 #include "abcpwn/commands/patch.hpp"
 #include "abcpwn/commands/pwn.hpp"
@@ -8,15 +17,6 @@
 #include "abcpwn/commands/template_cmd.hpp"
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/test_paths.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
-#include <cstdint>
-#include <filesystem>
-#include <fstream>
-#include <random>
-#include <string>
-#include <vector>
 
 namespace {
 
@@ -33,7 +33,7 @@ std::filesystem::path tmp_dir() {
     return d;
 }
 
-}  // namespace
+} // namespace
 
 // --- pwn target parser + DSL -------------------------------------------------
 
@@ -57,16 +57,15 @@ TEST_CASE("pwn parse_target accepts host:port, unix:, and ./local", "[pwn]") {
 
 TEST_CASE("pwn DSL parses every supported op", "[pwn]") {
     using namespace abcpwn::commands::pwn;
-    const std::string src =
-        "# comment line\n"
-        "recvuntil >>>\n"
-        "send AAAA\n"
-        "sendline payload\n"
-        "recvline\n"
-        "recvn 16\n"
-        "sleep 100\n"
-        "expect ^prompt$\n"
-        "set var some-value\n";
+    const std::string src = "# comment line\n"
+                            "recvuntil >>>\n"
+                            "send AAAA\n"
+                            "sendline payload\n"
+                            "recvline\n"
+                            "recvn 16\n"
+                            "sleep 100\n"
+                            "expect ^prompt$\n"
+                            "set var some-value\n";
     auto r = parse_dsl(src);
     REQUIRE(r);
     REQUIRE(r->size() == 8);
@@ -80,8 +79,8 @@ TEST_CASE("pwn DSL parses every supported op", "[pwn]") {
 TEST_CASE("pwn DSL rejects unknown ops and missing args", "[pwn]") {
     using namespace abcpwn::commands::pwn;
     REQUIRE_FALSE(parse_dsl("madeup foo\n"));
-    REQUIRE_FALSE(parse_dsl("send\n"));        // missing arg
-    REQUIRE_FALSE(parse_dsl("recvn abc\n"));   // non-numeric
+    REQUIRE_FALSE(parse_dsl("send\n"));      // missing arg
+    REQUIRE_FALSE(parse_dsl("recvn abc\n")); // non-numeric
 }
 
 TEST_CASE("PwnCommand process mode is Unsupported", "[pwn][command]") {
@@ -131,14 +130,14 @@ TEST_CASE("render_template ret2libc produces a pwntools-shaped script", "[templa
     const auto s = render_template("ret2libc", "/bin/ls");
     REQUIRE(s.find("from pwn import *") != std::string::npos);
     REQUIRE(s.find("elf = ELF(\"/bin/ls\")") != std::string::npos);
-    REQUIRE(s.find("libc.symbols['puts']")  != std::string::npos);
+    REQUIRE(s.find("libc.symbols['puts']") != std::string::npos);
     REQUIRE(s.find("libc.symbols['system']") != std::string::npos);
 }
 
 TEST_CASE("TemplateCommand writes solve.py when -o is given", "[template][command]") {
     abcpwn::core::Context ctx;
     abcpwn::commands::tmpl::TemplateCommand cmd;
-    cmd.strategy    = "ret2win";
+    cmd.strategy = "ret2win";
     cmd.binary_path = "./chal";
     const auto d = tmp_dir();
     cmd.output_path = (d / "solve.py").string();
@@ -178,7 +177,8 @@ TEST_CASE("DiffCommand on identical files reports (identical)", "[diff][command]
     bool saw_identical = false;
     for (const auto& s : r->sections) {
         for (const auto& f : s.findings) {
-            if (f.title == "(identical)") saw_identical = true;
+            if (f.title == "(identical)")
+                saw_identical = true;
         }
     }
     REQUIRE(saw_identical);
@@ -194,8 +194,8 @@ TEST_CASE("PatchCommand writes .patched with byte patch applied", "[patch][comma
         out.write(content.data(), content.size());
     }
     abcpwn::commands::diffpatch::PatchCommand cmd;
-    cmd.target       = src.string();
-    cmd.byte_patches = {"0x0=4142"};   // overwrite first two bytes
+    cmd.target = src.string();
+    cmd.byte_patches = {"0x0=4142"}; // overwrite first two bytes
     auto r = cmd.run(ctx);
     REQUIRE(r);
     const auto patched = src.string() + ".patched";
@@ -205,7 +205,7 @@ TEST_CASE("PatchCommand writes .patched with byte patch applied", "[patch][comma
     REQUIRE(got.size() == 16);
     REQUIRE(static_cast<unsigned char>(got[0]) == 0x41);
     REQUIRE(static_cast<unsigned char>(got[1]) == 0x42);
-    REQUIRE(static_cast<unsigned char>(got[2]) == 0x41);  // unchanged
+    REQUIRE(static_cast<unsigned char>(got[2]) == 0x41); // unchanged
     std::filesystem::remove_all(d);
 }
 
@@ -218,7 +218,7 @@ TEST_CASE("PatchCommand NOP patch writes 0x90 bytes", "[patch][command]") {
         out.write(std::string(8, 'A').data(), 8);
     }
     abcpwn::commands::diffpatch::PatchCommand cmd;
-    cmd.target      = src.string();
+    cmd.target = src.string();
     cmd.nop_patches = {"2:3"};
     auto r = cmd.run(ctx);
     REQUIRE(r);
@@ -242,7 +242,7 @@ TEST_CASE("PatchCommand byte patch beyond EOF is InvalidInput", "[patch][command
         out.write("AAAA", 4);
     }
     abcpwn::commands::diffpatch::PatchCommand cmd;
-    cmd.target       = src.string();
+    cmd.target = src.string();
     cmd.byte_patches = {"0x10=4142"};
     auto r = cmd.run(ctx);
     REQUIRE_FALSE(r);

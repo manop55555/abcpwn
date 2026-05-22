@@ -3,17 +3,19 @@
 
 #pragma once
 
-#include "abcpwn/commands/rop_search.hpp"
-#include "abcpwn/core/command.hpp"
-
 #include <cstddef>
 #include <string>
+
+#include "abcpwn/commands/rop_search.hpp"
+#include "abcpwn/core/command.hpp"
 
 namespace abcpwn::commands {
 
 class GadgetCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "gadget"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "gadget";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "find ROP gadgets in a binary's executable sections";
     }
@@ -26,7 +28,7 @@ public:
     std::string filter{};
     std::string bad_chars_hex{};
     std::string format{"pretty"};
-    bool        no_progress{false};
+    bool no_progress{false};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

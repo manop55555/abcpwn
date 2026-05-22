@@ -11,4 +11,4 @@ namespace abcpwn::formats::pe {
     return (b.info().format == BinaryFormat::Pe) ? &b.info() : nullptr;
 }
 
-}  // namespace abcpwn::formats::pe
+} // namespace abcpwn::formats::pe

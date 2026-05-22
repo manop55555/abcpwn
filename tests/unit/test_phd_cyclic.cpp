@@ -1,22 +1,36 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
-#include "abcpwn/commands/cyclic.hpp"
-#include "abcpwn/commands/disasm.hpp"
-#include "abcpwn/commands/phd.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "abcpwn/commands/cyclic.hpp"
+#include "abcpwn/commands/disasm.hpp"
+#include "abcpwn/commands/phd.hpp"
 
 using namespace abcpwn::commands;
 
 TEST_CASE("format_hex_dump produces canonical xxd-like rows", "[phd]") {
     const std::vector<std::uint8_t> data{
-        0x7f, 0x45, 0x4c, 0x46, 0x02, 0x01, 0x01, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x7f,
+        0x45,
+        0x4c,
+        0x46,
+        0x02,
+        0x01,
+        0x01,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
+        0x00,
     };
     auto rows = format_hex_dump(data, 0, 16);
     REQUIRE(rows.size() == 1);
@@ -60,17 +74,17 @@ TEST_CASE("cyclic_find on absent input returns nullopt", "[cyclic]") {
         REQUIRE(*off < 26 * 26 * 26 * 26);
     }
 
-    auto missing = cyclic_find("AAAA");  // capitals not in alphabet
+    auto missing = cyclic_find("AAAA"); // capitals not in alphabet
     REQUIRE_FALSE(missing.has_value());
 }
 
 TEST_CASE("DisasmCommand renders an i386 chain", "[disasm][command]") {
     abcpwn::core::Context ctx;
     DisasmCommand d;
-    d.input         = "31c0c3";  // xor eax, eax; ret
-    d.input_hex     = true;
-    d.arch_name     = "i386";
-    d.base_address  = 0x400000;
+    d.input = "31c0c3"; // xor eax, eax; ret
+    d.input_hex = true;
+    d.arch_name = "i386";
+    d.base_address = 0x400000;
     auto r = d.run(ctx);
     REQUIRE(r);
     REQUIRE(r->raw_lines.size() == 2);

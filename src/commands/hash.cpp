@@ -3,16 +3,16 @@
 
 #include "abcpwn/commands/hash.hpp"
 
-#include "abcpwn/core/safe_io.hpp"
+#include <cstdint>
+#include <span>
+#include <string>
+#include <vector>
 
 #include <picosha2.h>
 
 #include <CLI/CLI.hpp>
 
-#include <cstdint>
-#include <span>
-#include <string>
-#include <vector>
+#include "abcpwn/core/safe_io.hpp"
 
 namespace abcpwn::commands {
 
@@ -28,8 +28,8 @@ void HashCommand::setup(CLI::App& app) {
 core::Result<core::CommandResult> HashCommand::run(const core::Context& ctx) {
     if (algorithm != "sha256") {
         return core::err(core::ErrorCode::Unsupported,
-            "hash: only sha256 supported in this build "
-            "(md5/sha1/sha512 land in a later milestone)");
+                         "hash: only sha256 supported in this build "
+                         "(md5/sha1/sha512 land in a later milestone)");
     }
     core::CommandResult res;
     for (const auto& path : targets) {
@@ -48,4 +48,4 @@ core::Result<core::CommandResult> HashCommand::run(const core::Context& ctx) {
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

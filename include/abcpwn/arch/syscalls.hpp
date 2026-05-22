@@ -3,18 +3,18 @@
 
 #pragma once
 
-#include "abcpwn/arch/arch.hpp"
-
 #include <cstdint>
 #include <optional>
 #include <span>
 #include <string_view>
 
+#include "abcpwn/arch/arch.hpp"
+
 namespace abcpwn::arch::syscalls {
 
 struct Entry {
-    std::int32_t      number;
-    std::string_view  name;
+    std::int32_t number;
+    std::string_view name;
 };
 
 // Look up a syscall number by name on the given arch. Returns
@@ -28,4 +28,4 @@ struct Entry {
 // Full table for an arch (read-only span into static storage).
 [[nodiscard]] std::span<const Entry> table_for(Arch a) noexcept;
 
-}  // namespace abcpwn::arch::syscalls
+} // namespace abcpwn::arch::syscalls

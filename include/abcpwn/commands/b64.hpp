@@ -3,16 +3,18 @@
 
 #pragma once
 
+#include <string>
+
 #include "abcpwn/commands/encoding.hpp"
 #include "abcpwn/core/command.hpp"
-
-#include <string>
 
 namespace abcpwn::commands {
 
 class B64Command : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "b64"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "b64";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "encode or decode base64";
     }
@@ -20,7 +22,7 @@ public:
     [[nodiscard]] core::Result<core::CommandResult> run(const core::Context& ctx) override;
 
     std::string input{};
-    bool        decode{false};
+    bool decode{false};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

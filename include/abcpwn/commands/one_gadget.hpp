@@ -3,15 +3,17 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-
 #include <string>
+
+#include "abcpwn/core/command.hpp"
 
 namespace abcpwn::commands {
 
 class OneGadgetCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "one-gadget"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "one-gadget";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "find execve(\"/bin/sh\", ...) one-gadget candidates in libc";
     }
@@ -19,7 +21,7 @@ public:
     [[nodiscard]] core::Result<core::CommandResult> run(const core::Context& ctx) override;
 
     std::string libc{};
-    bool        all{false};
+    bool all{false};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

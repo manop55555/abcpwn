@@ -3,9 +3,6 @@
 
 #pragma once
 
-#include "abcpwn/core/context.hpp"
-#include "abcpwn/core/result.hpp"
-
 #include <cstdint>
 #include <filesystem>
 #include <map>
@@ -13,6 +10,9 @@
 #include <string>
 #include <string_view>
 #include <variant>
+
+#include "abcpwn/core/context.hpp"
+#include "abcpwn/core/result.hpp"
 
 namespace abcpwn::core::config {
 
@@ -26,17 +26,13 @@ using Value = std::variant<std::string, std::int64_t, bool>;
 struct Config {
     std::map<std::string, std::map<std::string, Value>> tables{};
 
-    [[nodiscard]] std::optional<std::string> get_string(
-        std::string_view table,
-        std::string_view key) const;
+    [[nodiscard]] std::optional<std::string> get_string(std::string_view table,
+                                                        std::string_view key) const;
 
-    [[nodiscard]] std::optional<std::int64_t> get_int(
-        std::string_view table,
-        std::string_view key) const;
+    [[nodiscard]] std::optional<std::int64_t> get_int(std::string_view table,
+                                                      std::string_view key) const;
 
-    [[nodiscard]] std::optional<bool> get_bool(
-        std::string_view table,
-        std::string_view key) const;
+    [[nodiscard]] std::optional<bool> get_bool(std::string_view table, std::string_view key) const;
 };
 
 // Parse a minimal TOML document. Supported:
@@ -57,4 +53,4 @@ struct Config {
 // ignored so older binaries can read newer config files.
 void apply_to_context(const Config& cfg, Context& ctx);
 
-}  // namespace abcpwn::core::config
+} // namespace abcpwn::core::config

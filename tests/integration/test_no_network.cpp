@@ -6,19 +6,18 @@
 // to run without --allow-network. This pins one of the core project
 // invariants: nothing reaches the wire by default.
 
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/commands/libc.hpp"
 #include "abcpwn/commands/pwninit.hpp"
 #include "abcpwn/core/context.hpp"
 
-#include <catch2/catch_test_macros.hpp>
-
 TEST_CASE("libc download requires ctx.allow_network = true",
-          "[integration][security][no-network]")
-{
+          "[integration][security][no-network]") {
     abcpwn::core::Context ctx;
     ctx.allow_network = false;
     abcpwn::commands::libc::LibcCommand cmd;
-    cmd.action     = "download";
+    cmd.action = "download";
     cmd.identifier = "libc6_2.34-0ubuntu3_amd64";
     auto r = cmd.run(ctx);
     REQUIRE_FALSE(r);
@@ -29,8 +28,7 @@ TEST_CASE("libc download requires ctx.allow_network = true",
 }
 
 TEST_CASE("libc download with allow_network=true still gated by compile flag",
-          "[integration][security][no-network]")
-{
+          "[integration][security][no-network]") {
     // When the build was produced without ABCPWN_WITH_NETWORK, the
     // command must surface FeatureDisabled even if the runtime gate
     // was opened. This is the belt-and-braces check that an
@@ -42,7 +40,7 @@ TEST_CASE("libc download with allow_network=true still gated by compile flag",
     abcpwn::core::Context ctx;
     ctx.allow_network = true;
     abcpwn::commands::libc::LibcCommand cmd;
-    cmd.action     = "download";
+    cmd.action = "download";
     cmd.identifier = "libc6_2.34-0ubuntu3_amd64";
     auto r = cmd.run(ctx);
     REQUIRE_FALSE(r);
@@ -50,8 +48,7 @@ TEST_CASE("libc download with allow_network=true still gated by compile flag",
 }
 
 TEST_CASE("pwninit on a directory without --allow-network does not download",
-          "[integration][security][no-network]")
-{
+          "[integration][security][no-network]") {
     // pwninit's plan output enumerates the steps it would execute.
     // Without --allow-network the libc-id / ld-fetch entries must
     // surface the gate, not the actual network call. This is the
@@ -66,8 +63,7 @@ TEST_CASE("pwninit on a directory without --allow-network does not download",
     for (const auto& s : r->sections) {
         for (const auto& f : s.findings) {
             if (f.detail.find("--allow-network") != std::string::npos
-             || f.detail.find("not actually download") != std::string::npos)
-            {
+                || f.detail.find("not actually download") != std::string::npos) {
                 saw_gate_note = true;
             }
         }

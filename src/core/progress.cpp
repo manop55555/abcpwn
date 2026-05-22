@@ -11,7 +11,7 @@
 #include <string>
 
 #if defined(__unix__) || defined(__APPLE__)
-#  include <unistd.h>
+#include <unistd.h>
 #endif
 
 namespace abcpwn::core {
@@ -26,16 +26,16 @@ namespace {
 #endif
 }
 
-}  // namespace
+} // namespace
 
 struct ProgressReporter::Impl {
-    Options                                     opts;
-    std::atomic<std::uint64_t>                  current{0};
-    std::mutex                                  render_mu;
-    std::chrono::steady_clock::time_point       last_render{};
-    bool                                        finished{false};
-    bool                                        ever_rendered{false};
-    std::ostream*                               output{nullptr};
+    Options opts;
+    std::atomic<std::uint64_t> current{0};
+    std::mutex render_mu;
+    std::chrono::steady_clock::time_point last_render{};
+    bool finished{false};
+    bool ever_rendered{false};
+    std::ostream* output{nullptr};
 
     Impl() : output(&std::cerr) {}
 
@@ -57,8 +57,7 @@ struct ProgressReporter::Impl {
         os << '\r' << "[*] " << opts.label << ": " << cur;
         if (opts.total > 0) {
             os << " / " << opts.total;
-            const auto pct = (opts.total == 0) ? 0
-                : static_cast<int>((cur * 100) / opts.total);
+            const auto pct = (opts.total == 0) ? 0 : static_cast<int>((cur * 100) / opts.total);
             os << " (" << pct << "%)";
         }
         if (tty) {
@@ -82,7 +81,8 @@ ProgressReporter::~ProgressReporter() {
 }
 
 void ProgressReporter::advance(std::uint64_t n) {
-    if (!impl_ || impl_->finished) return;
+    if (!impl_ || impl_->finished)
+        return;
     const auto now_cur = impl_->current.fetch_add(n, std::memory_order_acq_rel) + n;
     if (impl_->opts.on_tick) {
         impl_->opts.on_tick(now_cur, impl_->opts.total);
@@ -108,7 +108,8 @@ std::uint64_t ProgressReporter::total() const noexcept {
 }
 
 void ProgressReporter::finish() {
-    if (!impl_ || impl_->finished) return;
+    if (!impl_ || impl_->finished)
+        return;
     std::scoped_lock lk(impl_->render_mu);
     if (impl_->ever_rendered && impl_->output != nullptr && impl_->opts.use_stderr) {
         *impl_->output << '\n';
@@ -117,8 +118,9 @@ void ProgressReporter::finish() {
 }
 
 void ProgressReporter::set_output(std::ostream* os) {
-    if (!impl_) return;
+    if (!impl_)
+        return;
     impl_->output = os;
 }
 
-}  // namespace abcpwn::core
+} // namespace abcpwn::core

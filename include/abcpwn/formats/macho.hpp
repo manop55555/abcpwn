@@ -11,4 +11,4 @@ namespace abcpwn::formats::macho {
     return (b.info().format == BinaryFormat::MachO) ? &b.info() : nullptr;
 }
 
-}  // namespace abcpwn::formats::macho
+} // namespace abcpwn::formats::macho

@@ -3,25 +3,25 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-#include "abcpwn/core/result.hpp"
-
 #include <cstdint>
 #include <string>
 #include <string_view>
 #include <vector>
 
+#include "abcpwn/core/command.hpp"
+#include "abcpwn/core/result.hpp"
+
 namespace abcpwn::commands::pwn {
 
 enum class TubeKind : std::uint8_t {
-    Tcp        = 0,
+    Tcp = 0,
     UnixSocket = 1,
-    Process    = 2,
+    Process = 2,
 };
 
 struct TubeSpec {
-    TubeKind     kind{TubeKind::Tcp};
-    std::string  host_or_path{};   // host for tcp, socket path otherwise
+    TubeKind kind{TubeKind::Tcp};
+    std::string host_or_path{}; // host for tcp, socket path otherwise
     std::uint16_t port{0};
 };
 
@@ -32,20 +32,20 @@ struct TubeSpec {
 [[nodiscard]] core::Result<TubeSpec> parse_target(std::string_view target);
 
 enum class DslOp : std::uint8_t {
-    RecvUntil  = 0,
-    RecvLine   = 1,
-    RecvN      = 2,
-    Send       = 3,
-    SendLine   = 4,
-    Sleep      = 5,
-    Expect     = 6,
-    Set        = 7,
+    RecvUntil = 0,
+    RecvLine = 1,
+    RecvN = 2,
+    Send = 3,
+    SendLine = 4,
+    Sleep = 5,
+    Expect = 6,
+    Set = 7,
 };
 
 struct DslStep {
-    DslOp        op{};
-    std::string  arg1{};
-    std::string  arg2{};
+    DslOp op{};
+    std::string arg1{};
+    std::string arg2{};
     std::int64_t numeric{0};
 };
 
@@ -56,18 +56,20 @@ struct DslStep {
 
 class PwnCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "pwn"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "pwn";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "I/O tubes for CTF pwn challenges (TCP / Unix socket)";
     }
     void setup(CLI::App& app) override;
     [[nodiscard]] core::Result<core::CommandResult> run(const core::Context& ctx) override;
 
-    std::string  target{};
-    std::string  script_path{};
-    bool         interactive{false};
-    std::string  log_path{};
+    std::string target{};
+    std::string script_path{};
+    bool interactive{false};
+    std::string log_path{};
     std::int64_t timeout_seconds{30};
 };
 
-}  // namespace abcpwn::commands::pwn
+} // namespace abcpwn::commands::pwn

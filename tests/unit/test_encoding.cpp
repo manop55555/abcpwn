@@ -1,6 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
+#include <cstdint>
+#include <string>
+#include <string_view>
+#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/commands/b64.hpp"
 #include "abcpwn/commands/constgrep.hpp"
 #include "abcpwn/commands/encoding.hpp"
@@ -10,13 +17,6 @@
 #include "abcpwn/commands/xor_cmd.hpp"
 #include "abcpwn/core/context.hpp"
 
-#include <catch2/catch_test_macros.hpp>
-
-#include <cstdint>
-#include <string>
-#include <string_view>
-#include <vector>
-
 using namespace abcpwn::commands;
 using namespace abcpwn::commands::encoding;
 
@@ -25,7 +25,7 @@ std::vector<std::uint8_t> as_bytes(std::string_view s) {
     return {reinterpret_cast<const std::uint8_t*>(s.data()),
             reinterpret_cast<const std::uint8_t*>(s.data()) + s.size()};
 }
-}  // namespace
+} // namespace
 
 TEST_CASE("pack writes little-endian by default", "[encoding][pack]") {
     auto r = pack(0x4142, 2, Endian::Little);
@@ -71,11 +71,11 @@ TEST_CASE("hex rejects odd digits and bad chars", "[encoding][hex]") {
 }
 
 TEST_CASE("base64 known vectors", "[encoding][base64]") {
-    REQUIRE(base64_encode(as_bytes("f"))      == "Zg==");
-    REQUIRE(base64_encode(as_bytes("fo"))     == "Zm8=");
-    REQUIRE(base64_encode(as_bytes("foo"))    == "Zm9v");
-    REQUIRE(base64_encode(as_bytes("foob"))   == "Zm9vYg==");
-    REQUIRE(base64_encode(as_bytes("fooba"))  == "Zm9vYmE=");
+    REQUIRE(base64_encode(as_bytes("f")) == "Zg==");
+    REQUIRE(base64_encode(as_bytes("fo")) == "Zm8=");
+    REQUIRE(base64_encode(as_bytes("foo")) == "Zm9v");
+    REQUIRE(base64_encode(as_bytes("foob")) == "Zm9vYg==");
+    REQUIRE(base64_encode(as_bytes("fooba")) == "Zm9vYmE=");
     REQUIRE(base64_encode(as_bytes("foobar")) == "Zm9vYmFy");
 }
 
@@ -88,7 +88,7 @@ TEST_CASE("base64 roundtrip", "[encoding][base64]") {
 }
 
 TEST_CASE("base64 rejects malformed input", "[encoding][base64]") {
-    REQUIRE_FALSE(base64_decode("Zm9=v"));    // data after pad
+    REQUIRE_FALSE(base64_decode("Zm9=v")); // data after pad
     REQUIRE_FALSE(base64_decode("***"));
 }
 
@@ -118,8 +118,8 @@ TEST_CASE("constgrep finds signals", "[encoding][constgrep]") {
 TEST_CASE("PackCommand runs end-to-end", "[encoding][command]") {
     abcpwn::core::Context ctx;
     PackCommand p;
-    p.value      = 0x4142;
-    p.width      = 2;
+    p.value = 0x4142;
+    p.width = 2;
     p.big_endian = false;
     auto r = p.run(ctx);
     REQUIRE(r);

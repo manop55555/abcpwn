@@ -3,13 +3,13 @@
 
 #include "abcpwn/commands/syms.hpp"
 
-#include "abcpwn/formats/binary_loader.hpp"
-
-#include <CLI/CLI.hpp>
-
 #include <algorithm>
 #include <regex>
 #include <string>
+
+#include <CLI/CLI.hpp>
+
+#include "abcpwn/formats/binary_loader.hpp"
 
 namespace abcpwn::commands {
 
@@ -36,16 +36,16 @@ core::Result<core::CommandResult> SymsCommand::run(const core::Context& /*ctx*/)
             rx.emplace(filter);
         } catch (const std::regex_error& e) {
             return core::err(core::ErrorCode::InvalidInput,
-                std::string("syms: bad --filter regex: ") + e.what());
+                             std::string("syms: bad --filter regex: ") + e.what());
         }
     }
 
     const auto& source = dangerous_only ? info.dangerous_functions : info.dynamic_imports;
     for (const auto& sym : source) {
-        if (rx && !std::regex_search(sym, *rx)) continue;
-        sec.findings.emplace_back(
-            dangerous_only ? core::Severity::High : core::Severity::Info,
-            sym);
+        if (rx && !std::regex_search(sym, *rx))
+            continue;
+        sec.findings.emplace_back(dangerous_only ? core::Severity::High : core::Severity::Info,
+                                  sym);
     }
     if (sec.findings.empty()) {
         sec.findings.emplace_back(core::Severity::Info, "(no symbols matched)");
@@ -54,4 +54,4 @@ core::Result<core::CommandResult> SymsCommand::run(const core::Context& /*ctx*/)
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

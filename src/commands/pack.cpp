@@ -3,9 +3,9 @@
 
 #include "abcpwn/commands/pack.hpp"
 
-#include <CLI/CLI.hpp>
-
 #include <string>
+
+#include <CLI/CLI.hpp>
 
 namespace abcpwn::commands {
 
@@ -17,8 +17,7 @@ void PackCommand::setup(CLI::App& app) {
 
 core::Result<core::CommandResult> PackCommand::run(const core::Context& /*ctx*/) {
     using encoding::Endian;
-    auto bytes = encoding::pack(
-        value, width, big_endian ? Endian::Big : Endian::Little);
+    auto bytes = encoding::pack(value, width, big_endian ? Endian::Big : Endian::Little);
     if (!bytes) {
         return core::err(bytes.error());
     }
@@ -47,4 +46,4 @@ core::Result<core::CommandResult> UnpackCommand::run(const core::Context& /*ctx*
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

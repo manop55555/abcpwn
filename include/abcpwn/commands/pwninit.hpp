@@ -3,9 +3,9 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-
 #include <string>
+
+#include "abcpwn/core/command.hpp"
 
 namespace abcpwn::commands::pwninit {
 
@@ -19,7 +19,9 @@ namespace abcpwn::commands::pwninit {
 
 class PwninitCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "pwninit"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "pwninit";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "set up a CTF pwn challenge workspace";
     }
@@ -31,7 +33,7 @@ public:
     std::string libc_path{};
     std::string ld_path{};
     std::string template_strategy{"ret2libc"};
-    bool        no_patch{false};
+    bool no_patch{false};
 };
 
-}  // namespace abcpwn::commands::pwninit
+} // namespace abcpwn::commands::pwninit

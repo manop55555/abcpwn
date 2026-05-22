@@ -11,6 +11,6 @@ namespace abcpwn::core {
 // optimized away entirely on linkers that complain about it.
 namespace {
 [[maybe_unused]] constexpr int build_marker_v = 1;
-}  // namespace
+} // namespace
 
-}  // namespace abcpwn::core
+} // namespace abcpwn::core

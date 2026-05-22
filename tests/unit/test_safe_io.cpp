@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
-#include "abcpwn/core/safe_io.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstddef>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <random>
 #include <string>
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "abcpwn/core/safe_io.hpp"
 
 namespace {
 
@@ -23,13 +23,13 @@ std::filesystem::path make_tmp_dir() {
     return dir;
 }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("read_file returns the exact bytes", "[safe_io]") {
     using abcpwn::core::safe_io::read_file;
 
     const auto dir = make_tmp_dir();
-    const auto p   = dir / "hello.bin";
+    const auto p = dir / "hello.bin";
     {
         std::ofstream out(p, std::ios::binary);
         constexpr char payload[] = "hello\x00world";
@@ -44,11 +44,11 @@ TEST_CASE("read_file returns the exact bytes", "[safe_io]") {
 }
 
 TEST_CASE("read_file refuses missing paths with NotFound", "[safe_io]") {
-    using abcpwn::core::safe_io::read_file;
     using abcpwn::core::ErrorCode;
+    using abcpwn::core::safe_io::read_file;
 
     const auto dir = make_tmp_dir();
-    const auto p   = dir / "does-not-exist";
+    const auto p = dir / "does-not-exist";
     auto r = read_file(p);
     REQUIRE_FALSE(r);
     REQUIRE(r.error().code == ErrorCode::NotFound);
@@ -56,8 +56,8 @@ TEST_CASE("read_file refuses missing paths with NotFound", "[safe_io]") {
 }
 
 TEST_CASE("read_file refuses directories", "[safe_io]") {
-    using abcpwn::core::safe_io::read_file;
     using abcpwn::core::ErrorCode;
+    using abcpwn::core::safe_io::read_file;
 
     const auto dir = make_tmp_dir();
     auto r = read_file(dir);
@@ -67,12 +67,12 @@ TEST_CASE("read_file refuses directories", "[safe_io]") {
 }
 
 TEST_CASE("read_file enforces max_bytes", "[safe_io]") {
+    using abcpwn::core::ErrorCode;
     using abcpwn::core::safe_io::read_file;
     using abcpwn::core::safe_io::ReadOptions;
-    using abcpwn::core::ErrorCode;
 
     const auto dir = make_tmp_dir();
-    const auto p   = dir / "blob.bin";
+    const auto p = dir / "blob.bin";
     {
         std::ofstream out(p, std::ios::binary);
         out << std::string(1024, 'x');
@@ -90,7 +90,7 @@ TEST_CASE("write_text_file_atomic rewrites in place", "[safe_io]") {
     using abcpwn::core::safe_io::write_text_file_atomic;
 
     const auto dir = make_tmp_dir();
-    const auto p   = dir / "config.toml";
+    const auto p = dir / "config.toml";
     auto w1 = write_text_file_atomic(p, "key = 1\n");
     REQUIRE(w1);
     auto r1 = read_text_file(p);

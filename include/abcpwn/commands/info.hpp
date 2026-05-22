@@ -3,15 +3,17 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-
 #include <string>
+
+#include "abcpwn/core/command.hpp"
 
 namespace abcpwn::commands {
 
 class InfoCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "info"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "info";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "show mitigations, arch, symbols, libc hint";
     }
@@ -20,7 +22,7 @@ public:
 
     std::string target{};
     std::string arch_override{};
-    bool        no_strategy{false};
+    bool no_strategy{false};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

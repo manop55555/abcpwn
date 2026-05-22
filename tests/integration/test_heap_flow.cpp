@@ -7,14 +7,14 @@
 // shape as a CTF player working backwards from a target libc to a
 // viable technique.
 
-#include "abcpwn/commands/heap.hpp"
-#include "abcpwn/commands/safe_link.hpp"
-#include "abcpwn/core/context.hpp"
+#include <cstdint>
+#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdint>
-#include <string>
+#include "abcpwn/commands/heap.hpp"
+#include "abcpwn/commands/safe_link.hpp"
+#include "abcpwn/core/context.hpp"
 
 TEST_CASE("heap flow: technique compat -> safe-link encode", "[integration][heap]") {
     abcpwn::core::Context ctx;
@@ -24,7 +24,7 @@ TEST_CASE("heap flow: technique compat -> safe-link encode", "[integration][heap
     // require a heap leak).
     {
         abcpwn::commands::heap::HeapCommand cmd;
-        cmd.technique_str    = "tcache-poison";
+        cmd.technique_str = "tcache-poison";
         cmd.libc_version_str = "2.34";
         auto r = cmd.run(ctx);
         REQUIRE(r);
@@ -42,18 +42,16 @@ TEST_CASE("heap flow: technique compat -> safe-link encode", "[integration][heap
     // glibc safe-linking. safe_link_encode produces a value that
     // safe_link_decode at the same pos recovers exactly.
     constexpr std::uint64_t target_chunk = 0x55aabbccdd001000ULL;
-    constexpr std::uint64_t fd_pos       = 0x55aabbccdd002400ULL;
-    const auto encoded =
-        abcpwn::commands::safe_link::safe_link_encode(target_chunk, fd_pos);
+    constexpr std::uint64_t fd_pos = 0x55aabbccdd002400ULL;
+    const auto encoded = abcpwn::commands::safe_link::safe_link_encode(target_chunk, fd_pos);
     REQUIRE(encoded != target_chunk);
-    REQUIRE(abcpwn::commands::safe_link::safe_link_decode(encoded, fd_pos)
-        == target_chunk);
+    REQUIRE(abcpwn::commands::safe_link::safe_link_decode(encoded, fd_pos) == target_chunk);
 
     // Stage 3: same technique on 2.27 should be WORKS (safe-linking
     // not yet landed). This pins the compatibility direction.
     {
         abcpwn::commands::heap::HeapCommand cmd;
-        cmd.technique_str    = "tcache-poison";
+        cmd.technique_str = "tcache-poison";
         cmd.libc_version_str = "2.27";
         auto r = cmd.run(ctx);
         REQUIRE(r);
@@ -72,7 +70,7 @@ TEST_CASE("heap flow: technique compat -> safe-link encode", "[integration][heap
     {
         abcpwn::commands::heap::HeapCommand cmd;
         cmd.technique_str = "house-of-force";
-        cmd.all_libcs     = true;
+        cmd.all_libcs = true;
         auto r = cmd.run(ctx);
         REQUIRE(r);
         REQUIRE_FALSE(r->sections.empty());

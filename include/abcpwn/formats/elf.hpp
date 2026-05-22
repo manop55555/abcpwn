@@ -13,4 +13,4 @@ namespace abcpwn::formats::elf {
     return (b.info().format == BinaryFormat::Elf) ? &b.info() : nullptr;
 }
 
-}  // namespace abcpwn::formats::elf
+} // namespace abcpwn::formats::elf

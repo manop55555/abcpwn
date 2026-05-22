@@ -5,26 +5,23 @@
 // build leak payload -> build write payload. Mirrors the steps a CTF
 // player runs after dropping `AAAA%X.%X.%X` into a vulnerable printf.
 
+#include <cstdint>
+#include <string>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/arch/arch.hpp"
 #include "abcpwn/commands/fmt.hpp"
 #include "abcpwn/core/context.hpp"
 
-#include <catch2/catch_test_macros.hpp>
-
-#include <cstdint>
-#include <string>
-
-TEST_CASE("fmt-leak flow: locate offset -> leak payload -> write payload",
-          "[integration][fmt]")
-{
+TEST_CASE("fmt-leak flow: locate offset -> leak payload -> write payload", "[integration][fmt]") {
     using namespace abcpwn::commands::fmt;
     abcpwn::core::Context ctx;
 
     // Stage 1: parse a representative printf-style dump output.
     // The 4th 32-bit hex word is our 0x41414141 marker; tokens 1-3
     // are typical libc / stack noise.
-    const std::string dump =
-        "0x7ffe12345678.0x7f1234567890.0xdeadbeef.0x41414141.0xcafebabe";
+    const std::string dump = "0x7ffe12345678.0x7f1234567890.0xdeadbeef.0x41414141.0xcafebabe";
     auto idx_opt = find_marker_offset(dump);
     REQUIRE(idx_opt.has_value());
     const std::size_t idx = *idx_opt;
@@ -49,9 +46,9 @@ TEST_CASE("fmt-leak flow: locate offset -> leak payload -> write payload",
     // 16-bit half via %hn.
     {
         FmtCommand cmd;
-        cmd.write_spec   = "0x404040=0xdeadbeef";
+        cmd.write_spec = "0x404040=0xdeadbeef";
         cmd.arg_position = static_cast<std::int64_t>(idx);
-        cmd.arch_str     = "x86_64";
+        cmd.arch_str = "x86_64";
         auto r = cmd.run(ctx);
         REQUIRE(r);
         REQUIRE(r->raw_lines.size() == 1);

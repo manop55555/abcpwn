@@ -19,6 +19,15 @@
 #include "abcpwn/output/pretty.hpp"
 
 // Every command surface.
+#include <chrono>
+#include <cstdint>
+#include <iostream>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include <CLI/CLI.hpp>
+
 #include "abcpwn/commands/aslr_bypass.hpp"
 #include "abcpwn/commands/asm_cmd.hpp"
 #include "abcpwn/commands/b64.hpp"
@@ -56,29 +65,18 @@
 #include "abcpwn/commands/vtable.hpp"
 #include "abcpwn/commands/xor_cmd.hpp"
 
-#include <CLI/CLI.hpp>
-
-#include <chrono>
-#include <cstdint>
-#include <iostream>
-#include <memory>
-#include <string>
-#include <vector>
-
 namespace {
 
 struct DispatchEntry {
     std::unique_ptr<abcpwn::core::ICommand> cmd;
-    CLI::App*                               sub{nullptr};
+    CLI::App* sub{nullptr};
 };
 
 template <class C>
 void register_command(CLI::App& root, std::vector<DispatchEntry>& entries) {
     DispatchEntry e;
     e.cmd = std::make_unique<C>();
-    e.sub = root.add_subcommand(
-        std::string(e.cmd->name()),
-        std::string(e.cmd->description()));
+    e.sub = root.add_subcommand(std::string(e.cmd->name()), std::string(e.cmd->description()));
     e.cmd->setup(*e.sub);
     entries.push_back(std::move(e));
 }
@@ -147,7 +145,7 @@ void register_all(CLI::App& root, std::vector<DispatchEntry>& entries) {
     register_command<diffpatch::PatchCommand>(root, entries);
 }
 
-}  // namespace
+} // namespace
 
 int main(int argc, char** argv) {
     using namespace abcpwn;
@@ -160,25 +158,26 @@ int main(int argc, char** argv) {
     // every ICommand::run sees.
     std::string format_str{"pretty"};
     std::string color_str{"auto"};
-    int         verbose_count{0};
-    bool        quiet{false};
-    bool        no_banner{false};
-    bool        show_banner{false};
-    bool        allow_network{false};
+    int verbose_count{0};
+    bool quiet{false};
+    bool no_banner{false};
+    bool show_banner{false};
+    bool allow_network{false};
     std::string config_path{};
     std::string log_file_path{};
 
-    app.add_option("--format", format_str,    "pretty (default) | json");
-    app.add_option("--color", color_str,      "auto (default) | always | never");
+    app.add_option("--format", format_str, "pretty (default) | json");
+    app.add_option("--color", color_str, "auto (default) | always | never");
     app.add_flag("-v,--verbose", verbose_count, "Increase verbosity (-vv = trace)");
-    app.add_flag("-q,--quiet", quiet,         "Suppress info-level output");
-    app.add_flag("--no-banner", no_banner,    "Suppress the banner");
-    app.add_flag("--banner", show_banner,     "Print the banner and exit");
-    app.add_flag("--allow-network", allow_network,
-        "Permit network access (libc download, pwninit fetch)");
-    app.add_option("--config", config_path,   "Path to a TOML config file");
-    app.add_option("--log-file", log_file_path,
-        "Write logs to this path (in addition to stderr in pretty mode)");
+    app.add_flag("-q,--quiet", quiet, "Suppress info-level output");
+    app.add_flag("--no-banner", no_banner, "Suppress the banner");
+    app.add_flag("--banner", show_banner, "Print the banner and exit");
+    app.add_flag(
+        "--allow-network", allow_network, "Permit network access (libc download, pwninit fetch)");
+    app.add_option("--config", config_path, "Path to a TOML config file");
+    app.add_option("--log-file",
+                   log_file_path,
+                   "Write logs to this path (in addition to stderr in pretty mode)");
 
     std::vector<DispatchEntry> entries;
     register_all(app, entries);
@@ -191,13 +190,15 @@ int main(int argc, char** argv) {
 
     // Build the Context from parsed globals.
     core::Context ctx;
-    ctx.format = (format_str == "json")
-        ? core::OutputFormat::Json : core::OutputFormat::Pretty;
-    if (color_str == "always")     ctx.color = core::ColorMode::Always;
-    else if (color_str == "never") ctx.color = core::ColorMode::Never;
-    else                           ctx.color = core::ColorMode::Auto;
-    ctx.verbosity     = verbose_count - (quiet ? 1 : 0);
-    ctx.no_banner     = no_banner;
+    ctx.format = (format_str == "json") ? core::OutputFormat::Json : core::OutputFormat::Pretty;
+    if (color_str == "always")
+        ctx.color = core::ColorMode::Always;
+    else if (color_str == "never")
+        ctx.color = core::ColorMode::Never;
+    else
+        ctx.color = core::ColorMode::Auto;
+    ctx.verbosity = verbose_count - (quiet ? 1 : 0);
+    ctx.no_banner = no_banner;
     ctx.allow_network = allow_network;
     if (!log_file_path.empty()) {
         ctx.log_file = log_file_path;
@@ -248,14 +249,12 @@ int main(int argc, char** argv) {
     const auto end_at = std::chrono::steady_clock::now();
 
     if (!result) {
-        std::cerr << "[-] " << selected->cmd->name() << ": "
-                  << result.error().message << '\n';
+        std::cerr << "[-] " << selected->cmd->name() << ": " << result.error().message << '\n';
         return result.error().exit_code();
     }
 
     if (!result->duration) {
-        result->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(
-            end_at - start_at);
+        result->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_at - start_at);
     }
 
     if (ctx.format == core::OutputFormat::Json) {

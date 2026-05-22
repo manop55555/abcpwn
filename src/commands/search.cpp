@@ -3,28 +3,27 @@
 
 #include "abcpwn/commands/search.hpp"
 
-#include "abcpwn/commands/encoding.hpp"
-#include "abcpwn/core/safe_io.hpp"
-
-#include <CLI/CLI.hpp>
-
 #include <algorithm>
 #include <cstdint>
 #include <string>
 #include <vector>
 
+#include <CLI/CLI.hpp>
+
+#include "abcpwn/commands/encoding.hpp"
+#include "abcpwn/core/safe_io.hpp"
+
 namespace abcpwn::commands {
 
-std::vector<SearchHit> search_bytes(
-    std::span<const std::uint8_t> data,
-    std::span<const std::uint8_t> needle)
-{
+std::vector<SearchHit> search_bytes(std::span<const std::uint8_t> data,
+                                    std::span<const std::uint8_t> needle) {
     std::vector<SearchHit> out;
     if (needle.empty() || needle.size() > data.size()) {
         return out;
     }
     for (std::size_t i = 0; i + needle.size() <= data.size(); ++i) {
-        if (std::equal(needle.begin(), needle.end(), data.begin() + static_cast<std::ptrdiff_t>(i))) {
+        if (std::equal(
+                needle.begin(), needle.end(), data.begin() + static_cast<std::ptrdiff_t>(i))) {
             out.push_back({static_cast<std::uint64_t>(i), needle.size()});
         }
     }
@@ -47,7 +46,8 @@ core::Result<core::CommandResult> SearchCommand::run(const core::Context& ctx) {
     }
     std::vector<std::uint8_t> bytes;
     bytes.reserve(raw->size());
-    for (auto b : *raw) bytes.push_back(static_cast<std::uint8_t>(b));
+    for (auto b : *raw)
+        bytes.push_back(static_cast<std::uint8_t>(b));
 
     std::vector<std::uint8_t> needle;
     if (as_hex) {
@@ -58,7 +58,8 @@ core::Result<core::CommandResult> SearchCommand::run(const core::Context& ctx) {
         needle = std::move(*dec);
     } else {
         needle.reserve(pattern.size());
-        for (char c : pattern) needle.push_back(static_cast<std::uint8_t>(c));
+        for (char c : pattern)
+            needle.push_back(static_cast<std::uint8_t>(c));
     }
 
     const auto hits = search_bytes(bytes, needle);
@@ -69,8 +70,7 @@ core::Result<core::CommandResult> SearchCommand::run(const core::Context& ctx) {
     }
     for (const auto& h : hits) {
         char buf[64];
-        std::snprintf(buf, sizeof buf, "0x%lx (%zu bytes)",
-            (unsigned long) h.offset, h.length);
+        std::snprintf(buf, sizeof buf, "0x%lx (%zu bytes)", (unsigned long) h.offset, h.length);
         res.raw_lines.emplace_back(buf);
     }
     if (hits.empty()) {
@@ -79,4 +79,4 @@ core::Result<core::CommandResult> SearchCommand::run(const core::Context& ctx) {
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

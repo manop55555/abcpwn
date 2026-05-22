@@ -3,8 +3,6 @@
 
 #pragma once
 
-#include "abcpwn/core/error.hpp"
-
 #include <cassert>
 #include <chrono>
 #include <cstdint>
@@ -16,6 +14,8 @@
 #include <utility>
 #include <variant>
 #include <vector>
+
+#include "abcpwn/core/error.hpp"
 
 namespace abcpwn::core {
 
@@ -46,11 +46,14 @@ public:
     using error_type = E;
 
     Result(T value) : storage_(std::in_place_index<0>, std::move(value)) {}
-    Result(Unexpected<E> u)
-        : storage_(std::in_place_index<1>, std::move(u.value)) {}
+    Result(Unexpected<E> u) : storage_(std::in_place_index<1>, std::move(u.value)) {}
 
-    [[nodiscard]] bool has_value() const noexcept { return storage_.index() == 0; }
-    explicit operator bool() const noexcept { return has_value(); }
+    [[nodiscard]] bool has_value() const noexcept {
+        return storage_.index() == 0;
+    }
+    explicit operator bool() const noexcept {
+        return has_value();
+    }
 
     T& value() & {
         assert(has_value() && "value() on a failed Result");
@@ -60,16 +63,32 @@ public:
         assert(has_value() && "value() on a failed Result");
         return std::get<0>(storage_);
     }
-    T&& value() && { return std::move(std::get<0>(storage_)); }
+    T&& value() && {
+        return std::move(std::get<0>(storage_));
+    }
 
-    T& operator*() & noexcept { return std::get<0>(storage_); }
-    const T& operator*() const& noexcept { return std::get<0>(storage_); }
-    T* operator->() noexcept { return &std::get<0>(storage_); }
-    const T* operator->() const noexcept { return &std::get<0>(storage_); }
+    T& operator*() & noexcept {
+        return std::get<0>(storage_);
+    }
+    const T& operator*() const& noexcept {
+        return std::get<0>(storage_);
+    }
+    T* operator->() noexcept {
+        return &std::get<0>(storage_);
+    }
+    const T* operator->() const noexcept {
+        return &std::get<0>(storage_);
+    }
 
-    E& error() & noexcept { return std::get<1>(storage_); }
-    const E& error() const& noexcept { return std::get<1>(storage_); }
-    E&& error() && noexcept { return std::move(std::get<1>(storage_)); }
+    E& error() & noexcept {
+        return std::get<1>(storage_);
+    }
+    const E& error() const& noexcept {
+        return std::get<1>(storage_);
+    }
+    E&& error() && noexcept {
+        return std::move(std::get<1>(storage_));
+    }
 
 private:
     std::variant<T, E> storage_;
@@ -84,11 +103,19 @@ public:
     Result() = default;
     Result(Unexpected<E> u) : err_(std::move(u.value)) {}
 
-    [[nodiscard]] bool has_value() const noexcept { return !err_.has_value(); }
-    explicit operator bool() const noexcept { return has_value(); }
+    [[nodiscard]] bool has_value() const noexcept {
+        return !err_.has_value();
+    }
+    explicit operator bool() const noexcept {
+        return has_value();
+    }
 
-    E& error() & noexcept { return *err_; }
-    const E& error() const& noexcept { return *err_; }
+    E& error() & noexcept {
+        return *err_;
+    }
+    const E& error() const& noexcept {
+        return *err_;
+    }
 
 private:
     std::optional<E> err_{};
@@ -108,11 +135,11 @@ private:
 // rendering. The shape mirrors STEP/10 output rules so the rendering
 // layers in step 5 can consume it directly.
 struct Finding {
-    Severity                                                            severity{Severity::Info};
-    std::string                                                         title{};
-    std::string                                                         detail{};
-    std::optional<std::uint64_t>                                        offset{};
-    std::optional<std::string>                                          file{};
+    Severity severity{Severity::Info};
+    std::string title{};
+    std::string detail{};
+    std::optional<std::uint64_t> offset{};
+    std::optional<std::string> file{};
     std::map<std::string, std::variant<std::string, std::int64_t, bool>> extra{};
 
     Finding() = default;
@@ -123,7 +150,7 @@ struct Finding {
 
 // A section is a labelled group of findings under a common header.
 struct Section {
-    std::string          title{};
+    std::string title{};
     std::vector<Finding> findings{};
 };
 
@@ -131,20 +158,20 @@ struct Section {
 // output; raw_lines is for commands whose output is intrinsically
 // flat (`hex`, `unhex`, ...).
 struct CommandResult {
-    int                                          exit_code{0};
-    std::vector<Section>                         sections{};
-    std::vector<std::string>                     raw_lines{};
-    std::optional<std::chrono::nanoseconds>      duration{};
-    std::optional<std::string>                   summary{};
+    int exit_code{0};
+    std::vector<Section> sections{};
+    std::vector<std::string> raw_lines{};
+    std::optional<std::chrono::nanoseconds> duration{};
+    std::optional<std::string> summary{};
 };
 
 // Aggregated report from a multi-target scan (info on a directory,
 // gadget search across multiple binaries, etc.). The dispatcher
 // flattens this back to a CommandResult for rendering.
 struct ScanReport {
-    std::string                              target{};
-    std::vector<CommandResult>               results{};
-    std::optional<std::chrono::nanoseconds>  duration{};
+    std::string target{};
+    std::vector<CommandResult> results{};
+    std::optional<std::chrono::nanoseconds> duration{};
 };
 
-}  // namespace abcpwn::core
+} // namespace abcpwn::core

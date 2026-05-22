@@ -7,14 +7,14 @@
 // API so any size-cap, format-sniff, or LIEF-side crash surfaces under
 // the harness rather than only at runtime.
 
-#include "abcpwn/formats/binary_loader.hpp"
-
 #include <cstddef>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <string>
+
+#include "abcpwn/formats/binary_loader.hpp"
 
 extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size) {
     // Cap inputs at 2 MiB so a single fuzzer iteration stays fast;
@@ -29,13 +29,11 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
         return 0;
     }
     char name[64];
-    std::snprintf(name, sizeof name, "binloader-%p.bin",
-                  static_cast<const void*>(data));
+    std::snprintf(name, sizeof name, "binloader-%p.bin", static_cast<const void*>(data));
     const auto path = dir / name;
     {
         std::ofstream out(path, std::ios::binary | std::ios::trunc);
-        out.write(reinterpret_cast<const char*>(data),
-                  static_cast<std::streamsize>(size));
+        out.write(reinterpret_cast<const char*>(data), static_cast<std::streamsize>(size));
     }
     abcpwn::formats::LoadOptions opts;
     opts.require_known_format = false;

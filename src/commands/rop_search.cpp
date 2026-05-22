@@ -3,9 +3,6 @@
 
 #include "abcpwn/commands/rop_search.hpp"
 
-#include "abcpwn/arch/disasm.hpp"
-#include "abcpwn/core/signal.hpp"
-
 #include <algorithm>
 #include <array>
 #include <cstdint>
@@ -14,6 +11,9 @@
 #include <span>
 #include <string>
 #include <vector>
+
+#include "abcpwn/arch/disasm.hpp"
+#include "abcpwn/core/signal.hpp"
 
 namespace abcpwn::commands::rop {
 
@@ -25,46 +25,47 @@ namespace {
 // where to look back.
 [[nodiscard]] bool is_terminator_first_byte(std::uint8_t b, Terminator t, arch::Arch a) noexcept {
     if (a != arch::Arch::X86 && a != arch::Arch::X86_64) {
-        return true;  // outside x86, scan every offset; slower but correct
+        return true; // outside x86, scan every offset; slower but correct
     }
     switch (t) {
-        case Terminator::Ret:
-            return b == 0xc3 || b == 0xc2 || b == 0xcb || b == 0xca;
-        case Terminator::Jmp:
-            return b == 0xe9 || b == 0xeb || b == 0xff;
-        case Terminator::Call:
-            return b == 0xe8 || b == 0xff;
-        case Terminator::Syscall:
-            return b == 0x0f || b == 0xcd;
-        case Terminator::All:
-            return b == 0xc3 || b == 0xc2 || b == 0xcb || b == 0xca
-                || b == 0xe9 || b == 0xeb || b == 0xff
-                || b == 0xe8 || b == 0x0f || b == 0xcd;
+    case Terminator::Ret:
+        return b == 0xc3 || b == 0xc2 || b == 0xcb || b == 0xca;
+    case Terminator::Jmp:
+        return b == 0xe9 || b == 0xeb || b == 0xff;
+    case Terminator::Call:
+        return b == 0xe8 || b == 0xff;
+    case Terminator::Syscall:
+        return b == 0x0f || b == 0xcd;
+    case Terminator::All:
+        return b == 0xc3 || b == 0xc2 || b == 0xcb || b == 0xca || b == 0xe9 || b == 0xeb
+               || b == 0xff || b == 0xe8 || b == 0x0f || b == 0xcd;
     }
     return false;
 }
 
 [[nodiscard]] bool is_terminator_text(std::string_view m, Terminator t) noexcept {
     switch (t) {
-        case Terminator::Ret:     return m == "ret" || m == "retf";
-        case Terminator::Jmp:     return m.starts_with("jmp");
-        case Terminator::Call:    return m.starts_with("call");
-        case Terminator::Syscall: return m == "syscall" || m == "int";
-        case Terminator::All:
-            return m == "ret" || m == "retf"
-                || m.starts_with("jmp") || m.starts_with("call")
-                || m == "syscall" || m == "int";
+    case Terminator::Ret:
+        return m == "ret" || m == "retf";
+    case Terminator::Jmp:
+        return m.starts_with("jmp");
+    case Terminator::Call:
+        return m.starts_with("call");
+    case Terminator::Syscall:
+        return m == "syscall" || m == "int";
+    case Terminator::All:
+        return m == "ret" || m == "retf" || m.starts_with("jmp") || m.starts_with("call")
+               || m == "syscall" || m == "int";
     }
     return false;
 }
 
-[[nodiscard]] bool contains_bad_byte(
-    std::span<const std::uint8_t> bytes,
-    std::span<const std::uint8_t> bad) noexcept
-{
+[[nodiscard]] bool contains_bad_byte(std::span<const std::uint8_t> bytes,
+                                     std::span<const std::uint8_t> bad) noexcept {
     for (const auto b : bytes) {
         for (const auto bc : bad) {
-            if (b == bc) return true;
+            if (b == bc)
+                return true;
         }
     }
     return false;
@@ -73,23 +74,22 @@ namespace {
 [[nodiscard]] std::string render_gadget_text(const std::vector<arch::Instruction>& insns) {
     std::string s;
     for (std::size_t i = 0; i < insns.size(); ++i) {
-        if (i != 0) s.append(" ; ");
+        if (i != 0)
+            s.append(" ; ");
         s.append(insns[i].text());
     }
     return s;
 }
 
-}  // namespace
+} // namespace
 
-core::Result<std::vector<Gadget>> find_gadgets(
-    std::span<const ExecutableSection>       sections,
-    const GadgetSearchOptions&               opts)
-{
+core::Result<std::vector<Gadget>> find_gadgets(std::span<const ExecutableSection> sections,
+                                               const GadgetSearchOptions& opts) {
     if (opts.arch != arch::Arch::X86 && opts.arch != arch::Arch::X86_64) {
         return core::err(core::ErrorCode::Unsupported,
-            "gadget: only x86 / x86_64 finders are implemented in this milestone");
+                         "gadget: only x86 / x86_64 finders are implemented in this milestone");
     }
-    (void) is_terminator_first_byte;  // kept for future selective scans
+    (void) is_terminator_first_byte; // kept for future selective scans
 
     std::optional<std::regex> filter_rx;
     if (!opts.text_filter.empty()) {
@@ -97,7 +97,7 @@ core::Result<std::vector<Gadget>> find_gadgets(
             filter_rx.emplace(opts.text_filter);
         } catch (const std::regex_error& e) {
             return core::err(core::ErrorCode::InvalidInput,
-                std::string("gadget: bad --filter regex: ") + e.what());
+                             std::string("gadget: bad --filter regex: ") + e.what());
         }
     }
 
@@ -121,12 +121,11 @@ core::Result<std::vector<Gadget>> find_gadgets(
                 }
             }
 
-            std::span<const std::uint8_t> window(
-                bytes.data() + start, bytes.size() - start);
+            std::span<const std::uint8_t> window(bytes.data() + start, bytes.size() - start);
 
             arch::DisasmOptions dopts;
-            dopts.arch             = opts.arch;
-            dopts.base_address     = sec.virtual_address + start;
+            dopts.arch = opts.arch;
+            dopts.base_address = sec.virtual_address + start;
             dopts.max_instructions = opts.max_depth + 1;
             auto r = arch::disassemble(window, dopts);
             if (!r || r->empty()) {
@@ -151,14 +150,11 @@ core::Result<std::vector<Gadget>> find_gadgets(
             }
 
             const auto& term = (*r)[term_idx];
-            const std::size_t term_end = static_cast<std::size_t>(
-                (term.address + term.bytes.size()) - sec.virtual_address);
-            std::vector<std::uint8_t> gadget_bytes(
-                bytes.begin() + start, bytes.begin() + term_end);
+            const std::size_t term_end =
+                static_cast<std::size_t>((term.address + term.bytes.size()) - sec.virtual_address);
+            std::vector<std::uint8_t> gadget_bytes(bytes.begin() + start, bytes.begin() + term_end);
 
-            if (!opts.bad_chars.empty()
-                && contains_bad_byte(gadget_bytes, opts.bad_chars))
-            {
+            if (!opts.bad_chars.empty() && contains_bad_byte(gadget_bytes, opts.bad_chars)) {
                 continue;
             }
 
@@ -175,12 +171,12 @@ core::Result<std::vector<Gadget>> find_gadgets(
             if (it == uniques.end()) {
                 Gadget g;
                 g.address = va;
-                g.bytes   = std::move(gadget_bytes);
-                g.text    = text;
+                g.bytes = std::move(gadget_bytes);
+                g.text = text;
                 uniques.emplace(std::move(text), std::move(g));
             } else if (va < it->second.address) {
                 it->second.address = va;
-                it->second.bytes   = std::move(gadget_bytes);
+                it->second.bytes = std::move(gadget_bytes);
             }
             if (uniques.size() >= opts.max_results) {
                 break;
@@ -193,9 +189,10 @@ core::Result<std::vector<Gadget>> find_gadgets(
     for (auto& [_, g] : uniques) {
         out.push_back(std::move(g));
     }
-    std::sort(out.begin(), out.end(),
-        [](const Gadget& a, const Gadget& b) { return a.address < b.address; });
+    std::sort(out.begin(), out.end(), [](const Gadget& a, const Gadget& b) {
+        return a.address < b.address;
+    });
     return out;
 }
 
-}  // namespace abcpwn::commands::rop
+} // namespace abcpwn::commands::rop

@@ -3,14 +3,14 @@
 
 #pragma once
 
-#include "abcpwn/core/context.hpp"
-
 #include <memory>
 #include <string>
 
+#include "abcpwn/core/context.hpp"
+
 namespace spdlog {
 class logger;
-}  // namespace spdlog
+} // namespace spdlog
 
 namespace abcpwn::output {
 
@@ -33,4 +33,4 @@ void setup_logging(const core::Context& ctx);
 // configured (empty if logging only goes to stderr).
 [[nodiscard]] const std::string& last_log_path_for_testing();
 
-}  // namespace abcpwn::output
+} // namespace abcpwn::output

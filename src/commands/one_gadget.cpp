@@ -3,19 +3,18 @@
 
 #include "abcpwn/commands/one_gadget.hpp"
 
-#include "abcpwn/commands/search.hpp"
-#include "abcpwn/core/safe_io.hpp"
-#include "abcpwn/formats/binary_loader.hpp"
-
-#include <LIEF/LIEF.hpp>
-
-#include <CLI/CLI.hpp>
-
 #include <cstdint>
 #include <cstdio>
 #include <span>
 #include <string>
 #include <vector>
+
+#include <CLI/CLI.hpp>
+#include <LIEF/LIEF.hpp>
+
+#include "abcpwn/commands/search.hpp"
+#include "abcpwn/core/safe_io.hpp"
+#include "abcpwn/formats/binary_loader.hpp"
 
 namespace abcpwn::commands {
 
@@ -25,17 +24,24 @@ namespace {
 // byte buffer. Returns file offsets.
 std::vector<std::uint64_t> find_binsh(std::span<const std::uint8_t> data) {
     static constexpr std::uint8_t needle[] = {
-        '/', 'b', 'i', 'n', '/', 's', 'h', 0,
+        '/',
+        'b',
+        'i',
+        'n',
+        '/',
+        's',
+        'h',
+        0,
     };
-    auto hits = search_bytes(data,
-        std::span<const std::uint8_t>(needle, sizeof needle));
+    auto hits = search_bytes(data, std::span<const std::uint8_t>(needle, sizeof needle));
     std::vector<std::uint64_t> out;
     out.reserve(hits.size());
-    for (const auto& h : hits) out.push_back(h.offset);
+    for (const auto& h : hits)
+        out.push_back(h.offset);
     return out;
 }
 
-}  // namespace
+} // namespace
 
 void OneGadgetCommand::setup(CLI::App& app) {
     app.add_option("libc", libc, "libc image to analyze")->required();
@@ -53,7 +59,8 @@ core::Result<core::CommandResult> OneGadgetCommand::run(const core::Context& /*c
     }
     std::vector<std::uint8_t> bytes;
     bytes.reserve(raw->size());
-    for (auto b : *raw) bytes.push_back(static_cast<std::uint8_t>(b));
+    for (auto b : *raw)
+        bytes.push_back(static_cast<std::uint8_t>(b));
 
     const auto binsh = find_binsh(bytes);
 
@@ -62,8 +69,8 @@ core::Result<core::CommandResult> OneGadgetCommand::run(const core::Context& /*c
     sec.title = "one-gadget candidates";
 
     if (binsh.empty()) {
-        sec.findings.emplace_back(core::Severity::Info,
-            "no /bin/sh string", "no execve-shell candidates");
+        sec.findings.emplace_back(
+            core::Severity::Info, "no /bin/sh string", "no execve-shell candidates");
         return res;
     }
 
@@ -79,13 +86,14 @@ core::Result<core::CommandResult> OneGadgetCommand::run(const core::Context& /*c
         char buf[32];
         std::snprintf(buf, sizeof buf, "0x%lx", (unsigned long) off);
         core::Finding f(core::Severity::Info,
-            std::string("/bin/sh at ") + buf,
-            "constraints: not analyzed in this milestone (v0.1 stub)");
+                        std::string("/bin/sh at ") + buf,
+                        "constraints: not analyzed in this milestone (v0.1 stub)");
         f.offset = off;
         sec.findings.push_back(std::move(f));
     }
     if (!all) {
-        sec.findings.emplace_back(core::Severity::Info,
+        sec.findings.emplace_back(
+            core::Severity::Info,
             "note",
             "true one-gadget constraint extraction lands in a future version; "
             "in the meantime use the offsets above with manual disassembly");
@@ -93,4 +101,4 @@ core::Result<core::CommandResult> OneGadgetCommand::run(const core::Context& /*c
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

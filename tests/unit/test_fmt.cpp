@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/commands/fmt.hpp"
-#include "abcpwn/core/context.hpp"
+#include <cstdint>
+#include <string>
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <cstdint>
-#include <string>
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/commands/fmt.hpp"
+#include "abcpwn/core/context.hpp"
 
 using namespace abcpwn::commands::fmt;
 
@@ -38,8 +38,8 @@ TEST_CASE("build_leak_payload emits %N$s by default", "[fmt]") {
 TEST_CASE("build_write_payload requires arg_index", "[fmt]") {
     WriteSpec ws;
     ws.target_address = 0x404040;
-    ws.value          = 0xdeadbeef;
-    ws.arg_index      = 0;
+    ws.value = 0xdeadbeef;
+    ws.arg_index = 0;
     auto r = build_write_payload(ws);
     REQUIRE_FALSE(r);
     REQUIRE(r.error().code == abcpwn::core::ErrorCode::InvalidInput);
@@ -48,9 +48,9 @@ TEST_CASE("build_write_payload requires arg_index", "[fmt]") {
 TEST_CASE("build_write_payload prepends four target-address slots on x86_64", "[fmt]") {
     WriteSpec ws;
     ws.target_address = 0x404040;
-    ws.value          = 0xdeadbeef;
-    ws.arg_index      = 8;
-    ws.arch           = abcpwn::arch::Arch::X86_64;
+    ws.value = 0xdeadbeef;
+    ws.arg_index = 8;
+    ws.arch = abcpwn::arch::Arch::X86_64;
     auto r = build_write_payload(ws);
     REQUIRE(r);
     // Four 8-byte addresses = 32 bytes at the start, then the format string.
@@ -62,7 +62,10 @@ TEST_CASE("build_write_payload prepends four target-address slots on x86_64", "[
     // Last bytes should look like format-string ascii (contain '%').
     bool has_percent = false;
     for (auto b : *r) {
-        if (b == '%') { has_percent = true; break; }
+        if (b == '%') {
+            has_percent = true;
+            break;
+        }
     }
     REQUIRE(has_percent);
 }
@@ -98,9 +101,9 @@ TEST_CASE("FmtCommand without any action is a usage error", "[fmt][command]") {
 TEST_CASE("FmtCommand --write surface returns escaped hex string", "[fmt][command]") {
     abcpwn::core::Context ctx;
     FmtCommand cmd;
-    cmd.write_spec   = "0x404040=0xdeadbeef";
+    cmd.write_spec = "0x404040=0xdeadbeef";
     cmd.arg_position = 8;
-    cmd.arch_str     = "x86_64";
+    cmd.arch_str = "x86_64";
     auto r = cmd.run(ctx);
     REQUIRE(r);
     REQUIRE(r->raw_lines.size() == 1);

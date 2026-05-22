@@ -10,14 +10,14 @@ namespace abcpwn::core::signal {
 
 namespace {
 
-std::atomic<bool>     g_cancelled{false};
-std::atomic_flag      g_installed = ATOMIC_FLAG_INIT;
+std::atomic<bool> g_cancelled{false};
+std::atomic_flag g_installed = ATOMIC_FLAG_INIT;
 
 extern "C" void handler(int /*sig*/) {
     g_cancelled.store(true, std::memory_order_release);
 }
 
-}  // namespace
+} // namespace
 
 void install_handlers() {
     if (g_installed.test_and_set(std::memory_order_acq_rel)) {
@@ -27,7 +27,7 @@ void install_handlers() {
     sa.sa_handler = &handler;
     sigemptyset(&sa.sa_mask);
     sa.sa_flags = SA_RESTART;
-    sigaction(SIGINT,  &sa, nullptr);
+    sigaction(SIGINT, &sa, nullptr);
     sigaction(SIGTERM, &sa, nullptr);
 }
 
@@ -47,4 +47,4 @@ const std::atomic<bool>& flag() noexcept {
     return g_cancelled;
 }
 
-}  // namespace abcpwn::core::signal
+} // namespace abcpwn::core::signal

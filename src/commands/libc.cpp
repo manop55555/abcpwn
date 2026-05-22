@@ -9,8 +9,6 @@
 
 #include "abcpwn/commands/libc.hpp"
 
-#include <CLI/CLI.hpp>
-
 #include <array>
 #include <charconv>
 #include <cstdint>
@@ -23,8 +21,10 @@
 #include <system_error>
 #include <vector>
 
+#include <CLI/CLI.hpp>
+
 #if defined(ABCPWN_WITH_NETWORK) && ABCPWN_WITH_NETWORK
-#  include <curl/curl.h>
+#include <curl/curl.h>
 #endif
 
 namespace abcpwn::commands::libc {
@@ -36,33 +36,33 @@ namespace {
 // most-asked entries CTF players hit. Symbol offsets are from the
 // libc base (rather than absolute), per pwntools convention.
 struct Fingerprint {
-    std::string_view  id;
-    std::string_view  symbol;
-    std::uint64_t     offset;
+    std::string_view id;
+    std::string_view symbol;
+    std::uint64_t offset;
 };
 
 constexpr std::array<Fingerprint, 18> kFingerprints = {{
-    {"libc6_2.27-3ubuntu1.6_amd64", "system",     0x55410},
-    {"libc6_2.27-3ubuntu1.6_amd64", "execve",     0xe62f0},
-    {"libc6_2.27-3ubuntu1.6_amd64", "puts",       0x80f50},
-    {"libc6_2.27-3ubuntu1.6_amd64", "printf",     0x64f00},
+    {"libc6_2.27-3ubuntu1.6_amd64", "system", 0x55410},
+    {"libc6_2.27-3ubuntu1.6_amd64", "execve", 0xe62f0},
+    {"libc6_2.27-3ubuntu1.6_amd64", "puts", 0x80f50},
+    {"libc6_2.27-3ubuntu1.6_amd64", "printf", 0x64f00},
     {"libc6_2.27-3ubuntu1.6_amd64", "__libc_start_main_ret", 0x21b97},
 
-    {"libc6_2.31-0ubuntu9.16_amd64", "system",    0x52290},
-    {"libc6_2.31-0ubuntu9.16_amd64", "execve",    0xe40a0},
-    {"libc6_2.31-0ubuntu9.16_amd64", "puts",      0x84420},
-    {"libc6_2.31-0ubuntu9.16_amd64", "printf",    0x61c90},
+    {"libc6_2.31-0ubuntu9.16_amd64", "system", 0x52290},
+    {"libc6_2.31-0ubuntu9.16_amd64", "execve", 0xe40a0},
+    {"libc6_2.31-0ubuntu9.16_amd64", "puts", 0x84420},
+    {"libc6_2.31-0ubuntu9.16_amd64", "printf", 0x61c90},
     {"libc6_2.31-0ubuntu9.16_amd64", "__libc_start_main_ret", 0x270b3},
 
-    {"libc6_2.34-0ubuntu3_amd64", "system",       0x4f550},
-    {"libc6_2.34-0ubuntu3_amd64", "execve",       0xebd30},
-    {"libc6_2.34-0ubuntu3_amd64", "puts",         0x80450},
-    {"libc6_2.34-0ubuntu3_amd64", "printf",       0x607f0},
+    {"libc6_2.34-0ubuntu3_amd64", "system", 0x4f550},
+    {"libc6_2.34-0ubuntu3_amd64", "execve", 0xebd30},
+    {"libc6_2.34-0ubuntu3_amd64", "puts", 0x80450},
+    {"libc6_2.34-0ubuntu3_amd64", "printf", 0x607f0},
     {"libc6_2.34-0ubuntu3_amd64", "__libc_start_main_ret", 0x29d90},
 
-    {"libc6_2.39-0ubuntu8_amd64", "system",       0x50d70},
-    {"libc6_2.39-0ubuntu8_amd64", "execve",       0xebb00},
-    {"libc6_2.39-0ubuntu8_amd64", "puts",         0x80e50},
+    {"libc6_2.39-0ubuntu8_amd64", "system", 0x50d70},
+    {"libc6_2.39-0ubuntu8_amd64", "execve", 0xebb00},
+    {"libc6_2.39-0ubuntu8_amd64", "puts", 0x80e50},
 }};
 
 [[nodiscard]] std::optional<std::uint64_t> parse_hex(std::string_view s) {
@@ -82,32 +82,36 @@ constexpr std::array<Fingerprint, 18> kFingerprints = {{
 // offset) pairs. We match on the low 12 bits because libc base
 // addresses are page-aligned and ASLR randomizes everything else.
 struct OffsetPair {
-    std::string   symbol;
+    std::string symbol;
     std::uint16_t low12;
 };
 
-[[nodiscard]] std::vector<std::string> identify_libc(
-    const std::vector<OffsetPair>& pairs)
-{
+[[nodiscard]] std::vector<std::string> identify_libc(const std::vector<OffsetPair>& pairs) {
     std::vector<std::string> candidates;
     // Walk every known ID and keep ones that match every input pair.
     std::set<std::string_view> all_ids;
-    for (const auto& fp : kFingerprints) all_ids.insert(fp.id);
+    for (const auto& fp : kFingerprints)
+        all_ids.insert(fp.id);
 
     for (const auto& id : all_ids) {
         bool all_match = true;
         for (const auto& want : pairs) {
             bool found_one = false;
             for (const auto& fp : kFingerprints) {
-                if (fp.id != id || fp.symbol != want.symbol) continue;
+                if (fp.id != id || fp.symbol != want.symbol)
+                    continue;
                 if ((fp.offset & 0xfff) == want.low12) {
                     found_one = true;
                     break;
                 }
             }
-            if (!found_one) { all_match = false; break; }
+            if (!found_one) {
+                all_match = false;
+                break;
+            }
         }
-        if (all_match) candidates.emplace_back(id);
+        if (all_match)
+            candidates.emplace_back(id);
     }
     return candidates;
 }
@@ -118,19 +122,15 @@ struct OffsetPair {
     return std::string(b);
 }
 
-}  // namespace
+} // namespace
 
 void LibcCommand::setup(CLI::App& app) {
-    app.add_option("action", action,
-        "id | offsets | diff | download | search")->required();
-    app.add_option("--offset", offset_pairs,
-        "For 'id': repeatable sym:hex pair. For others: ignored.");
-    app.add_option("--symbol", symbol,
-        "For 'offsets': filter to one symbol");
-    app.add_option("id", identifier,
-        "libc identifier (offsets / download / search)");
-    app.add_option("--other", other,
-        "Second libc id for 'diff'");
+    app.add_option("action", action, "id | offsets | diff | download | search")->required();
+    app.add_option(
+        "--offset", offset_pairs, "For 'id': repeatable sym:hex pair. For others: ignored.");
+    app.add_option("--symbol", symbol, "For 'offsets': filter to one symbol");
+    app.add_option("id", identifier, "libc identifier (offsets / download / search)");
+    app.add_option("--other", other, "Second libc id for 'diff'");
 }
 
 core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
@@ -142,22 +142,22 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
             const auto colon = spec.find(':');
             if (colon == std::string::npos) {
                 return core::err(core::ErrorCode::UsageError,
-                    "libc id: --offset expects sym:hex (e.g., puts:0xe50)");
+                                 "libc id: --offset expects sym:hex (e.g., puts:0xe50)");
             }
             const std::string sym(spec.begin(), spec.begin() + colon);
             const auto off = parse_hex(spec.substr(colon + 1));
             if (!off) {
                 return core::err(core::ErrorCode::InvalidInput,
-                    "libc id: offset for '" + sym + "' not hex");
+                                 "libc id: offset for '" + sym + "' not hex");
             }
             OffsetPair p;
             p.symbol = sym;
-            p.low12  = static_cast<std::uint16_t>(*off & 0xfffU);
+            p.low12 = static_cast<std::uint16_t>(*off & 0xfffU);
             pairs.push_back(std::move(p));
         }
         if (pairs.empty()) {
             return core::err(core::ErrorCode::UsageError,
-                "libc id: provide at least one --offset sym:hex");
+                             "libc id: provide at least one --offset sym:hex");
         }
         const auto hits = identify_libc(pairs);
         auto& sec = res.sections.emplace_back();
@@ -166,9 +166,10 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
             sec.findings.emplace_back(core::Severity::Info, "match", id);
         }
         if (hits.empty()) {
-            sec.findings.emplace_back(core::Severity::Info, "(none)",
-                "no libc in the v0.1 in-binary table matches these offsets; "
-                "download a fuller libc-database for broader coverage");
+            sec.findings.emplace_back(core::Severity::Info,
+                                      "(none)",
+                                      "no libc in the v0.1 in-binary table matches these offsets; "
+                                      "download a fuller libc-database for broader coverage");
         }
         return res;
     }
@@ -176,47 +177,51 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
     if (action == "offsets") {
         if (identifier.empty()) {
             return core::err(core::ErrorCode::UsageError,
-                "libc offsets: pass a libc id (positional)");
+                             "libc offsets: pass a libc id (positional)");
         }
         auto& sec = res.sections.emplace_back();
         sec.title = "offsets in " + identifier;
         for (const auto& fp : kFingerprints) {
-            if (fp.id != identifier) continue;
-            if (!symbol.empty() && fp.symbol != symbol) continue;
-            sec.findings.emplace_back(core::Severity::Info,
-                std::string(fp.symbol), hex_str(fp.offset));
+            if (fp.id != identifier)
+                continue;
+            if (!symbol.empty() && fp.symbol != symbol)
+                continue;
+            sec.findings.emplace_back(
+                core::Severity::Info, std::string(fp.symbol), hex_str(fp.offset));
         }
         if (sec.findings.empty()) {
             return core::err(core::ErrorCode::NotFound,
-                "libc offsets: no entries for '" + identifier
-                + (symbol.empty() ? "" : "' / symbol '" + symbol)
-                + "'");
+                             "libc offsets: no entries for '" + identifier
+                                 + (symbol.empty() ? "" : "' / symbol '" + symbol) + "'");
         }
         return res;
     }
 
     if (action == "diff") {
         if (identifier.empty() || other.empty()) {
-            return core::err(core::ErrorCode::UsageError,
-                "libc diff: pass id and --other id");
+            return core::err(core::ErrorCode::UsageError, "libc diff: pass id and --other id");
         }
         auto& sec = res.sections.emplace_back();
         sec.title = "diff " + identifier + " vs " + other;
         std::map<std::string_view, std::uint64_t> a_map, b_map;
         for (const auto& fp : kFingerprints) {
-            if (fp.id == identifier) a_map[fp.symbol] = fp.offset;
-            if (fp.id == other)      b_map[fp.symbol] = fp.offset;
+            if (fp.id == identifier)
+                a_map[fp.symbol] = fp.offset;
+            if (fp.id == other)
+                b_map[fp.symbol] = fp.offset;
         }
         for (const auto& [sym, off] : a_map) {
             if (auto it = b_map.find(sym); it != b_map.end()) {
-                const auto delta = static_cast<std::int64_t>(it->second)
-                                 - static_cast<std::int64_t>(off);
+                const auto delta =
+                    static_cast<std::int64_t>(it->second) - static_cast<std::int64_t>(off);
                 char buf[64];
-                std::snprintf(buf, sizeof buf, "%s -> %s   (delta %+ld)",
-                    hex_str(off).c_str(), hex_str(it->second).c_str(),
-                    static_cast<long>(delta));
-                sec.findings.emplace_back(core::Severity::Info,
-                    std::string(sym), buf);
+                std::snprintf(buf,
+                              sizeof buf,
+                              "%s -> %s   (delta %+ld)",
+                              hex_str(off).c_str(),
+                              hex_str(it->second).c_str(),
+                              static_cast<long>(delta));
+                sec.findings.emplace_back(core::Severity::Info, std::string(sym), buf);
             }
         }
         return res;
@@ -225,35 +230,36 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
     if (action == "download") {
         if (!ctx.allow_network) {
             return core::err(core::ErrorCode::NetworkDisabled,
-                "libc download: --allow-network not set on Context");
+                             "libc download: --allow-network not set on Context");
         }
         if (!network_compiled_in()) {
             return core::err(core::ErrorCode::FeatureDisabled,
-                "libc download: this build was compiled without "
-                "ABCPWN_WITH_NETWORK. Rebuild with "
-                "-DABCPWN_WITH_NETWORK=ON or use the abcpwn-full "
-                "release artifact.");
+                             "libc download: this build was compiled without "
+                             "ABCPWN_WITH_NETWORK. Rebuild with "
+                             "-DABCPWN_WITH_NETWORK=ON or use the abcpwn-full "
+                             "release artifact.");
         }
 #if defined(ABCPWN_WITH_NETWORK) && ABCPWN_WITH_NETWORK
         if (identifier.empty()) {
             return core::err(core::ErrorCode::UsageError,
-                "libc download: pass a libc id (positional)");
+                             "libc download: pass a libc id (positional)");
         }
         // libc-database compatible URL pattern; the upstream project
         // serves a per-id tarball at this layout.
-        const std::string url =
-            "https://libc.rip/api/libs/" + identifier;
+        const std::string url = "https://libc.rip/api/libs/" + identifier;
         CURL* curl = curl_easy_init();
         if (curl == nullptr) {
             return core::err(core::ErrorCode::NetworkError,
-                "libc download: curl_easy_init() failed");
+                             "libc download: curl_easy_init() failed");
         }
         long http_code = 0;
         std::string body;
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str());
         curl_easy_setopt(curl, CURLOPT_FOLLOWLOCATION, 1L);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 30L);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION,
+        curl_easy_setopt(
+            curl,
+            CURLOPT_WRITEFUNCTION,
             +[](char* ptr, size_t s, size_t n, void* userdata) -> size_t {
                 auto* out = static_cast<std::string*>(userdata);
                 out->append(ptr, s * n);
@@ -265,26 +271,23 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
         curl_easy_cleanup(curl);
         if (rc != CURLE_OK) {
             return core::err(core::ErrorCode::NetworkError,
-                std::string("libc download: ") + curl_easy_strerror(rc));
+                             std::string("libc download: ") + curl_easy_strerror(rc));
         }
         auto& sec = res.sections.emplace_back();
         sec.title = "libc download";
         sec.findings.emplace_back(core::Severity::Info, "url", url);
-        sec.findings.emplace_back(core::Severity::Info, "http",
-            std::to_string(http_code));
-        sec.findings.emplace_back(core::Severity::Info, "bytes",
-            std::to_string(body.size()));
+        sec.findings.emplace_back(core::Severity::Info, "http", std::to_string(http_code));
+        sec.findings.emplace_back(core::Severity::Info, "bytes", std::to_string(body.size()));
         return res;
 #else
         return core::err(core::ErrorCode::FeatureDisabled,
-            "libc download: network not compiled in");
+                         "libc download: network not compiled in");
 #endif
     }
 
     if (action == "search") {
         if (identifier.empty()) {
-            return core::err(core::ErrorCode::UsageError,
-                "libc search: pass a pattern");
+            return core::err(core::ErrorCode::UsageError, "libc search: pass a pattern");
         }
         auto& sec = res.sections.emplace_back();
         sec.title = "search '" + identifier + "'";
@@ -295,19 +298,18 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
             }
         }
         for (const auto& id : ids) {
-            sec.findings.emplace_back(core::Severity::Info,
-                std::string(id), "match");
+            sec.findings.emplace_back(core::Severity::Info, std::string(id), "match");
         }
         if (ids.empty()) {
-            sec.findings.emplace_back(core::Severity::Info, "(no match)",
-                "v0.1 in-binary table has no entries containing '"
-                + identifier + "'");
+            sec.findings.emplace_back(core::Severity::Info,
+                                      "(no match)",
+                                      "v0.1 in-binary table has no entries containing '"
+                                          + identifier + "'");
         }
         return res;
     }
 
-    return core::err(core::ErrorCode::UsageError,
-        "libc: unknown action '" + action + "'");
+    return core::err(core::ErrorCode::UsageError, "libc: unknown action '" + action + "'");
 }
 
-}  // namespace abcpwn::commands::libc
+} // namespace abcpwn::commands::libc

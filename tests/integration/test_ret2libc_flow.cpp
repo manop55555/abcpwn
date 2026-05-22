@@ -3,6 +3,11 @@
 //
 // End-to-end CTF flow: info -> libc id -> gadget -> rop --execve.
 
+#include <filesystem>
+#include <string>
+
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/commands/gadget.hpp"
 #include "abcpwn/commands/info.hpp"
 #include "abcpwn/commands/libc.hpp"
@@ -10,19 +15,13 @@
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/test_paths.hpp"
 
-#include <catch2/catch_test_macros.hpp>
-
-#include <filesystem>
-#include <string>
-
 namespace {
 
 std::filesystem::path fixture(std::string_view name) {
-    return std::filesystem::path(abcpwn::test_paths::fixtures_dir)
-         / "binaries" / std::string(name);
+    return std::filesystem::path(abcpwn::test_paths::fixtures_dir) / "binaries" / std::string(name);
 }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("ret2libc flow: info -> libc id -> gadget -> rop", "[integration][ret2libc]") {
     if (!std::filesystem::exists(fixture("hello-hardened"))) {
@@ -42,14 +41,15 @@ TEST_CASE("ret2libc flow: info -> libc id -> gadget -> rop", "[integration][ret2
     // glibc 2.34 fingerprint that the v0.1 in-binary table covers.
     {
         abcpwn::commands::libc::LibcCommand libc;
-        libc.action       = "id";
+        libc.action = "id";
         libc.offset_pairs = {"system:0x550", "execve:0xd30"};
         auto r = libc.run(ctx);
         REQUIRE(r);
         bool found_2_34 = false;
         for (const auto& s : r->sections) {
             for (const auto& f : s.findings) {
-                if (f.detail.find("libc6_2.34") != std::string::npos) found_2_34 = true;
+                if (f.detail.find("libc6_2.34") != std::string::npos)
+                    found_2_34 = true;
             }
         }
         REQUIRE(found_2_34);
@@ -61,9 +61,9 @@ TEST_CASE("ret2libc flow: info -> libc id -> gadget -> rop", "[integration][ret2
     // command runs and returns a usable command result.
     {
         abcpwn::commands::GadgetCommand gadget;
-        gadget.target      = fixture("hello-hardened").string();
-        gadget.depth       = 3;
-        gadget.filter      = "pop rdi";
+        gadget.target = fixture("hello-hardened").string();
+        gadget.depth = 3;
+        gadget.filter = "pop rdi";
         gadget.no_progress = true;
         auto r = gadget.run(ctx);
         REQUIRE(r);
@@ -84,6 +84,6 @@ TEST_CASE("ret2libc flow: info -> libc id -> gadget -> rop", "[integration][ret2
         REQUIRE_FALSE(r);
         const auto code = r.error().code;
         REQUIRE((code == abcpwn::core::ErrorCode::UsageError
-              || code == abcpwn::core::ErrorCode::Unsupported));
+                 || code == abcpwn::core::ErrorCode::Unsupported));
     }
 }

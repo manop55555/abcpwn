@@ -3,16 +3,18 @@
 
 #pragma once
 
+#include <string>
+
 #include "abcpwn/commands/encoding.hpp"
 #include "abcpwn/core/command.hpp"
-
-#include <string>
 
 namespace abcpwn::commands {
 
 class ConstgrepCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "constgrep"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "constgrep";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "search compiled-in constants (mmap, signals, auxv, ...)";
     }
@@ -23,4 +25,4 @@ public:
     std::string category{};
 };
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

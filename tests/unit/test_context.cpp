@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/core/config.hpp"
 #include "abcpwn/core/context.hpp"
-
-#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("default context has safe defaults", "[context]") {
     abcpwn::core::Context ctx;
@@ -27,14 +27,13 @@ TEST_CASE("verbosity helpers", "[context]") {
 }
 
 TEST_CASE("config parses [section] key = value pairs", "[context][config]") {
-    auto r = abcpwn::core::config::parse(
-        "[output]\n"
-        "color = \"always\"\n"
-        "format = \"json\"\n"
-        "allow_network = true\n"
-        "[limits]\n"
-        "max_threads = 4\n"
-        "max_runtime_seconds = 1800\n");
+    auto r = abcpwn::core::config::parse("[output]\n"
+                                         "color = \"always\"\n"
+                                         "format = \"json\"\n"
+                                         "allow_network = true\n"
+                                         "[limits]\n"
+                                         "max_threads = 4\n"
+                                         "max_runtime_seconds = 1800\n");
     REQUIRE(r);
 
     abcpwn::core::Context ctx;
@@ -48,11 +47,10 @@ TEST_CASE("config parses [section] key = value pairs", "[context][config]") {
 }
 
 TEST_CASE("config supports hex and negative integers", "[config]") {
-    auto r = abcpwn::core::config::parse(
-        "[demo]\n"
-        "hex = 0xCAFE\n"
-        "neg = -42\n"
-        "pos = +17\n");
+    auto r = abcpwn::core::config::parse("[demo]\n"
+                                         "hex = 0xCAFE\n"
+                                         "neg = -42\n"
+                                         "pos = +17\n");
     REQUIRE(r);
     REQUIRE(*r->get_int("demo", "hex") == 0xCAFE);
     REQUIRE(*r->get_int("demo", "neg") == -42);
@@ -60,12 +58,11 @@ TEST_CASE("config supports hex and negative integers", "[config]") {
 }
 
 TEST_CASE("config handles comments and blank lines", "[config]") {
-    auto r = abcpwn::core::config::parse(
-        "# top of file\n"
-        "\n"
-        "[a]\n"
-        "k = \"v\"  # inline\n"
-        "# trailing comment\n");
+    auto r = abcpwn::core::config::parse("# top of file\n"
+                                         "\n"
+                                         "[a]\n"
+                                         "k = \"v\"  # inline\n"
+                                         "# trailing comment\n");
     REQUIRE(r);
     REQUIRE(*r->get_string("a", "k") == "v");
 }

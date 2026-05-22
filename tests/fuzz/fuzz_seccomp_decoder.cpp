@@ -5,13 +5,13 @@
 // decoder returns InvalidInput on a non-multiple-of-8 buffer, so we
 // pad / truncate to keep iterations productive.
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/commands/seccomp.hpp"
-
 #include <cstddef>
 #include <cstdint>
 #include <span>
 #include <vector>
+
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/commands/seccomp.hpp"
 
 extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size) {
     // Round size down to a multiple of 8 so the decoder advances; the
@@ -25,7 +25,6 @@ extern "C" int LLVMFuzzerTestOneInput(const std::uint8_t* data, std::size_t size
     if (!decoded) {
         return 0;
     }
-    (void) abcpwn::commands::seccomp::disassemble_bpf(
-        *decoded, abcpwn::arch::Arch::X86_64);
+    (void) abcpwn::commands::seccomp::disassemble_bpf(*decoded, abcpwn::arch::Arch::X86_64);
     return 0;
 }

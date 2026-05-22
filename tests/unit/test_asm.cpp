@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
+#include <catch2/catch_test_macros.hpp>
+
 #include "abcpwn/arch/arch.hpp"
 #include "abcpwn/arch/asm.hpp"
-
-#include <catch2/catch_test_macros.hpp>
 
 TEST_CASE("assemble reports FeatureDisabled when keystone is off", "[arch][asm]") {
     using namespace abcpwn::arch;

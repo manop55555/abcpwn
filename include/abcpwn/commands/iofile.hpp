@@ -3,16 +3,16 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-
 #include <cstdint>
 #include <string>
+
+#include "abcpwn/core/command.hpp"
 
 namespace abcpwn::commands::iofile {
 
 enum class Technique : std::uint8_t {
-    FsopLeak        = 0,
-    FsopExec        = 1,
+    FsopLeak = 0,
+    FsopExec = 1,
     VtableOverwrite = 2,
 };
 
@@ -21,27 +21,29 @@ enum class Technique : std::uint8_t {
 // versions (most notably _wide_data and vtable positions); the
 // command lets the caller pick the right snapshot.
 struct FileLayout {
-    std::uint32_t    flags_offset;
-    std::uint32_t    read_ptr_offset;
-    std::uint32_t    read_end_offset;
-    std::uint32_t    write_base_offset;
-    std::uint32_t    write_ptr_offset;
-    std::uint32_t    write_end_offset;
-    std::uint32_t    buf_base_offset;
-    std::uint32_t    buf_end_offset;
-    std::uint32_t    fileno_offset;
-    std::uint32_t    chain_offset;       // _chain in _IO_FILE
-    std::uint32_t    lock_offset;
-    std::uint32_t    wide_data_offset;
-    std::uint32_t    vtable_offset;      // offset of vtable pointer
-    std::uint32_t    struct_size;        // total size of _IO_FILE_plus
+    std::uint32_t flags_offset;
+    std::uint32_t read_ptr_offset;
+    std::uint32_t read_end_offset;
+    std::uint32_t write_base_offset;
+    std::uint32_t write_ptr_offset;
+    std::uint32_t write_end_offset;
+    std::uint32_t buf_base_offset;
+    std::uint32_t buf_end_offset;
+    std::uint32_t fileno_offset;
+    std::uint32_t chain_offset; // _chain in _IO_FILE
+    std::uint32_t lock_offset;
+    std::uint32_t wide_data_offset;
+    std::uint32_t vtable_offset; // offset of vtable pointer
+    std::uint32_t struct_size;   // total size of _IO_FILE_plus
 };
 
 [[nodiscard]] FileLayout layout_for(std::string_view libc_version) noexcept;
 
 class IofileCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "iofile"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "iofile";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "FILE-stream exploitation helper (FSOP / vtable overwrite)";
     }
@@ -52,4 +54,4 @@ public:
     std::string libc_version_str{"2.34"};
 };
 
-}  // namespace abcpwn::commands::iofile
+} // namespace abcpwn::commands::iofile

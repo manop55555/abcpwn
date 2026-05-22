@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
-#include "abcpwn/arch/arch.hpp"
-#include "abcpwn/commands/encoding.hpp"
-#include "abcpwn/commands/shellcode.hpp"
-#include "abcpwn/core/context.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstdint>
 #include <span>
 #include <string>
 #include <vector>
 
+#include <catch2/catch_test_macros.hpp>
+
+#include "abcpwn/arch/arch.hpp"
+#include "abcpwn/commands/encoding.hpp"
+#include "abcpwn/commands/shellcode.hpp"
+#include "abcpwn/core/context.hpp"
+
 using namespace abcpwn::commands::shellcode;
 
 TEST_CASE("preset_from_string covers all v0.1 names", "[shellcode]") {
-    REQUIRE(*preset_from_string("sh")        == Preset::Sh);
+    REQUIRE(*preset_from_string("sh") == Preset::Sh);
     REQUIRE(*preset_from_string("read-flag") == Preset::ReadFlag);
-    REQUIRE(*preset_from_string("cat-flag")  == Preset::CatFlag);
-    REQUIRE(*preset_from_string("bind")      == Preset::Bind);
-    REQUIRE(*preset_from_string("reverse")   == Preset::Reverse);
+    REQUIRE(*preset_from_string("cat-flag") == Preset::CatFlag);
+    REQUIRE(*preset_from_string("bind") == Preset::Bind);
+    REQUIRE(*preset_from_string("reverse") == Preset::Reverse);
     REQUIRE_FALSE(preset_from_string("nope").has_value());
 }
 
@@ -31,11 +31,14 @@ TEST_CASE("database has the curated x86_64 / x86 / aarch64 sh entries", "[shellc
     bool has_x86_sh = false;
     bool has_a64_sh = false;
     for (const auto& e : db) {
-        if (e.arch == abcpwn::arch::Arch::X86_64  && e.preset == Preset::Sh) has_x64_sh = true;
-        if (e.arch == abcpwn::arch::Arch::X86     && e.preset == Preset::Sh) has_x86_sh = true;
-        if (e.arch == abcpwn::arch::Arch::Aarch64 && e.preset == Preset::Sh) has_a64_sh = true;
+        if (e.arch == abcpwn::arch::Arch::X86_64 && e.preset == Preset::Sh)
+            has_x64_sh = true;
+        if (e.arch == abcpwn::arch::Arch::X86 && e.preset == Preset::Sh)
+            has_x86_sh = true;
+        if (e.arch == abcpwn::arch::Arch::Aarch64 && e.preset == Preset::Sh)
+            has_a64_sh = true;
         REQUIRE_FALSE(e.bytes.empty());
-        REQUIRE(e.bytes.size() < 256);  // sanity
+        REQUIRE(e.bytes.size() < 256); // sanity
     }
     REQUIRE(has_x64_sh);
     REQUIRE(has_x86_sh);
@@ -44,7 +47,7 @@ TEST_CASE("database has the curated x86_64 / x86 / aarch64 sh entries", "[shellc
 
 TEST_CASE("x86_64 sh payload has expected syscall trailer", "[shellcode]") {
     PayloadSpec spec;
-    spec.arch   = abcpwn::arch::Arch::X86_64;
+    spec.arch = abcpwn::arch::Arch::X86_64;
     spec.preset = Preset::Sh;
     auto p = lookup(spec);
     REQUIRE(p);
@@ -59,7 +62,7 @@ TEST_CASE("x86_64 sh payload has expected syscall trailer", "[shellcode]") {
 
 TEST_CASE("x86 sh payload uses int 0x80", "[shellcode]") {
     PayloadSpec spec;
-    spec.arch   = abcpwn::arch::Arch::X86;
+    spec.arch = abcpwn::arch::Arch::X86;
     spec.preset = Preset::Sh;
     auto p = lookup(spec);
     REQUIRE(p);
@@ -70,7 +73,7 @@ TEST_CASE("x86 sh payload uses int 0x80", "[shellcode]") {
 
 TEST_CASE("aarch64 sh payload ends with svc #0", "[shellcode]") {
     PayloadSpec spec;
-    spec.arch   = abcpwn::arch::Arch::Aarch64;
+    spec.arch = abcpwn::arch::Arch::Aarch64;
     spec.preset = Preset::Sh;
     auto p = lookup(spec);
     REQUIRE(p);
@@ -84,7 +87,7 @@ TEST_CASE("aarch64 sh payload ends with svc #0", "[shellcode]") {
 
 TEST_CASE("lookup returns Unsupported for unknown combinations", "[shellcode]") {
     PayloadSpec spec;
-    spec.arch   = abcpwn::arch::Arch::Aarch64;
+    spec.arch = abcpwn::arch::Arch::Aarch64;
     spec.preset = Preset::Bind;
     auto p = lookup(spec);
     REQUIRE_FALSE(p);
@@ -94,7 +97,8 @@ TEST_CASE("lookup returns Unsupported for unknown combinations", "[shellcode]") 
 
 TEST_CASE("payloads marked null_free actually have no 0x00 bytes", "[shellcode][db]") {
     for (const auto& e : database()) {
-        if (!e.null_free) continue;
+        if (!e.null_free)
+            continue;
         for (auto b : e.bytes) {
             REQUIRE(b != 0x00);
         }
@@ -105,7 +109,7 @@ TEST_CASE("xor encoder roundtrips", "[shellcode][encoder]") {
     const std::vector<std::uint8_t> input{0x90, 0x90, 0x6a, 0x3b, 0x58, 0x0f, 0x05};
     Encoder enc;
     enc.kind = Encoder::Kind::Xor;
-    enc.key  = {0xa5};
+    enc.key = {0xa5};
 
     auto encoded = apply_encoder(input, enc);
     REQUIRE(encoded);
@@ -159,8 +163,8 @@ TEST_CASE("ShellcodeCommand default x86_64 sh in hex format", "[shellcode][comma
     abcpwn::core::Context ctx;
     ShellcodeCommand cmd;
     cmd.preset_str = "sh";
-    cmd.arch_str   = "x86_64";
-    cmd.format     = "hex";
+    cmd.arch_str = "x86_64";
+    cmd.format = "hex";
     auto r = cmd.run(ctx);
     REQUIRE(r);
     REQUIRE(r->raw_lines.size() == 1);
@@ -172,9 +176,9 @@ TEST_CASE("ShellcodeCommand default x86_64 sh in hex format", "[shellcode][comma
 TEST_CASE("ShellcodeCommand bad-chars filter rejects matching payload", "[shellcode][command]") {
     abcpwn::core::Context ctx;
     ShellcodeCommand cmd;
-    cmd.preset_str    = "sh";
-    cmd.arch_str      = "x86_64";
-    cmd.bad_chars_hex = "0f";  // x86_64 sh contains 0x0f (syscall opcode)
+    cmd.preset_str = "sh";
+    cmd.arch_str = "x86_64";
+    cmd.bad_chars_hex = "0f"; // x86_64 sh contains 0x0f (syscall opcode)
     auto r = cmd.run(ctx);
     REQUIRE_FALSE(r);
     REQUIRE(r.error().code == abcpwn::core::ErrorCode::InvalidInput);
@@ -185,8 +189,8 @@ TEST_CASE("ShellcodeCommand format=c emits a C array literal", "[shellcode][comm
     abcpwn::core::Context ctx;
     ShellcodeCommand cmd;
     cmd.preset_str = "sh";
-    cmd.arch_str   = "x86";
-    cmd.format     = "c";
+    cmd.arch_str = "x86";
+    cmd.format = "c";
     auto r = cmd.run(ctx);
     REQUIRE(r);
     REQUIRE(r->raw_lines.size() == 1);

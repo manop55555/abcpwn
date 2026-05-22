@@ -3,11 +3,11 @@
 
 #include "abcpwn/commands/b64.hpp"
 
-#include <CLI/CLI.hpp>
-
 #include <cstdint>
 #include <span>
 #include <string>
+
+#include <CLI/CLI.hpp>
 
 namespace abcpwn::commands {
 
@@ -34,4 +34,4 @@ core::Result<core::CommandResult> B64Command::run(const core::Context& /*ctx*/) 
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

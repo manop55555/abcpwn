@@ -3,12 +3,12 @@
 
 #pragma once
 
-#include "abcpwn/core/command.hpp"
-#include "abcpwn/core/result.hpp"
-
 #include <cstdint>
 #include <string>
 #include <vector>
+
+#include "abcpwn/core/command.hpp"
+#include "abcpwn/core/result.hpp"
 
 namespace abcpwn::commands::srop {
 
@@ -46,7 +46,9 @@ struct FrameX86_64 {
 
 class SropCommand : public core::ICommand {
 public:
-    [[nodiscard]] std::string_view name()        const noexcept override { return "srop"; }
+    [[nodiscard]] std::string_view name() const noexcept override {
+        return "srop";
+    }
     [[nodiscard]] std::string_view description() const noexcept override {
         return "build a sigreturn-oriented programming frame";
     }
@@ -60,4 +62,4 @@ public:
     std::uint64_t rsp{0};
 };
 
-}  // namespace abcpwn::commands::srop
+} // namespace abcpwn::commands::srop

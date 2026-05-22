@@ -3,14 +3,14 @@
 
 #include "abcpwn/commands/strings.hpp"
 
-#include "abcpwn/core/safe_io.hpp"
-
-#include <CLI/CLI.hpp>
-
 #include <cstdint>
 #include <span>
 #include <string>
 #include <vector>
+
+#include <CLI/CLI.hpp>
+
+#include "abcpwn/core/safe_io.hpp"
 
 namespace abcpwn::commands {
 
@@ -20,13 +20,11 @@ bool is_printable(unsigned char c) noexcept {
     return (c >= 0x20 && c < 0x7f) || c == '\t';
 }
 
-}  // namespace
+} // namespace
 
-std::vector<ExtractedString> extract_ascii_strings(
-    std::span<const std::uint8_t> data,
-    std::size_t                   min_length,
-    std::size_t                   max_results)
-{
+std::vector<ExtractedString> extract_ascii_strings(std::span<const std::uint8_t> data,
+                                                   std::size_t min_length,
+                                                   std::size_t max_results) {
     std::vector<ExtractedString> out;
     out.reserve(std::min<std::size_t>(max_results, 64));
 
@@ -70,7 +68,8 @@ core::Result<core::CommandResult> StringsCommand::run(const core::Context& ctx) 
     }
     std::vector<std::uint8_t> bytes;
     bytes.reserve(raw->size());
-    for (auto b : *raw) bytes.push_back(static_cast<std::uint8_t>(b));
+    for (auto b : *raw)
+        bytes.push_back(static_cast<std::uint8_t>(b));
 
     auto hits = extract_ascii_strings(bytes, min_length, max_results);
     core::CommandResult res;
@@ -82,4 +81,4 @@ core::Result<core::CommandResult> StringsCommand::run(const core::Context& ctx) 
     return res;
 }
 
-}  // namespace abcpwn::commands
+} // namespace abcpwn::commands

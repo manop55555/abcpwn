@@ -28,4 +28,4 @@ void reset_for_testing() noexcept;
 // indirect call overhead matters. Read-only.
 [[nodiscard]] const std::atomic<bool>& flag() noexcept;
 
-}  // namespace abcpwn::core::signal
+} // namespace abcpwn::core::signal

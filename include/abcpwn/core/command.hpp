@@ -3,18 +3,18 @@
 
 #pragma once
 
-#include "abcpwn/core/context.hpp"
-#include "abcpwn/core/result.hpp"
-
 #include <span>
 #include <string>
 #include <string_view>
+
+#include "abcpwn/core/context.hpp"
+#include "abcpwn/core/result.hpp"
 
 // Forward-declare the CLI11 subcommand class so the interface header
 // does not pull the full CLI11 include into every command's header.
 namespace CLI {
 class App;
-}  // namespace CLI
+} // namespace CLI
 
 namespace abcpwn::core {
 
@@ -45,4 +45,4 @@ public:
     [[nodiscard]] virtual Result<CommandResult> run(const Context& ctx) = 0;
 };
 
-}  // namespace abcpwn::core
+} // namespace abcpwn::core

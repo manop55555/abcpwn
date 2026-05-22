@@ -1,16 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
+#include <chrono>
+#include <sstream>
+
+#include <catch2/catch_test_macros.hpp>
+#include <nlohmann/json.hpp>
+
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/core/result.hpp"
 #include "abcpwn/output/json_writer.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
-#include <nlohmann/json.hpp>
-
-#include <chrono>
-#include <sstream>
 
 using nlohmann::json;
 
@@ -23,11 +22,11 @@ abcpwn::core::CommandResult sample_result() {
     s.title = "Mitigations";
     s.findings.emplace_back(abcpwn::core::Severity::Info, "NX", "yes");
     s.findings.emplace_back(abcpwn::core::Severity::High, "Fortify", "no");
-    s.findings.emplace_back(abcpwn::core::Severity::Low,  "Stripped", "no");
+    s.findings.emplace_back(abcpwn::core::Severity::Low, "Stripped", "no");
     return res;
 }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("json envelope carries required envelope fields", "[json]") {
     abcpwn::core::Context ctx;
@@ -54,10 +53,10 @@ TEST_CASE("json summary counts findings by severity", "[json]") {
     w.write(oss, "info", sample_result());
     const auto j = json::parse(oss.str());
 
-    REQUIRE(j["summary"]["info"].get<int>()     == 1);
-    REQUIRE(j["summary"]["low"].get<int>()      == 1);
-    REQUIRE(j["summary"]["high"].get<int>()     == 1);
-    REQUIRE(j["summary"]["medium"].get<int>()   == 0);
+    REQUIRE(j["summary"]["info"].get<int>() == 1);
+    REQUIRE(j["summary"]["low"].get<int>() == 1);
+    REQUIRE(j["summary"]["high"].get<int>() == 1);
+    REQUIRE(j["summary"]["medium"].get<int>() == 0);
     REQUIRE(j["summary"]["critical"].get<int>() == 0);
 }
 

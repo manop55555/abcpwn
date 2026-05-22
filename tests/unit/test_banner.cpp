@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: Apache-2.0
 // Copyright (c) 2026 manop55555
 
-#include "abcpwn/output/banner.hpp"
-#include "abcpwn/test_paths.hpp"
-
-#include <catch2/catch_test_macros.hpp>
-
 #include <filesystem>
 #include <fstream>
 #include <sstream>
 #include <string>
+
+#include <catch2/catch_test_macros.hpp>
+
+#include "abcpwn/output/banner.hpp"
+#include "abcpwn/test_paths.hpp"
 
 namespace {
 
@@ -21,7 +21,7 @@ std::string read_snapshot(const std::filesystem::path& p) {
     return std::move(oss).str();
 }
 
-}  // namespace
+} // namespace
 
 TEST_CASE("banner is byte-identical to the snapshot", "[banner][snapshot]") {
     const auto path = std::filesystem::path(abcpwn::test_paths::snapshots_dir) / "banner.txt";
