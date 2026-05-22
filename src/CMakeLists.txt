@@ -10,6 +10,13 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/arch/asm.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/arch/disasm.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/arch/syscalls.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/b64.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/constgrep.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/encoding.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/errno_cmd.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/hex.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/pack.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/xor_cmd.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/build_marker.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/config.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/progress.cpp"
@@ -27,6 +34,7 @@ target_link_libraries(abcpwn_core PUBLIC
     spdlog::spdlog
     LIEF::LIEF
     capstone::capstone
+    CLI11::CLI11
 )
 
 if(ABCPWN_WITH_KEYSTONE)
