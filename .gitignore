@@ -59,6 +59,11 @@ oom-*
 leak-*
 timeout-*
 
+# Auto-generated libFuzzer corpus mutations in the seed dirs.
+# Hand-authored seeds (the committed ones) have human-readable names;
+# libFuzzer writes its mutations with 40-hex-char SHA-1 filenames.
+tests/fuzz/seeds/*/[0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f][0-9a-f]
+
 # Binary outputs (anchored to repo root so include/abcpwn/ is not affected)
 /abcpwn
 /abcpwn-full

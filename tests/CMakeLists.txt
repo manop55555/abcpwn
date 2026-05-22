@@ -15,3 +15,7 @@ set(ABCPWN_TESTS_SNAPSHOTS_DIR "${CMAKE_SOURCE_DIR}/tests/snapshots"
 
 # Unit subdirectory is added by step 3+ as test sources are written.
 add_subdirectory(unit)
+
+if(ABCPWN_BUILD_FUZZERS)
+    add_subdirectory(fuzz)
+endif()
