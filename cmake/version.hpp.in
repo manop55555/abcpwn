@@ -1,0 +1,18 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 manop55555
+//
+// Auto-generated. Do not edit. Source: cmake/version.hpp.in.
+
+#pragma once
+
+#include <string_view>
+
+namespace abcpwn::core {
+
+inline constexpr std::string_view version_string = "@PROJECT_VERSION@";
+
+inline constexpr unsigned version_major = @PROJECT_VERSION_MAJOR@;
+inline constexpr unsigned version_minor = @PROJECT_VERSION_MINOR@;
+inline constexpr unsigned version_patch = @PROJECT_VERSION_PATCH@;
+
+}  // namespace abcpwn::core

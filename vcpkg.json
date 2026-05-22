@@ -1,0 +1,32 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg.schema.json",
+  "name": "abcpwn",
+  "version": "0.1.0",
+  "description": "binary exploitation toolkit",
+  "homepage": "https://github.com/manop55555/abcpwn",
+  "documentation": "https://github.com/manop55555/abcpwn/blob/main/docs/COMMANDS.md",
+  "license": "Apache-2.0",
+  "supports": "(linux | osx) & (x64 | arm64)",
+  "dependencies": [
+    "lief",
+    "capstone",
+    "cli11",
+    "nlohmann-json",
+    "spdlog",
+    "catch2"
+  ],
+  "features": {
+    "network": {
+      "description": "Enable network features (libc download, pwninit)",
+      "dependencies": ["curl"]
+    },
+    "fuzz": {
+      "description": "Build libFuzzer harnesses",
+      "dependencies": []
+    },
+    "unicorn": {
+      "description": "Enable Unicorn for seccomp emulation",
+      "dependencies": ["unicorn"]
+    }
+  }
+}

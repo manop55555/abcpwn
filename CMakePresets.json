@@ -1,0 +1,114 @@
+{
+  "version": 8,
+  "cmakeMinimumRequired": { "major": 3, "minor": 25, "patch": 0 },
+  "configurePresets": [
+    {
+      "name": "base",
+      "hidden": true,
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/${presetName}",
+      "cacheVariables": {
+        "CMAKE_EXPORT_COMPILE_COMMANDS": "ON",
+        "VCPKG_MANIFEST_MODE": "ON",
+        "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+      }
+    },
+    {
+      "name": "debug",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Debug",
+        "ABCPWN_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "release",
+      "inherits": "base",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "ABCPWN_BUILD_TESTS": "ON"
+      }
+    },
+    {
+      "name": "release-with-keystone",
+      "inherits": "release",
+      "cacheVariables": {
+        "ABCPWN_WITH_KEYSTONE": "ON",
+        "ABCPWN_WITH_NETWORK": "ON"
+      }
+    },
+    {
+      "name": "asan",
+      "inherits": "debug",
+      "cacheVariables": {
+        "ABCPWN_SANITIZER": "address"
+      }
+    },
+    {
+      "name": "ubsan",
+      "inherits": "debug",
+      "cacheVariables": {
+        "ABCPWN_SANITIZER": "undefined"
+      }
+    },
+    {
+      "name": "tsan",
+      "inherits": "debug",
+      "cacheVariables": {
+        "ABCPWN_SANITIZER": "thread"
+      }
+    },
+    {
+      "name": "fuzz",
+      "inherits": "debug",
+      "cacheVariables": {
+        "ABCPWN_BUILD_FUZZERS": "ON",
+        "CMAKE_C_COMPILER": "clang",
+        "CMAKE_CXX_COMPILER": "clang++"
+      }
+    },
+    {
+      "name": "coverage",
+      "inherits": "debug",
+      "cacheVariables": {
+        "ABCPWN_COVERAGE": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    { "name": "debug",                  "configurePreset": "debug" },
+    { "name": "release",                "configurePreset": "release" },
+    { "name": "release-with-keystone",  "configurePreset": "release-with-keystone" },
+    { "name": "asan",                   "configurePreset": "asan" },
+    { "name": "ubsan",                  "configurePreset": "ubsan" },
+    { "name": "tsan",                   "configurePreset": "tsan" },
+    { "name": "fuzz",                   "configurePreset": "fuzz" },
+    { "name": "coverage",               "configurePreset": "coverage" }
+  ],
+  "testPresets": [
+    {
+      "name": "debug",
+      "configurePreset": "debug",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    },
+    {
+      "name": "release",
+      "configurePreset": "release",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    },
+    {
+      "name": "asan",
+      "configurePreset": "asan",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    },
+    {
+      "name": "coverage",
+      "configurePreset": "coverage",
+      "output": { "outputOnFailure": true },
+      "execution": { "noTestsAction": "error", "stopOnFailure": false }
+    }
+  ]
+}
