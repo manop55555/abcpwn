@@ -27,6 +27,8 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/rop.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/rop_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/search.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/shellcode.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/shellcode_db.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/strings.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/syms.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/xor_cmd.cpp"
