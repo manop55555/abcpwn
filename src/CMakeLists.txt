@@ -17,9 +17,14 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/disasm.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/encoding.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/errno_cmd.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/hash.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/hex.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/info.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/pack.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/phd.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/search.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/strings.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/syms.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/xor_cmd.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/build_marker.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/core/config.cpp"
@@ -39,6 +44,7 @@ target_link_libraries(abcpwn_core PUBLIC
     LIEF::LIEF
     capstone::capstone
     CLI11::CLI11
+    abcpwn_picosha2
 )
 
 if(ABCPWN_WITH_KEYSTONE)
