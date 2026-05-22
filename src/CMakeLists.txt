@@ -27,6 +27,7 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/hex.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/info.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/iofile.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/libc.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/one_gadget.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/pack.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/phd.cpp"
@@ -35,6 +36,7 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/rop_search.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/safe_link.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/search.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/seccomp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/shellcode.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/shellcode_db.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/srop.cpp"
@@ -70,4 +72,9 @@ if(ABCPWN_WITH_KEYSTONE)
     elseif(TARGET keystone)
         target_link_libraries(abcpwn_core PUBLIC keystone)
     endif()
+endif()
+
+if(ABCPWN_WITH_NETWORK)
+    target_compile_definitions(abcpwn_core PUBLIC ABCPWN_WITH_NETWORK=1)
+    target_link_libraries(abcpwn_core PUBLIC CURL::libcurl)
 endif()
