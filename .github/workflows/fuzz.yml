@@ -18,11 +18,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        harness:
-          - fuzz_binary_loader
-          - fuzz_seccomp_decoder
-          - fuzz_fmt_parser
-          - fuzz_gadget_filter
+        include:
+          - { harness: fuzz_binary_loader,   seeds: binary_loader }
+          - { harness: fuzz_seccomp_decoder, seeds: seccomp_decoder }
+          - { harness: fuzz_fmt_parser,      seeds: fmt_parser }
+          - { harness: fuzz_gadget_filter,   seeds: gadget_filter }
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
@@ -59,7 +59,7 @@ jobs:
             -max_total_time=3600 \
             -print_final_stats=1 \
             tests/fuzz/corpus/${{ matrix.harness }} \
-            tests/fuzz/seeds/${{ matrix.harness#fuzz_ }}
+            tests/fuzz/seeds/${{ matrix.seeds }}
 
       - name: Upload crashes (on failure)
         uses: actions/upload-artifact@v4
