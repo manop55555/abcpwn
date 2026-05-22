@@ -2,6 +2,7 @@
 // Copyright (c) 2026 manop55555
 
 #include "abcpwn/output/banner.hpp"
+#include "abcpwn/test_paths.hpp"
 
 #include <catch2/catch_test_macros.hpp>
 
@@ -20,14 +21,10 @@ std::string read_snapshot(const std::filesystem::path& p) {
     return std::move(oss).str();
 }
 
-constexpr const char* snapshot_env = "ABCPWN_BANNER_SNAPSHOT";
-
 }  // namespace
 
 TEST_CASE("banner is byte-identical to the snapshot", "[banner][snapshot]") {
-    const char* path = std::getenv(snapshot_env);
-    REQUIRE(path != nullptr);
-
+    const auto path = std::filesystem::path(abcpwn::test_paths::snapshots_dir) / "banner.txt";
     const std::string expected = read_snapshot(path);
     const std::string_view actual = abcpwn::output::banner_text();
 
