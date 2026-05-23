@@ -5,7 +5,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.1.0-alpha] - 2026-05-23
 
 ### Added
 
@@ -34,7 +34,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   support per the `NO_COLOR` convention.
 - Banner with version block and the 38-command description.
 - Global flags: `--allow-network`, `--no-color`, `--no-banner`,
-  `--format`, `--config`, `--log-file`.
+  `--format`, `--config`, `--log-file`, `--about-network`,
+  `--version`, `--help`.
+- `--version` output per `STEP/18`: banner header + version
+  string + git commit + build date + arch + compiler + feature
+  flags + vcpkg baseline + LIEF and Capstone versions.
+- `--about-network` prints the no-network policy in a form CTF
+  organizers and security auditors can grep, including the
+  `ABCPWN_NO_NETWORK=1` env override.
+- `ABCPWN_NO_NETWORK=1` environment variable forces network
+  access off even when `--allow-network` is passed
+  (defense-in-depth for locked-down infrastructure).
 - Static analysis suite in CI: clang-tidy, cppcheck, clang-format,
   shellcheck, plus the in-tree orchestrator (`scripts/check-all.sh`)
   that enforces SPDX headers, telemetry-free policy, URL allowlist,
@@ -45,7 +55,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Sanitizer presets (AddressSanitizer, UndefinedBehaviorSanitizer,
   ThreadSanitizer) wired through dedicated workflow on pull
   requests.
-- Catch2 unit and integration tests; 185 tests at v0.1 baseline.
+- Catch2 unit and integration tests; 186 tests at v0.1 baseline.
 - Performance benchmarks via Catch2 with stored baseline.
 - Documentation: README, BUILDING, SECURITY, CONTRIBUTING,
   CODE_OF_CONDUCT, LICENSE, LICENSE-THIRD-PARTY, CHANGELOG, plus
