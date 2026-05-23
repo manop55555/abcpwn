@@ -13,7 +13,7 @@
        |1|          exploitation, seccomp BPF analysis, libc fingerprint
        |0|          resolution, GOT/PLT inspection, sigreturn-oriented
        \ /          programming, and ret2dlresolve - all in a single
-        '           static C++ binary. zero runtime deps. zero telemetry.
+        '           native C++ binary. no telemetry. no auto-update.
 ```
 
 [![CI](https://github.com/manop55555/abcpwn/actions/workflows/ci.yml/badge.svg)](https://github.com/manop55555/abcpwn/actions/workflows/ci.yml)
@@ -22,8 +22,10 @@
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
 [![Platforms](https://img.shields.io/badge/platforms-linux%20%7C%20macos-blue.svg)](#supported-platforms)
 
-Native C++20 CLI toolkit for binary exploitation. Statically linked. Zero
-runtime dependencies. Zero telemetry. Zero network calls by default.
+Native C++20 CLI toolkit for binary exploitation. Dynamically linked
+against system libc/libm; every third-party library (LIEF, Capstone,
+CLI11, nlohmann/json, spdlog) is statically bundled into the binary.
+No telemetry. No auto-update. No network calls by default.
 
 `abcpwn` is a single binary that consolidates the day-to-day toolkit of a
 CTF binary-exploitation player: ELF/PE/Mach-O inspection, ROP gadget

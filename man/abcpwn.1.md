@@ -21,7 +21,9 @@ ROP gadget discovery, shellcode generation, format-string
 primitives, glibc heap exploitation helpers, seccomp BPF analysis,
 libc fingerprint resolution, GOT/PLT inspection,
 sigreturn-oriented programming, and ret2dlresolve into one
-statically-linked binary.
+native binary. The binary is dynamically linked against the
+system libc and libm; every other dependency (LIEF, Capstone,
+CLI11, nlohmann/json, spdlog) is statically bundled.
 
 The default build makes no network calls. Two subcommands
 (**libc download**, **pwninit**) can fetch remote data when the

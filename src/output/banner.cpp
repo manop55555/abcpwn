@@ -23,7 +23,7 @@ constexpr std::string_view kBanner = R"BANNER(        P
        |1|          exploitation, seccomp BPF analysis, libc fingerprint
        |0|          resolution, GOT/PLT inspection, sigreturn-oriented
        \ /          programming, and ret2dlresolve - all in a single
-        '           static C++ binary. zero runtime deps. zero telemetry.
+        '           native C++ binary. no telemetry. no auto-update.
 )BANNER";
 
 constexpr std::string_view kCompactHeader =
