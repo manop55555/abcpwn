@@ -14,8 +14,8 @@ measurement methodology, and the design principles that get us there.
 | `abcpwn errno 11`                               | < 5 ms  | 20 ms     | - |
 | `abcpwn info /bin/ls`                           | < 50 ms | 200 ms    | `checksec.sh`: ~100 ms |
 | `abcpwn syms /bin/ls`                           | < 100 ms| 500 ms    | `nm` + `grep`: ~50 ms |
-| `abcpwn gadget /bin/bash` (~10k gadgets)        | < 100 ms| 500 ms    | ROPgadget: ~2 s |
-| `abcpwn gadget libc.so.6` (~100k gadgets)       | < 1 s   | 5 s       | ROPgadget: ~20 s |
+| `abcpwn gadget /bin/bash` (~10k gadgets)        | < 500 ms| 2000 ms   | ROPgadget: ~2 s |
+| `abcpwn gadget libc.so.6` (~100k gadgets)       | < 4 s   | 5 s       | ROPgadget: ~20 s |
 | `abcpwn rop --execve /bin/bash`                 | < 200 ms| 1 s       | pwntools `ROP()`: ~3 s |
 | `abcpwn one-gadget libc.so.6`                   | < 100 ms| 500 ms    | `one_gadget`: ~1 s |
 | `abcpwn libc id --offset puts:0x80`             | < 50 ms | 200 ms    | libc-database: ~500 ms |

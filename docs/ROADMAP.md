@@ -24,12 +24,42 @@
 - Multi-arch release artifacts: `linux-aarch64`, `macos-arm64`,
   `macos-x86_64` (currently the release pipeline emits
   `linux-x86_64` only).
+- Multi-platform CI matrix: add `linux-aarch64` gcc-13, macOS x86_64
+  (macos-13), macOS arm64 (macos-14, macos-15) jobs to ci.yml.
 - TLS support in `pwn` I/O tubes for direct CTF infrastructure
   interaction.
 - Additional shellcode presets (broader arch and syscall coverage).
 - Improved libc database fetching with mirror selection.
 - Homebrew tap publication.
 - AUR package for Arch Linux users.
+- Parallel gadget search to bring `gadget libc.so.6` back under
+  the v0.1-aspirational 1-second target. Forward-decode is
+  sequential today; `std::execution::par_unseq` with a bounded
+  thread count was raised in ADR 0003's alternatives and deferred
+  here. Until shipped the v0.1 targets in
+  [PERFORMANCE.md](PERFORMANCE.md) reflect sequential-scan reality
+  (4-second soft target, 5-second hard limit on libc.so.6).
+- Intel CET feature flag restoration in the release binary's
+  `.note.gnu.property`. `cmake/Hardening.cmake` already passes
+  `-fcf-protection=full` to the C++ compile, but the linker
+  intersects feature-property notes across all input objects, and
+  the vcpkg-installed LIEF and Capstone static archives are built
+  without CET, dragging the final marking down to baseline. Fix
+  by either rebuilding the vendored deps with `-fcf-protection=full`
+  in a vcpkg overlay port, or by experimenting with
+  `-Wl,-z,force-ibt`/`-Wl,-z,force-shstk`. PIE, NX, RELRO, stack
+  canary, and FORTIFY are all verified present on the v0.1 binary;
+  CET is the only hardening rule missing at the binary marker
+  level.
+- Codecov upload for coverage runs. Today coverage.yml uploads
+  the LCOV trace as a workflow artifact only; Codecov integration
+  needs either a public repo or a paid Codecov plan for private
+  repos.
+- Organic test growth from 185 toward 200+. Per session 11 audit:
+  pad coverage with rapidcheck property tests (pack/unpack,
+  hex/unhex, cyclic invariants) and per-command pretty/json
+  snapshot tests under `tests/snapshots/`. Avoid padding for
+  count's sake; tests should map to real regression surfaces.
 
 ## v0.3
 
