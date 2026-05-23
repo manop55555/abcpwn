@@ -1,0 +1,50 @@
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 manop55555
+
+name: CodeQL
+run-name: ${{ github.workflow }} on ${{ github.ref_name }} by @${{ github.actor }}
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  schedule:
+    - cron: '0 6 * * 1'  # Monday 06:00 UTC
+
+permissions:
+  actions: read
+  contents: read
+  security-events: write
+
+concurrency:
+  group: codeql-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: github/codeql-action/init@v3
+        with:
+          languages: cpp
+          queries: security-extended,security-and-quality
+
+      - name: Install prereqs
+        run: |
+          sudo apt update
+          sudo apt install -y ninja-build pandoc
+          git clone https://github.com/microsoft/vcpkg ${{ runner.temp }}/vcpkg
+          ${{ runner.temp }}/vcpkg/bootstrap-vcpkg.sh
+          echo "VCPKG_ROOT=${{ runner.temp }}/vcpkg" >> $GITHUB_ENV
+
+      - name: Build
+        run: |
+          cmake --preset release
+          cmake --build --preset release --parallel
+
+      - uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:cpp"
