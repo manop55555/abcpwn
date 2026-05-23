@@ -15,6 +15,12 @@ inline constexpr unsigned version_major = @PROJECT_VERSION_MAJOR@;
 inline constexpr unsigned version_minor = @PROJECT_VERSION_MINOR@;
 inline constexpr unsigned version_patch = @PROJECT_VERSION_PATCH@;
 
+// Full SemVer string including any pre-release suffix (-alpha.N,
+// -beta.N, -rc.N). Captured from `git describe --tags` at configure
+// time so the binary reports the same version the maintainer
+// tagged. Falls back to PROJECT_VERSION when the repo has no tag.
+inline constexpr std::string_view semver_string = "@ABCPWN_SEMVER_STRING@";
+
 // Build provenance and host context (computed at configure time).
 inline constexpr std::string_view git_commit     = "@ABCPWN_GIT_COMMIT@";
 inline constexpr std::string_view build_date     = "@ABCPWN_BUILD_DATE@";

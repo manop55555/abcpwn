@@ -42,3 +42,6 @@ add_test(NAME test_readme_quickstart
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_readme_quickstart.sh"
             "$<TARGET_FILE:abcpwn>"
             "${CMAKE_SOURCE_DIR}")
+add_test(NAME test_version_output
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_version_output.sh"
+            "$<TARGET_FILE:abcpwn>")

@@ -61,6 +61,26 @@ if(NOT ABCPWN_GIT_COMMIT)
     set(ABCPWN_GIT_COMMIT "unknown")
 endif()
 
+# Full SemVer string with pre-release suffix from `git describe`.
+# `git describe --tags --abbrev=0` returns the most recent tag
+# (e.g. v0.1.0-alpha.2). We strip the leading 'v' to get a clean
+# SemVer string. If no tag exists or git is unavailable, fall back
+# to PROJECT_VERSION so the field is always populated.
+if(GIT_EXECUTABLE AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" describe --tags --abbrev=0
+        OUTPUT_VARIABLE ABCPWN_SEMVER_STRING
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+    if(ABCPWN_SEMVER_STRING MATCHES "^v(.+)$")
+        set(ABCPWN_SEMVER_STRING "${CMAKE_MATCH_1}")
+    endif()
+endif()
+if(NOT ABCPWN_SEMVER_STRING)
+    set(ABCPWN_SEMVER_STRING "${PROJECT_VERSION}")
+endif()
+
 # build date - honor SOURCE_DATE_EPOCH for reproducible builds
 if(DEFINED ENV{SOURCE_DATE_EPOCH})
     execute_process(

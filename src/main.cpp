@@ -77,13 +77,20 @@ struct DispatchEntry {
 
 // STEP/18-shaped --version output. Combines the compact banner
 // header (per STEP/02) with the build provenance block configured
-// from cmake/version.hpp.in. Returned as a single string so CLI11
-// can hand it to the user via set_version_flag's callback.
-std::string build_version_block() {
+// from cmake/version.hpp.in. The banner header is suppressed when
+// include_banner=false (caller pre-checks --no-banner).
+std::string build_version_block(bool include_banner) {
     namespace core = abcpwn::core;
     std::ostringstream os;
-    os << abcpwn::output::compact_header() << "\n\n";
-    os << "abcpwn v" << core::version_string << " (commit " << core::git_commit << ", built "
+    if (include_banner) {
+        os << abcpwn::output::compact_header() << "\n\n";
+    }
+    // The version_string here is PROJECT_VERSION ("0.1.0"). For
+    // pre-release tags (e.g. v0.1.0-alpha.3) the full SemVer
+    // string lives in core::semver_string which is configured
+    // from the most-recent git tag at build time and includes
+    // any -alpha.N / -beta.N / -rc.N suffix.
+    os << "abcpwn v" << core::semver_string << " (commit " << core::git_commit << ", built "
        << core::build_date << ")\n";
     os << "  arch: " << core::arch_triple << "\n";
     os << "  compiler: " << core::cxx_compiler << "\n";
@@ -210,7 +217,12 @@ int main(int argc, char** argv) {
     using namespace abcpwn;
 
     CLI::App app{"abcpwn - binary exploitation toolkit"};
-    app.set_version_flag("--version", &build_version_block);
+    // --version is handled manually after parse so --no-banner
+    // can suppress the compact_header in the version block. The
+    // default CLI11 set_version_flag fires its callback inline
+    // during parsing and has no way to consult other flags.
+    bool show_version{false};
+    app.add_flag("--version", show_version, "Print version and exit");
     app.require_subcommand(0, 1);
 
     // --about-network prints the no-network policy and exits.
@@ -297,6 +309,15 @@ int main(int argc, char** argv) {
     if (show_banner) {
         const bool color = output::PrettyPrinter::should_color(ctx, std::cerr);
         output::print_banner(std::cerr, color);
+        return 0;
+    }
+
+    // --version: print the STEP/18 version block and exit. The
+    // compact_header at the top of the block is omitted when
+    // --no-banner is set so callers that pipe `--version` get
+    // only the structured fields.
+    if (show_version) {
+        std::cout << build_version_block(/*include_banner=*/!ctx.no_banner);
         return 0;
     }
 
