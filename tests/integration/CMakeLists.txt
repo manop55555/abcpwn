@@ -38,3 +38,7 @@ add_test(NAME test_about_network
 add_test(NAME test_no_stdout_pollution
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_no_stdout_pollution.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_readme_quickstart
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_readme_quickstart.sh"
+            "$<TARGET_FILE:abcpwn>"
+            "${CMAKE_SOURCE_DIR}")

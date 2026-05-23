@@ -71,12 +71,14 @@ From source: see [BUILDING.md](BUILDING.md).
 ## Quick start
 
 ```bash
-abcpwn info ./challenge                  # checksec equivalent
-abcpwn syms ./challenge --type funcs     # symbol inspection
-abcpwn gadget ./libc.so.6 --max-len 8    # ROP gadget discovery
-abcpwn rop ./challenge --execve          # synthesize execve("/bin/sh") chain
+abcpwn info ./challenge                          # checksec equivalent
+abcpwn syms ./challenge --dangerous              # find unsafe imports
+abcpwn gadget ./libc.so.6 --depth 8              # ROP gadget discovery
+abcpwn rop ./challenge --syscall 59 \
+    --syscall-arg 0x404020 --syscall-arg 0 \
+    --syscall-arg 0                              # execve("/bin/sh", 0, 0)
 abcpwn shellcode --preset sh --arch x86_64
-abcpwn pwn ./challenge --tcp 1.2.3.4:1337
+abcpwn pwn 1.2.3.4:1337                          # target is host:port positional
 abcpwn --format json info /bin/ls | jq .findings
 ```
 
