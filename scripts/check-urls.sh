@@ -9,7 +9,7 @@
 
 set -euo pipefail
 
-ALLOWED_HOSTS='(github\.com|raw\.githubusercontent\.com|codecov\.io|libc\.rip|libc-database|apache\.org|cmake\.org|json\.nlohmann\.me|cppreference\.com|en\.wikipedia\.org|osdev\.org|sigstore\.dev|spdx\.org|microsoft\.com|llvm\.org|keepachangelog\.com|semver\.org|img\.shields\.io|docs\.github\.com|api\.github\.com|token\.actions\.githubusercontent\.com)'
+ALLOWED_HOSTS='(github\.com|raw\.githubusercontent\.com|codecov\.io|libc\.rip|libc-database|apache\.org|cmake\.org|json\.nlohmann\.me|cppreference\.com|en\.wikipedia\.org|osdev\.org|sigstore\.dev|spdx\.org|microsoft\.com|llvm\.org|keepachangelog\.com|semver\.org|img\.shields\.io|docs\.github\.com|api\.github\.com|token\.actions\.githubusercontent\.com|contributor-covenant\.org|creativecommons\.org|conventionalcommits\.org|boost\.org)'
 
 mapfile -t targets < <(git ls-files \
     | grep -E '\.(cpp|hpp|h|md|yml|yaml|json|toml|cmake|sh|py)$' \
