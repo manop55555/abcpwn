@@ -144,6 +144,19 @@ void PrettyPrinter::print_section(std::ostream& os, const core::Section& s) {
 
 void PrettyPrinter::print_command_result(std::ostream& os, const core::CommandResult& res) {
     color_active_ = should_color(ctx_, os);
+
+    if (res.raw_payload) {
+        // Opaque binary payload: write the bytes as-is with no
+        // trailing newline so stdout carries exactly the payload.
+        // The dispatcher suppresses the timing footer separately
+        // (see print_timing). raw_lines for raw_payload results is
+        // expected to be a single entry holding the byte string.
+        for (const auto& line : res.raw_lines) {
+            os.write(line.data(), static_cast<std::streamsize>(line.size()));
+        }
+        return;
+    }
+
     for (const auto& s : res.sections) {
         print_section(os, s);
         os << '\n';
@@ -151,16 +164,20 @@ void PrettyPrinter::print_command_result(std::ostream& os, const core::CommandRe
     for (const auto& line : res.raw_lines) {
         os << line << '\n';
     }
-    if (res.duration) {
-        // Right-align the duration at column 60.
-        const std::string d = fmt_duration(*res.duration);
-        const int pad = std::max(1, kSeverityColumn - static_cast<int>(d.size()));
-        os << std::string(static_cast<std::size_t>(pad), ' ');
-        maybe_color(os, Ansi::dim_white, color_active_);
-        emit(os, d);
-        maybe_color(os, Ansi::reset, color_active_);
-        os << '\n';
+}
+
+void PrettyPrinter::print_timing(std::ostream& os, const core::CommandResult& res) {
+    if (!res.duration || res.raw_payload) {
+        return;
     }
+    color_active_ = should_color(ctx_, os);
+    const std::string d = fmt_duration(*res.duration);
+    const int pad = std::max(1, kSeverityColumn - static_cast<int>(d.size()));
+    os << std::string(static_cast<std::size_t>(pad), ' ');
+    maybe_color(os, Ansi::dim_white, color_active_);
+    emit(os, d);
+    maybe_color(os, Ansi::reset, color_active_);
+    os << '\n';
 }
 
 } // namespace abcpwn::output

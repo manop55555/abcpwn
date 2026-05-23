@@ -291,10 +291,12 @@ int main(int argc, char** argv) {
     output::setup_logging(ctx);
     core::signal::install_handlers();
 
-    // --banner: print and exit, regardless of subcommand.
+    // --banner: print and exit, regardless of subcommand. The
+    // banner is decoration; emit on stderr so stdout stays clean
+    // for any caller that redirects it.
     if (show_banner) {
-        const bool color = output::PrettyPrinter::should_color(ctx, std::cout);
-        output::print_banner(std::cout, color);
+        const bool color = output::PrettyPrinter::should_color(ctx, std::cerr);
+        output::print_banner(std::cerr, color);
         return 0;
     }
 
@@ -316,13 +318,13 @@ int main(int argc, char** argv) {
     }
 
     if (selected == nullptr) {
-        // No subcommand chosen: banner + help (unless --no-banner or
-        // JSON mode -- JSON callers don't want banner bytes corrupting
-        // their parse).
+        // No subcommand chosen: banner + help. Banner emits on
+        // stderr (decoration, never on the data channel). Help
+        // text stays on stdout per Unix convention for --help.
         if (!ctx.no_banner && ctx.format != core::OutputFormat::Json) {
-            const bool color = output::PrettyPrinter::should_color(ctx, std::cout);
-            output::print_banner(std::cout, color);
-            std::cout << '\n';
+            const bool color = output::PrettyPrinter::should_color(ctx, std::cerr);
+            output::print_banner(std::cerr, color);
+            std::cerr << '\n';
         }
         std::cout << app.help();
         return 0;
@@ -346,10 +348,16 @@ int main(int argc, char** argv) {
         writer.write(std::cout, selected->cmd->name(), *result);
     } else {
         output::PrettyPrinter pp(ctx);
-        if (!ctx.no_banner) {
-            pp.print_command_header(std::cout);
+        // Compact header and timing footer are decoration -- they
+        // go to stderr so a caller can redirect stdout (e.g. for
+        // raw-byte output, JSON consumed by jq, hex dumps fed to
+        // od) without seeing them. Suppress the header entirely
+        // for raw_payload results so binary output is pristine.
+        if (!ctx.no_banner && !result->raw_payload) {
+            pp.print_command_header(std::cerr);
         }
         pp.print_command_result(std::cout, *result);
+        pp.print_timing(std::cerr, *result);
     }
 
     return result->exit_code;

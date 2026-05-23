@@ -89,15 +89,40 @@ TEST_CASE("pretty emits ANSI codes when color forced on", "[pretty]") {
     REQUIRE(oss.str().find("\x1b[") != std::string::npos);
 }
 
-TEST_CASE("pretty appends duration line", "[pretty]") {
+TEST_CASE("pretty emits duration via print_timing, not print_command_result", "[pretty]") {
     auto ctx = never_color_ctx();
     abcpwn::output::PrettyPrinter pp(ctx);
     abcpwn::core::CommandResult res;
     res.duration = std::chrono::milliseconds{42};
 
-    std::ostringstream oss;
-    pp.print_command_result(oss, res);
-    REQUIRE(oss.str().find("(42 ms)") != std::string::npos);
+    // print_command_result writes data only -- the timing footer
+    // moved to print_timing so the dispatcher can route data on
+    // stdout and decoration on stderr.
+    std::ostringstream data;
+    pp.print_command_result(data, res);
+    REQUIRE(data.str().find("(42 ms)") == std::string::npos);
+
+    std::ostringstream meta;
+    pp.print_timing(meta, res);
+    REQUIRE(meta.str().find("(42 ms)") != std::string::npos);
+}
+
+TEST_CASE("pretty raw_payload suppresses newline and timing", "[pretty]") {
+    auto ctx = never_color_ctx();
+    abcpwn::output::PrettyPrinter pp(ctx);
+    abcpwn::core::CommandResult res;
+    res.duration = std::chrono::milliseconds{42};
+    res.raw_payload = true;
+    res.raw_lines.push_back(std::string{"\xde\xad\xbe\xef", 4});
+
+    std::ostringstream data;
+    pp.print_command_result(data, res);
+    REQUIRE(data.str().size() == 4);
+    REQUIRE(data.str() == std::string{"\xde\xad\xbe\xef", 4});
+
+    std::ostringstream meta;
+    pp.print_timing(meta, res);
+    REQUIRE(meta.str().empty());
 }
 
 TEST_CASE("should_color is false when format is json", "[pretty]") {

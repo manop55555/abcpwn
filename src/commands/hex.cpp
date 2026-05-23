@@ -37,6 +37,9 @@ core::Result<core::CommandResult> UnhexCommand::run(const core::Context& /*ctx*/
     }
     core::CommandResult res;
     res.raw_lines.emplace_back(reinterpret_cast<const char*>(bytes->data()), bytes->size());
+    // unhex emits opaque bytes; raw_payload suppresses banner +
+    // timing footer so stdout carries exactly the decoded bytes.
+    res.raw_payload = true;
     return res;
 }
 

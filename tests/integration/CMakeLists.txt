@@ -34,3 +34,6 @@ add_test(NAME test_docs
 add_test(NAME test_about_network
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_about_network.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_no_stdout_pollution
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_no_stdout_pollution.sh"
+            "$<TARGET_FILE:abcpwn>")

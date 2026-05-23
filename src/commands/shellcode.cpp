@@ -201,6 +201,9 @@ core::Result<core::CommandResult> ShellcodeCommand::run(const core::Context& /*c
     if (format == "raw") {
         res.raw_lines.emplace_back(reinterpret_cast<const char*>(encoded->bytes.data()),
                                    encoded->bytes.size());
+        // Opaque binary; suppress banner + timing footer on
+        // stdout so the payload bytes are unpolluted.
+        res.raw_payload = true;
     } else if (format == "c") {
         res.raw_lines.push_back(format_c(encoded->bytes));
     } else if (format == "escaped") {

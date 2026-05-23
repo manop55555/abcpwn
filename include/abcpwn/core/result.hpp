@@ -163,6 +163,12 @@ struct CommandResult {
     std::vector<std::string> raw_lines{};
     std::optional<std::chrono::nanoseconds> duration{};
     std::optional<std::string> summary{};
+    // When true the raw_lines hold opaque binary bytes (e.g.
+    // `shellcode --format raw`, `unhex`). The pretty printer
+    // writes them without trailing newlines and the dispatcher
+    // suppresses the duration footer + banner so stdout carries
+    // exactly the payload bytes.
+    bool raw_payload{false};
 };
 
 // Aggregated report from a multi-target scan (info on a directory,
