@@ -241,12 +241,14 @@ int main(int argc, char** argv) {
     bool quiet{false};
     bool no_banner{false};
     bool show_banner{false};
+    bool no_color{false};
     bool allow_network{false};
     std::string config_path{};
     std::string log_file_path{};
 
     app.add_option("--format", format_str, "pretty (default) | json");
     app.add_option("--color", color_str, "auto (default) | always | never");
+    app.add_flag("--no-color", no_color, "Disable color output (alias for --color never)");
     app.add_flag("-v,--verbose", verbose_count, "Increase verbosity (-vv = trace)");
     app.add_flag("-q,--quiet", quiet, "Suppress info-level output");
     app.add_flag("--no-banner", no_banner, "Suppress the banner");
@@ -270,10 +272,10 @@ int main(int argc, char** argv) {
     // Build the Context from parsed globals.
     core::Context ctx;
     ctx.format = (format_str == "json") ? core::OutputFormat::Json : core::OutputFormat::Pretty;
-    if (color_str == "always")
-        ctx.color = core::ColorMode::Always;
-    else if (color_str == "never")
+    if (no_color || color_str == "never")
         ctx.color = core::ColorMode::Never;
+    else if (color_str == "always")
+        ctx.color = core::ColorMode::Always;
     else
         ctx.color = core::ColorMode::Auto;
     ctx.verbosity = verbose_count - (quiet ? 1 : 0);
