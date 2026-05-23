@@ -2,6 +2,7 @@
 # Copyright (c) 2026 manop55555
 
 name: Fuzz
+run-name: ${{ github.workflow }} on ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   schedule:
@@ -15,6 +16,11 @@ permissions:
 jobs:
   fuzz:
     name: ${{ matrix.harness }}
+    # Non-gating for v0.1.x: a fuzz crash uploads the artifact and
+    # opens a tracking issue (see steps below) but does not fail the
+    # workflow. Restored to gating in v0.2 once the initial backlog
+    # of upstream-LIEF findings is triaged. See docs/ROADMAP.md.
+    continue-on-error: true
     strategy:
       fail-fast: false
       matrix:

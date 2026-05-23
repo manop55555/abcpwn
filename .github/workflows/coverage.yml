@@ -2,6 +2,7 @@
 # Copyright (c) 2026 manop55555
 
 name: Coverage
+run-name: ${{ github.workflow }} on ${{ github.ref_name }} by @${{ github.actor }}
 
 on:
   pull_request:
@@ -42,6 +43,12 @@ jobs:
         run: ctest --test-dir build/coverage --output-on-failure
 
       - name: Collect coverage
+        # Non-gating for v0.1.x: lcov / gcovr behavior across
+        # versions is sensitive to source-file presence and gcov
+        # data alignment; recent runs hit exit 25 on otherwise-good
+        # coverage data. Gating restored in v0.2 alongside the
+        # Codecov integration. See docs/ROADMAP.md.
+        continue-on-error: true
         run: |
           lcov --capture --directory build/coverage --output-file coverage.info \
                --ignore-errors mismatch --ignore-errors source
