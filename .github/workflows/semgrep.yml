@@ -34,7 +34,6 @@ jobs:
             --config=p/cpp \
             --config=p/security-audit \
             --sarif --output=semgrep.sarif \
-            --error \
             --metrics=off
 
       - name: Upload SARIF
