@@ -2,12 +2,11 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 manop55555
 #
-# Documentation hygiene check. v0.1 docs/COMMANDS.md does not yet
-# exist (that lands in step 25), so this test focuses on the README
-# + CHANGELOG + CONTRIBUTING-shaped files that DO exist, and on
-# verifying that every subcommand the binary advertises has a
-# stable name (lowercase, kebab-case where applicable, never
-# embeds forbidden tokens).
+# Documentation hygiene check. Verifies that every subcommand the
+# binary advertises has a stable name (lowercase, kebab-case where
+# applicable, never embeds forbidden tokens) and that the public
+# documentation set is internally consistent: required files exist,
+# internal links resolve, and fenced code blocks are balanced.
 #
 # Usage: test_docs.sh <abcpwn-binary> <source-root>
 
@@ -99,4 +98,105 @@ if [ "$bad_url" -ne 0 ]; then
     exit 1
 fi
 
-echo "[+] docs hygiene OK: orchestrator scripts, subcommand names, README casing, URLs"
+# Step 5: every doc that step 25 was supposed to ship exists.
+required_docs=(
+    "README.md"
+    "BUILDING.md"
+    "SECURITY.md"
+    "CONTRIBUTING.md"
+    "CODE_OF_CONDUCT.md"
+    "LICENSE"
+    "LICENSE-THIRD-PARTY.md"
+    "CHANGELOG.md"
+    "CITATION.cff"
+    "docs/ARCHITECTURE.md"
+    "docs/COMMANDS.md"
+    "docs/PERFORMANCE.md"
+    "docs/SECURITY-MODEL.md"
+    "docs/ERROR_CODES.md"
+    "docs/FAQ.md"
+    "docs/TUTORIALS.md"
+    "docs/ROADMAP.md"
+    "docs/STATIC_ANALYSIS.md"
+    "docs/SUPPORT.md"
+)
+missing=0
+for d in "${required_docs[@]}"; do
+    if [ ! -f "$SOURCE_ROOT/$d" ]; then
+        echo "[-] required doc missing: $d"
+        missing=1
+    fi
+done
+if [ "$missing" -ne 0 ]; then
+    exit 1
+fi
+
+# Step 6: internal markdown links resolve. Scan tracked .md files
+# under the source root (excluding the gitignored design log) and
+# for every [text](path) where path is relative (no scheme, no
+# leading '#'), confirm the target exists. Anchor-only refs and
+# external schemes are skipped. The grep captures ](...) groups
+# including the closing paren; bash parameter expansion strips the
+# wrapper, avoiding sed regex fragility on anchor-only badge links.
+broken_links=0
+while IFS= read -r mdfile; do
+    [ -z "$mdfile" ] && continue
+    case "$mdfile" in
+        */DECISIONS.md) continue ;;
+    esac
+    mddir=$(dirname "$mdfile")
+    while IFS= read -r raw; do
+        # raw looks like '](path)' or '] (path)'. Strip leading "]"
+        # and any whitespace, then strip wrapping parens.
+        link=${raw#\]}
+        link=${link# *}
+        link=${link#\(}
+        link=${link%\)}
+        # Drop any trailing #anchor portion from a doc-relative
+        # target like docs/X.md#section.
+        path=${link%%#*}
+        [ -z "$path" ] && continue
+        case "$path" in
+            http://*|https://*|mailto:*|ftp://*) continue ;;
+        esac
+        target="$mddir/$path"
+        if [ ! -e "$target" ]; then
+            echo "[-] broken internal link in ${mdfile#"$SOURCE_ROOT"/}: $link"
+            broken_links=1
+        fi
+    done < <(grep -oE '\][[:space:]]*\([^)]+\)' "$mdfile" 2>/dev/null || true)
+done < <(find "$SOURCE_ROOT" -type f -name '*.md' \
+              -not -path "*/STEP/*" \
+              -not -path "*/build/*" \
+              -not -path "*/vcpkg_installed/*" \
+              -not -path "*/.git/*" 2>/dev/null)
+if [ "$broken_links" -ne 0 ]; then
+    exit 1
+fi
+
+# Step 7: fenced code blocks are balanced (every opening fence has
+# a matching closing fence) and where the opening fence carries a
+# language tag, the tag is from a recognized set. Unrecognized tags
+# are NOT a failure (people use rare languages too), but unbalanced
+# fences ARE.
+fence_problems=0
+while IFS= read -r mdfile; do
+    [ -z "$mdfile" ] && continue
+    case "$mdfile" in
+        */DECISIONS.md) continue ;;
+    esac
+    fence_count=$(grep -cE '^```' "$mdfile" 2>/dev/null || true)
+    if [ "$((fence_count % 2))" -ne 0 ]; then
+        echo "[-] unbalanced triple-backtick fences in ${mdfile#"$SOURCE_ROOT"/}: $fence_count fence lines"
+        fence_problems=1
+    fi
+done < <(find "$SOURCE_ROOT" -type f -name '*.md' \
+              -not -path "*/STEP/*" \
+              -not -path "*/build/*" \
+              -not -path "*/vcpkg_installed/*" \
+              -not -path "*/.git/*" 2>/dev/null)
+if [ "$fence_problems" -ne 0 ]; then
+    exit 1
+fi
+
+echo "[+] docs hygiene OK: orchestrator, subcommand names, README casing, URLs, required docs, internal links, code-fence balance"
