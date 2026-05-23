@@ -5,7 +5,9 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
+#include <limits>
 #include <string>
 #include <string_view>
 #include <vector>
@@ -127,6 +129,29 @@ core::Result<core::CommandResult> CyclicCommand::run(const core::Context& /*ctx*
     if (length == 0) {
         return core::err(core::ErrorCode::UsageError,
                          "cyclic: provide either a length or --find <subseq>");
+    }
+    // Enforce the de Bruijn unique-window guarantee: the longest
+    // sequence over an alphabet of size k with unique n-length
+    // windows is k^n bytes. Past that, the sequence has to repeat
+    // and `cyclic --find` will return wrong offsets. Reject larger
+    // requests rather than silently producing wrong output.
+    const std::uint64_t k = alphabet.size();
+    std::uint64_t max_length = 1;
+    bool overflowed = false;
+    for (std::size_t i = 0; i < subseq_length; ++i) {
+        if (max_length
+            > (std::numeric_limits<std::uint64_t>::max() / std::max<std::uint64_t>(1, k))) {
+            overflowed = true;
+            break;
+        }
+        max_length *= k;
+    }
+    if (!overflowed && length > max_length) {
+        return core::err(core::ErrorCode::SizeExceeded,
+                         "cyclic: length " + std::to_string(length)
+                             + " exceeds the unique-window limit (alphabet^subseq = "
+                             + std::to_string(max_length)
+                             + "). Use -n <larger> or -a <wider alphabet> to extend.");
     }
     res.raw_lines.push_back(cyclic_generate(length, alphabet, subseq_length));
     return res;

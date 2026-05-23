@@ -78,6 +78,36 @@ TEST_CASE("cyclic_find on absent input returns nullopt", "[cyclic]") {
     REQUIRE_FALSE(missing.has_value());
 }
 
+TEST_CASE("CyclicCommand rejects length past unique-window limit", "[cyclic][command][size]") {
+    abcpwn::core::Context ctx;
+    CyclicCommand cmd;
+    // Default alphabet (a-z, k=26) at default subseq (n=4) gives
+    // a unique-window maximum of 26^4 = 456,976. Anything past
+    // that produces wrap-around output where the unique-offset
+    // guarantee no longer holds and cyclic --find returns wrong
+    // values. Round 1's CRITICAL reproducer: cyclic 100000000.
+    cmd.length = 100'000'000;
+    auto r = cmd.run(ctx);
+    REQUIRE_FALSE(r);
+    REQUIRE(r.error().code == abcpwn::core::ErrorCode::SizeExceeded);
+    REQUIRE(r.error().message.find("456976") != std::string::npos);
+
+    // The exact maximum should still work.
+    CyclicCommand cmd_max;
+    cmd_max.length = 26 * 26 * 26 * 26;
+    auto r_max = cmd_max.run(ctx);
+    REQUIRE(r_max);
+    REQUIRE(r_max->raw_lines.size() == 1);
+    REQUIRE(r_max->raw_lines[0].size() == 26 * 26 * 26 * 26);
+
+    // One past the maximum is rejected.
+    CyclicCommand cmd_over;
+    cmd_over.length = 26 * 26 * 26 * 26 + 1;
+    auto r_over = cmd_over.run(ctx);
+    REQUIRE_FALSE(r_over);
+    REQUIRE(r_over.error().code == abcpwn::core::ErrorCode::SizeExceeded);
+}
+
 TEST_CASE("DisasmCommand renders an i386 chain", "[disasm][command]") {
     abcpwn::core::Context ctx;
     DisasmCommand d;
