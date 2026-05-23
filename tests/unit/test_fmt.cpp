@@ -45,7 +45,8 @@ TEST_CASE("build_write_payload requires arg_index", "[fmt]") {
     REQUIRE(r.error().code == abcpwn::core::ErrorCode::InvalidInput);
 }
 
-TEST_CASE("build_write_payload prepends four target-address slots on x86_64", "[fmt]") {
+TEST_CASE("build_write_payload puts format directives before addresses (round-2 fix)",
+          "[fmt][round2]") {
     WriteSpec ws;
     ws.target_address = 0x404040;
     ws.value = 0xdeadbeef;
@@ -53,21 +54,34 @@ TEST_CASE("build_write_payload prepends four target-address slots on x86_64", "[
     ws.arch = abcpwn::arch::Arch::X86_64;
     auto r = build_write_payload(ws);
     REQUIRE(r);
-    // Four 8-byte addresses = 32 bytes at the start, then the format string.
+
+    // Round-2 CRITICAL fix: addresses must come AT THE END so the
+    // 64-bit address NUL upper bytes never terminate printf's
+    // format-string scan before the %hn directives run. The first
+    // byte of the payload must be a format-string character ('%'),
+    // not the low byte of an address.
+    REQUIRE_FALSE(r->empty());
+    REQUIRE((*r)[0] == '%');
+
+    // The last 32 bytes (4 x ptr_size) must encode the four target
+    // addresses: 0x404040, 0x404042, 0x404044, 0x404046 (each
+    // little-endian, 8 bytes on x86_64). Verify the first byte of
+    // each landed-address slot matches.
     REQUIRE(r->size() >= 32);
-    // The first 8 bytes should encode 0x404040 (little-endian).
-    REQUIRE((*r)[0] == 0x40);
-    REQUIRE((*r)[1] == 0x40);
-    REQUIRE((*r)[2] == 0x40);
-    // Last bytes should look like format-string ascii (contain '%').
-    bool has_percent = false;
-    for (auto b : *r) {
-        if (b == '%') {
-            has_percent = true;
-            break;
-        }
+    const std::size_t addr_block_off = r->size() - 32;
+    REQUIRE((*r)[addr_block_off + 0] == 0x40); // 0x404040 low byte
+    REQUIRE((*r)[addr_block_off + 1] == 0x40);
+    REQUIRE((*r)[addr_block_off + 2] == 0x40);
+    REQUIRE((*r)[addr_block_off + 8] == 0x42);  // 0x404042 low byte
+    REQUIRE((*r)[addr_block_off + 16] == 0x44); // 0x404044
+    REQUIRE((*r)[addr_block_off + 24] == 0x46); // 0x404046
+
+    // Before the address block, there must be no NUL bytes -
+    // a single NUL would have stopped printf during the scan that
+    // the round-2 reproducer exposed.
+    for (std::size_t i = 0; i < addr_block_off; ++i) {
+        REQUIRE((*r)[i] != 0x00);
     }
-    REQUIRE(has_percent);
 }
 
 TEST_CASE("FmtCommand --find-offset reports the index", "[fmt][command]") {

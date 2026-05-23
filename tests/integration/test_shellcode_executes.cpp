@@ -22,6 +22,7 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+
 #include <fcntl.h>
 #include <sys/mman.h>
 #include <sys/wait.h>
@@ -37,12 +38,8 @@ namespace {
 // Map an RWX page and copy the bytes into it. Returns the page
 // address or nullptr on failure.
 void* map_executable(const std::vector<std::uint8_t>& bytes) {
-    void* page = mmap(nullptr,
-                      4096,
-                      PROT_READ | PROT_WRITE | PROT_EXEC,
-                      MAP_PRIVATE | MAP_ANONYMOUS,
-                      -1,
-                      0);
+    void* page =
+        mmap(nullptr, 4096, PROT_READ | PROT_WRITE | PROT_EXEC, MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
     if (page == MAP_FAILED) {
         return nullptr;
     }
@@ -123,8 +120,7 @@ TEST_CASE("x86_64 sh preset actually spawns /bin/sh under a loader",
     int status = 0;
     REQUIRE(waitpid(pid, &status, 0) == pid);
 
-    INFO("waitpid status: " << status
-                            << ", WIFEXITED=" << WIFEXITED(status)
+    INFO("waitpid status: " << status << ", WIFEXITED=" << WIFEXITED(status)
                             << ", WEXITSTATUS=" << (WIFEXITED(status) ? WEXITSTATUS(status) : -1)
                             << ", WIFSIGNALED=" << WIFSIGNALED(status)
                             << ", WTERMSIG=" << (WIFSIGNALED(status) ? WTERMSIG(status) : -1));
