@@ -69,6 +69,13 @@ jobs:
         run: sha256sum abcpwn-${{ matrix.artifact }}.tar.gz > SHA256SUMS-${{ matrix.artifact }}
 
       - name: Attest provenance
+        # GHAS-gated: actions/attest-build-provenance@v1 requires
+        # the repo to be public or to have a paid GHAS plan. v0.1
+        # ships from a private user-owned repo so the attestation
+        # fails to persist. Marked non-gating so the rest of the
+        # release flow (archive upload, draft publish) proceeds.
+        # Restoration tracked in docs/ROADMAP.md under v0.2.
+        continue-on-error: true
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: abcpwn-${{ matrix.artifact }}.tar.gz

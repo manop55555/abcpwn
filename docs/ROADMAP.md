@@ -17,6 +17,14 @@
 
 ## v0.2 (next)
 
+- Re-enable SLSA provenance attestation in release.yml. v0.1
+  ships with `actions/attest-build-provenance@v1` marked
+  `continue-on-error: true` because the action requires either a
+  public repo or a paid GHAS plan; on a user-owned private repo
+  it fails to persist the attestation. When the repo path
+  unlocks GHAS (visibility flip, transfer to an org with GHAS,
+  or paid plan), remove the `continue-on-error` and verify the
+  provenance file appears in release artifacts.
 - Sigstore signing of release artifacts (cosign verify-blob workflow).
 - Per-file NOLINT review for the clang-tidy categories temporarily
   disabled at the v0.1 baseline.
