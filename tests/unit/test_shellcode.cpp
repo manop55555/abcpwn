@@ -51,13 +51,23 @@ TEST_CASE("x86_64 sh payload has expected syscall trailer", "[shellcode]") {
     spec.preset = Preset::Sh;
     auto p = lookup(spec);
     REQUIRE(p);
-    REQUIRE(p->bytes.size() == 23);
+    // 24 bytes after the QA round-2 NUL-terminator fix (was 23
+    // pre-fix; an extra `push rdx` was inserted to guarantee
+    // [rdi+8] == 0 on the stack).
+    REQUIRE(p->bytes.size() == 24);
     // last two bytes must be 0x0f 0x05 (syscall)
     REQUIRE(p->bytes[p->bytes.size() - 2] == 0x0f);
     REQUIRE(p->bytes[p->bytes.size() - 1] == 0x05);
     // and 0x3b (execve) must appear early (the "push 0x3b" pattern)
     REQUIRE(p->bytes[0] == 0x6a);
     REQUIRE(p->bytes[1] == 0x3b);
+    // The NUL-terminator fix is structurally identified by a
+    // `push rdx` (0x52) appearing BEFORE the movabs rbx
+    // (0x48 0xbb) - that pushed zero is what lands at [rdi+8]
+    // and terminates the pathname.
+    REQUIRE(p->bytes[4] == 0x52);
+    REQUIRE(p->bytes[5] == 0x48);
+    REQUIRE(p->bytes[6] == 0xbb);
 }
 
 TEST_CASE("x86 sh payload uses int 0x80", "[shellcode]") {
@@ -168,8 +178,8 @@ TEST_CASE("ShellcodeCommand default x86_64 sh in hex format", "[shellcode][comma
     auto r = cmd.run(ctx);
     REQUIRE(r);
     REQUIRE(r->raw_lines.size() == 1);
-    // 23 bytes * 2 hex chars
-    REQUIRE(r->raw_lines[0].size() == 46);
+    // 24 bytes (after the round-2 NUL-terminator fix) * 2 hex chars
+    REQUIRE(r->raw_lines[0].size() == 48);
     REQUIRE(r->raw_lines[0].starts_with("6a3b58"));
 }
 

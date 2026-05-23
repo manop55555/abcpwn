@@ -20,6 +20,7 @@ abcpwn_add_integration_test(test_seccomp_flow       test_seccomp_flow.cpp)
 abcpwn_add_integration_test(test_heap_flow          test_heap_flow.cpp)
 abcpwn_add_integration_test(test_no_network         test_no_network.cpp)
 abcpwn_add_integration_test(test_signal_handling    test_signal_handling.cpp)
+abcpwn_add_integration_test(test_shellcode_executes test_shellcode_executes.cpp)
 
 # Shell-script tests. Both run against the just-built abcpwn binary
 # and the tracked docs/scripts/completions tree.
