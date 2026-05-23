@@ -33,7 +33,7 @@ jobs:
       - name: Install prereqs
         run: |
           sudo apt update
-          sudo apt install -y ninja-build
+          sudo apt install -y ninja-build pandoc
           git clone https://github.com/microsoft/vcpkg ${{ runner.temp }}/vcpkg
           ${{ runner.temp }}/vcpkg/bootstrap-vcpkg.sh
           echo "VCPKG_ROOT=${{ runner.temp }}/vcpkg" >> $GITHUB_ENV
@@ -49,12 +49,17 @@ jobs:
 
       - name: Stage artifact
         run: |
-          mkdir -p staging/abcpwn-${{ matrix.artifact }}
-          cp build/release/abcpwn staging/abcpwn-${{ matrix.artifact }}/
-          cp LICENSE             staging/abcpwn-${{ matrix.artifact }}/
-          cp README.md           staging/abcpwn-${{ matrix.artifact }}/
+          stage="staging/abcpwn-${{ matrix.artifact }}"
+          mkdir -p "$stage"
+          cp build/release/abcpwn        "$stage/"
+          cp LICENSE                     "$stage/"
+          cp LICENSE-THIRD-PARTY.md      "$stage/"
+          cp README.md                   "$stage/"
+          if [ -f build/release/man/abcpwn.1 ]; then
+            cp build/release/man/abcpwn.1 "$stage/"
+          fi
           if [ -d completions ]; then
-            cp -r completions    staging/abcpwn-${{ matrix.artifact }}/
+            cp -r completions             "$stage/"
           fi
           tar -C staging -czf abcpwn-${{ matrix.artifact }}.tar.gz \
               abcpwn-${{ matrix.artifact }}

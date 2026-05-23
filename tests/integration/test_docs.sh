@@ -199,4 +199,48 @@ if [ "$fence_problems" -ne 0 ]; then
     exit 1
 fi
 
-echo "[+] docs hygiene OK: orchestrator, subcommand names, README casing, URLs, required docs, internal links, code-fence balance"
+# Step 8: every canonical subcommand name appears in every shell
+# completion file. Names are extracted source-statically from the
+# command headers (each command's name() override returns a literal),
+# so this check runs without a built binary. Each completion file is
+# expected to live under completions/. Missing completion files are
+# a hard fail because step 5 already verifies their presence.
+mapfile -t canonical_names < <(
+    grep -A1 -hE 'name\(\)\s*const\s*noexcept\s*override' \
+         "$SOURCE_ROOT"/include/abcpwn/commands/*.hpp 2>/dev/null \
+        | grep -oE 'return "[a-z][a-z0-9-]+"' \
+        | sed 's/return "//;s/"$//' \
+        | sort -u
+)
+
+if [ "${#canonical_names[@]}" -lt 30 ]; then
+    echo "[-] could not extract canonical subcommand names from include/abcpwn/commands/ (found ${#canonical_names[@]}, expected 30+)"
+    exit 1
+fi
+
+completion_problems=0
+for completion in \
+    "$SOURCE_ROOT/completions/abcpwn.bash" \
+    "$SOURCE_ROOT/completions/_abcpwn" \
+    "$SOURCE_ROOT/completions/abcpwn.fish"
+do
+    if [ ! -f "$completion" ]; then
+        echo "[-] missing completion: ${completion#"$SOURCE_ROOT"/}"
+        completion_problems=1
+        continue
+    fi
+    for name in "${canonical_names[@]}"; do
+        # Require the name to appear as a standalone token. Word-boundary
+        # behavior differs between greps on different platforms; use a
+        # conservative character-class check that brackets the token.
+        if ! grep -qE "(^|[^a-z0-9-])${name}([^a-z0-9-]|$)" "$completion"; then
+            echo "[-] completion ${completion#"$SOURCE_ROOT"/} missing subcommand: $name"
+            completion_problems=1
+        fi
+    done
+done
+if [ "$completion_problems" -ne 0 ]; then
+    exit 1
+fi
+
+echo "[+] docs hygiene OK: orchestrator, subcommand names, README casing, URLs, required docs, internal links, code-fence balance, completion coverage"

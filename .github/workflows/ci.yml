@@ -73,7 +73,7 @@ jobs:
       - name: Install prereqs
         run: |
           sudo apt update
-          sudo apt install -y ninja-build cppcheck clang-tidy-18 ${{ matrix.apt_pkgs }}
+          sudo apt install -y ninja-build cppcheck clang-tidy-18 pandoc ${{ matrix.apt_pkgs }}
 
       - name: Setup vcpkg
         run: |

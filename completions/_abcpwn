@@ -1,0 +1,95 @@
+#compdef abcpwn
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2026 manop55555
+#
+# zsh completion for abcpwn. Drop into a directory on $fpath
+# (e.g. /usr/share/zsh/site-functions/) and ensure compinit has run.
+
+_abcpwn() {
+    local -a subcommands global_flags
+
+    subcommands=(
+        # recon
+        'info:show mitigations, arch, symbols, libc hint'
+        'syms:list symbols (dynamic/static/imports/exports)'
+        'strings:list printable strings in a binary'
+        'search:search a binary for ASCII or hex byte patterns'
+        'hash:compute file hash (sha256 default)'
+        # encoding
+        'pack:pack an integer into raw bytes (endian + width)'
+        'unpack:unpack raw bytes into an integer'
+        'hex:encode raw input as hex bytes'
+        'unhex:decode hex bytes into raw output'
+        'b64:encode or decode base64'
+        'xor:xor bytes against a repeating key'
+        'errno:look up POSIX errno by number or name'
+        'constgrep:search compiled-in constants'
+        # asm
+        'asm:assemble source text into raw bytes (requires Keystone)'
+        'disasm:disassemble raw bytes with capstone'
+        'phd:pretty hex dump'
+        # pattern
+        'cyclic:generate or search a pwntools-style cyclic sequence'
+        # rop
+        'gadget:find ROP gadgets in a binary'
+        'rop:build a ROP chain for a given strategy'
+        'one-gadget:find execve one-gadget candidates in libc'
+        # specialized
+        'srop:build a sigreturn-oriented programming frame'
+        'ret2dl:ret2dlresolve helper'
+        'dynelf:consume leak pairs to identify libc'
+        'aslr-bypass:ASLR / PIE bypass helpers'
+        # shellcode
+        'shellcode:emit a built-in shellcode payload'
+        # format
+        'fmt:format string analysis and payload generation'
+        # got
+        'got:list GOT entries and build overwrite payloads'
+        # heap
+        'heap:describe a heap exploitation primitive on a given libc'
+        'safe-link:encode or decode glibc safe-linking obfuscation'
+        # file/c++
+        'iofile:FILE-stream exploitation helper'
+        'vtable:list/analyze/hijack C++ vtables'
+        # sandbox
+        'seccomp:decode and reason about seccomp BPF filters'
+        'libc:identify and inspect glibc versions'
+        # workflow
+        'pwninit:set up a CTF pwn challenge workspace'
+        'pwn:I/O tubes for CTF pwn challenges'
+        'template:emit a pwntools exploit skeleton'
+        'diff:byte-level diff between two binaries'
+        'patch:apply byte / NOP / asm patches to a binary'
+    )
+
+    global_flags=(
+        '--format[output format: pretty | json]:format:(pretty json)'
+        '--color[color policy]:color:(auto always never)'
+        '--no-color[disable color output]'
+        '--no-banner[suppress the banner]'
+        '--config[path to a TOML config file]:config file:_files'
+        '--log-file[write a JSON log of the run]:log file:_files'
+        '--allow-network[enable network for libc/pwninit]'
+        '--help[print help]'
+        '--version[print version]'
+    )
+
+    _arguments -C \
+        $global_flags \
+        '1: :->subcmd' \
+        '*::arg:->args'
+
+    case "$state" in
+        subcmd)
+            _describe 'subcommand' subcommands
+            ;;
+        args)
+            # Per-subcommand argument completion is intentionally
+            # not enumerated here; abcpwn's --help text is the
+            # authoritative source for each subcommand's flags.
+            _files
+            ;;
+    esac
+}
+
+_abcpwn "$@"
