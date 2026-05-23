@@ -21,10 +21,12 @@
 // Every command surface.
 #include <chrono>
 #include <cstdint>
+#include <cstdlib>
 #include <iostream>
 #include <memory>
 #include <sstream>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include <CLI/CLI.hpp>
@@ -93,6 +95,39 @@ std::string build_version_block() {
     os << "  Capstone: " << core::capstone_version << "\n";
     os << "\nApache-2.0 licensed.\n";
     os << "https://github.com/manop55555/abcpwn\n";
+    return os.str();
+}
+
+// Human-readable summary of the no-network policy. Printed by
+// --about-network so CTF organizers and security auditors can
+// confirm the invariant without grepping source. Mirrors the
+// guarantees enumerated in docs/SECURITY-MODEL.md.
+std::string build_about_network_text() {
+    namespace core = abcpwn::core;
+    std::ostringstream os;
+    os << "abcpwn network policy\n";
+    os << "=====================\n\n";
+    os << "abcpwn makes no network calls by default. Only two\n";
+    os << "subcommands ever touch the wire, and both refuse to run\n";
+    os << "without the explicit --allow-network global flag:\n\n";
+    os << "  libc download    fetch a libc archive from libc.rip\n";
+    os << "  pwninit          fetch the matching dynamic linker\n\n";
+    os << "Without --allow-network, those subcommands exit with code\n";
+    os << "12 (NetworkDisabled) and print:\n";
+    os << "  [-] network access disabled (use --allow-network to enable)\n\n";
+    os << "All other subcommands operate offline against the local\n";
+    os << "filesystem only. There is no telemetry, no analytics, no\n";
+    os << "crash reporting, no auto-update, and no phone-home of any\n";
+    os << "kind. CI enforces this via scripts/check-no-telemetry.sh\n";
+    os << "and scripts/check-urls.sh.\n\n";
+    os << "Defense-in-depth: setting ABCPWN_NO_NETWORK=1 in the\n";
+    os << "environment forces network access off even when\n";
+    os << "--allow-network is passed. Useful for locked-down CI or\n";
+    os << "shared infrastructure.\n\n";
+    os << "Build-time feature flags affecting network code:\n";
+    os << "  network=" << (core::have_network ? "yes" : "no") << "\n";
+    os << "(When network=no, the libc download and pwninit fetch\n";
+    os << "code paths are compiled out entirely.)\n";
     return os.str();
 }
 
@@ -178,6 +213,14 @@ int main(int argc, char** argv) {
     app.set_version_flag("--version", &build_version_block);
     app.require_subcommand(0, 1);
 
+    // --about-network prints the no-network policy and exits.
+    // Handled via a flag-with-callback so it short-circuits before
+    // subcommand dispatch, matching the --version pattern.
+    bool show_about_network{false};
+    app.add_flag("--about-network",
+                 show_about_network,
+                 "Print the network policy and exit (no network calls).");
+
     // Global flags. After parse they are folded into a Context that
     // every ICommand::run sees.
     std::string format_str{"pretty"};
@@ -224,6 +267,15 @@ int main(int argc, char** argv) {
     ctx.verbosity = verbose_count - (quiet ? 1 : 0);
     ctx.no_banner = no_banner;
     ctx.allow_network = allow_network;
+
+    // Defense-in-depth: ABCPWN_NO_NETWORK=1 in the environment forces
+    // network access off even when --allow-network is passed. Lets
+    // locked-down CI and shared infrastructure prevent operators from
+    // accidentally enabling the two network-using subcommands.
+    if (const char* no_net = std::getenv("ABCPWN_NO_NETWORK");
+        no_net != nullptr && std::string_view{no_net} == "1") {
+        ctx.allow_network = false;
+    }
     if (!log_file_path.empty()) {
         ctx.log_file = log_file_path;
     }
@@ -243,6 +295,14 @@ int main(int argc, char** argv) {
     if (show_banner) {
         const bool color = output::PrettyPrinter::should_color(ctx, std::cout);
         output::print_banner(std::cout, color);
+        return 0;
+    }
+
+    // --about-network: print the policy and exit. Done after the
+    // Context is built so the printed feature flags reflect the
+    // running binary, not just compile-time defaults.
+    if (show_about_network) {
+        std::cout << build_about_network_text();
         return 0;
     }
 
