@@ -16,12 +16,12 @@ paths-ignore:
   - tests/fixtures/**
 
 # cpp/poorly-documented-function flags functions over a certain
-# size with a comment-line ratio under 2 percent. The project policy
-# (CLAUDE.md, "Default to writing no comments. Only add one when the
-# WHY is non-obvious.") expressly avoids narrative comments, so the
-# rule produces structural false positives on any sufficiently long
-# action-dispatcher function. Exclude the rule project-wide rather
-# than per-file.
+# size with a comment-line ratio under 2 percent. The project's
+# documented style is to default to no narrative comments and only
+# add one when the WHY is non-obvious, so the rule produces
+# structural false positives on any sufficiently long action-
+# dispatcher function. Exclude the rule project-wide rather than
+# per-file.
 query-filters:
   - exclude:
       id: cpp/poorly-documented-function
