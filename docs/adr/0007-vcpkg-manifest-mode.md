@@ -65,9 +65,9 @@ Harder:
   Version skew across distributions. We would track three
   different versions of LIEF, for example, and surface different
   bugs on different developer machines.
-- **Conan.** Reject. Comparable feature set to vcpkg, but the
-  Anthropic-LLVM CMake-first integration is slightly cleaner with
-  vcpkg toolchain files, and the recipe quality for our specific
+- **Conan.** Reject. Comparable feature set to vcpkg, but
+  CMake-first integration is slightly cleaner with vcpkg
+  toolchain files, and the recipe quality for our specific
   dependency set is more uniform.
 - **CMake `FetchContent` for everything.** Reject. Builds every
   dependency from source every time. We do use FetchContent for

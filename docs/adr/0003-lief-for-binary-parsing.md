@@ -56,8 +56,9 @@ Harder:
   Mach-O LC_ commands). The attack surface a single malformed
   binary opens is too high to maintain in-house.
 - **objdump or readelf shell-outs.** Reject. Slow, depends on
-  external tools, and CLAUDE.md forbids `system()` / `popen()` /
-  `exec*()` anywhere in `src/`.
+  external tools, and the project security model forbids
+  `system()` / `popen()` / `exec*()` anywhere in `src/`. See
+  [../SECURITY-MODEL.md](../SECURITY-MODEL.md) Rule 5.
 - **libbfd.** Reject. GPL-licensed; would force the default build
   to be GPL.
 - **Per-format library mix.** Reject. Wrapping three separate
