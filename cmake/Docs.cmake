@@ -62,7 +62,7 @@ install(FILES "${CMAKE_SOURCE_DIR}/completions/abcpwn.bash"
         COMPONENT abcpwn-docs)
 
 install(FILES "${CMAKE_SOURCE_DIR}/completions/_abcpwn"
-        DESTINATION "${CMAKE_INSTALL_DATADIR}/zsh/site-functions"
+        DESTINATION "${CMAKE_INSTALL_DATADIR}/zsh/vendor-completions"
         COMPONENT abcpwn-docs)
 
 install(FILES "${CMAKE_SOURCE_DIR}/completions/abcpwn.fish"

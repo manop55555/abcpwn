@@ -178,7 +178,8 @@ The install layout:
 - `/usr/local/bin/abcpwn`
 - `/usr/local/share/man/man1/abcpwn.1`
 - `/usr/local/share/bash-completion/completions/abcpwn`
-- `/usr/local/share/zsh/site-functions/_abcpwn`
+- `/usr/local/share/zsh/vendor-completions/_abcpwn`  (default; on stock Ubuntu's `$fpath`)
+  Alternative for source builds: `/usr/local/share/zsh/site-functions/_abcpwn`
 - `/usr/local/share/fish/vendor_completions.d/abcpwn.fish`
 
 ### From release artifacts

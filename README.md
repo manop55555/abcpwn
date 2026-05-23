@@ -60,7 +60,28 @@ Linux or macOS is supported.
 
 Pre-built binaries: [GitHub Releases](https://github.com/manop55555/abcpwn/releases).
 
-One-liner:
+### Install from the release tarball
+
+```bash
+curl -LO https://github.com/manop55555/abcpwn/releases/download/v0.1.0-alpha.2/abcpwn-linux-x86_64.tar.gz
+curl -LO https://github.com/manop55555/abcpwn/releases/download/v0.1.0-alpha.2/SHA256SUMS
+sha256sum -c SHA256SUMS --ignore-missing
+tar -xzf abcpwn-linux-x86_64.tar.gz
+cd abcpwn-linux-x86_64
+
+sudo install -m 755 abcpwn                /usr/local/bin/abcpwn
+sudo install -m 644 abcpwn.1              /usr/local/share/man/man1/abcpwn.1
+sudo install -m 644 completions/abcpwn.bash \
+    /usr/local/share/bash-completion/completions/abcpwn
+# stock Ubuntu's default $fpath includes vendor-completions/
+sudo install -m 644 completions/_abcpwn   /usr/local/share/zsh/vendor-completions/_abcpwn
+# fall-back path for source builds:
+# sudo install -m 644 completions/_abcpwn /usr/local/share/zsh/site-functions/_abcpwn
+sudo install -m 644 completions/abcpwn.fish \
+    /usr/local/share/fish/vendor_completions.d/abcpwn.fish
+```
+
+### One-liner
 
 ```bash
 curl -sSL https://raw.githubusercontent.com/manop55555/abcpwn/main/scripts/install.sh | bash

@@ -164,16 +164,7 @@ CLI contract.
 :   When set (to any value), disables ANSI color output. The
     **--no-color** flag has the same effect.
 
-`XDG_CACHE_HOME`
-:   Override the default cache directory
-    (`~/.cache/abcpwn/`).
-
 # FILES
-
-`~/.cache/abcpwn/`
-:   Default cache directory. Holds downloaded libc archives (when
-    **--allow-network** is used), pre-computed gadget indexes per
-    binary (keyed by SHA-256), and per-run temporary state.
 
 `~/.config/abcpwn/`
 :   User configuration directory. Honored by **--config** when no
@@ -185,8 +176,11 @@ CLI contract.
 `/usr/share/bash-completion/completions/abcpwn`
 :   Bash completion script.
 
-`/usr/share/zsh/site-functions/_abcpwn`
-:   Zsh completion function.
+`/usr/share/zsh/vendor-completions/_abcpwn`
+:   Zsh completion function. Stock Ubuntu's default `$fpath`
+    includes `vendor-completions/` for distro packages.
+    `/usr/share/zsh/site-functions/` is the alternative when
+    installing manually from source.
 
 `/usr/share/fish/vendor_completions.d/abcpwn.fish`
 :   Fish completion script.
