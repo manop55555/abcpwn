@@ -4,11 +4,15 @@
 #include "abcpwn/output/json_writer.hpp"
 
 #include <chrono>
+#include <cstdint>
+#include <iostream>
 #include <ostream>
+#include <span>
 #include <variant>
 
 #include <nlohmann/json.hpp>
 
+#include "abcpwn/commands/encoding.hpp"
 #include "abcpwn/core/version.hpp"
 
 namespace abcpwn::output {
@@ -139,11 +143,47 @@ void JsonWriter::write(
         envelope["result"]["summary_text"] = *res.summary;
     }
     if (!res.raw_lines.empty()) {
-        envelope["result"]["lines"] = res.raw_lines;
+        if (res.raw_payload) {
+            // Opaque binary bytes. JSON strings must be UTF-8;
+            // non-UTF-8 bytes make nlohmann::json throw
+            // type_error.316 at dump time and the process aborts.
+            // Concatenate the raw_lines and encode as base64
+            // under bytes_b64 so any byte sequence round-trips
+            // through a stable, parseable schema. Also expose
+            // bytes_hex for callers that prefer it.
+            std::vector<std::uint8_t> all;
+            std::size_t total = 0;
+            for (const auto& line : res.raw_lines) {
+                total += line.size();
+            }
+            all.reserve(total);
+            for (const auto& line : res.raw_lines) {
+                all.insert(all.end(),
+                           reinterpret_cast<const std::uint8_t*>(line.data()),
+                           reinterpret_cast<const std::uint8_t*>(line.data() + line.size()));
+            }
+            envelope["result"]["bytes_b64"] = abcpwn::commands::encoding::base64_encode(all);
+            envelope["result"]["bytes_hex"] = abcpwn::commands::encoding::hex_encode(all, "");
+            envelope["result"]["bytes_len"] = static_cast<std::int64_t>(all.size());
+        } else {
+            envelope["result"]["lines"] = res.raw_lines;
+        }
     }
     envelope["result"]["exit_code"] = res.exit_code;
 
-    os << envelope.dump(2) << '\n';
+    // Defense-in-depth: a future raw_lines path that forgets to
+    // set raw_payload would still throw type_error.316 here. Catch
+    // the exception, drop the offending field, and re-emit as a
+    // {"error": ...} envelope so a JSON consumer sees a structured
+    // failure rather than SIGABRT.
+    try {
+        os << envelope.dump(2) << '\n';
+    } catch (const nlohmann::json::type_error& e) {
+        std::cerr << "[-] json: non-UTF-8 bytes leaked into a string field (" << e.what() << ")\n";
+        envelope["result"].erase("lines");
+        envelope["error"] = std::string("non-UTF-8 payload; serialization aborted");
+        os << envelope.dump(2) << '\n';
+    }
 }
 
 } // namespace abcpwn::output

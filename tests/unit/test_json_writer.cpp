@@ -84,3 +84,48 @@ TEST_CASE("json result.exit_code defaults to zero", "[json]") {
     const auto j = json::parse(oss.str());
     REQUIRE(j["result"]["exit_code"].get<int>() == 0);
 }
+
+TEST_CASE("json raw_payload encodes binary bytes as base64 + hex", "[json][raw-bytes]") {
+    abcpwn::core::Context ctx;
+    ctx.format = abcpwn::core::OutputFormat::Json;
+    abcpwn::output::JsonWriter w(ctx);
+    std::ostringstream oss;
+    abcpwn::core::CommandResult res;
+    res.raw_payload = true;
+    // Non-UTF-8 bytes that previously aborted nlohmann::dump.
+    res.raw_lines.emplace_back(std::string{"\xde\xad\xbe\xef", 4});
+
+    // Must not throw / abort.
+    REQUIRE_NOTHROW(w.write(oss, "unhex", res));
+
+    const auto j = json::parse(oss.str());
+    REQUIRE(j["result"]["bytes_b64"].get<std::string>() == "3q2+7w==");
+    REQUIRE(j["result"]["bytes_hex"].get<std::string>() == "deadbeef");
+    REQUIRE(j["result"]["bytes_len"].get<int>() == 4);
+    // The legacy "lines" field is not present for raw_payload so
+    // downstream tools never see a string holding raw bytes.
+    REQUIRE_FALSE(j["result"].contains("lines"));
+}
+
+TEST_CASE("json raw_payload handles all 256 byte values", "[json][raw-bytes]") {
+    abcpwn::core::Context ctx;
+    ctx.format = abcpwn::core::OutputFormat::Json;
+    abcpwn::output::JsonWriter w(ctx);
+    std::ostringstream oss;
+    abcpwn::core::CommandResult res;
+    res.raw_payload = true;
+    std::string all;
+    all.reserve(256);
+    for (int i = 0; i < 256; ++i) {
+        all.push_back(static_cast<char>(i));
+    }
+    res.raw_lines.push_back(all);
+
+    REQUIRE_NOTHROW(w.write(oss, "noop", res));
+    const auto j = json::parse(oss.str());
+    REQUIRE(j["result"]["bytes_len"].get<int>() == 256);
+    // Spot-check a couple bytes via the hex representation.
+    const auto hex = j["result"]["bytes_hex"].get<std::string>();
+    REQUIRE(hex.substr(0, 4) == "0001");
+    REQUIRE(hex.substr(508, 4) == "feff");
+}
