@@ -43,6 +43,90 @@ include(Coverage)
 include(Dependencies)
 
 # --- version header (generated) ---------------------------------------------
+# Build provenance fields consumed by --version output. Each lookup
+# tolerates missing inputs so a clean tarball / non-git build still
+# configures.
+
+# git commit (short SHA) - "unknown" if not a git checkout
+find_package(Git QUIET)
+if(GIT_EXECUTABLE AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+        COMMAND "${GIT_EXECUTABLE}" -C "${CMAKE_SOURCE_DIR}" rev-parse --short HEAD
+        OUTPUT_VARIABLE ABCPWN_GIT_COMMIT
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+endif()
+if(NOT ABCPWN_GIT_COMMIT)
+    set(ABCPWN_GIT_COMMIT "unknown")
+endif()
+
+# build date - honor SOURCE_DATE_EPOCH for reproducible builds
+if(DEFINED ENV{SOURCE_DATE_EPOCH})
+    execute_process(
+        COMMAND date -u -d "@$ENV{SOURCE_DATE_EPOCH}" +%Y-%m-%d
+        OUTPUT_VARIABLE ABCPWN_BUILD_DATE
+        OUTPUT_STRIP_TRAILING_WHITESPACE
+        ERROR_QUIET
+    )
+endif()
+if(NOT ABCPWN_BUILD_DATE)
+    string(TIMESTAMP ABCPWN_BUILD_DATE "%Y-%m-%d" UTC)
+endif()
+
+# arch + compiler
+set(ABCPWN_ARCH_TRIPLE "${CMAKE_SYSTEM_PROCESSOR}-${CMAKE_SYSTEM_NAME}")
+string(TOLOWER "${ABCPWN_ARCH_TRIPLE}" ABCPWN_ARCH_TRIPLE)
+set(ABCPWN_CXX_COMPILER "${CMAKE_CXX_COMPILER_ID} ${CMAKE_CXX_COMPILER_VERSION}")
+
+# vcpkg baseline - parse from vcpkg-configuration.json if present,
+# else from vcpkg.json
+set(ABCPWN_VCPKG_BASELINE "unknown")
+foreach(_vcpkg_file
+        "${CMAKE_SOURCE_DIR}/vcpkg-configuration.json"
+        "${CMAKE_SOURCE_DIR}/vcpkg.json")
+    if(EXISTS "${_vcpkg_file}")
+        file(READ "${_vcpkg_file}" _vcpkg_contents)
+        string(REGEX MATCH "\"baseline\"[ \t\n]*:[ \t\n]*\"([0-9a-f]+)\""
+               _baseline_match "${_vcpkg_contents}")
+        if(CMAKE_MATCH_1)
+            string(SUBSTRING "${CMAKE_MATCH_1}" 0 12 ABCPWN_VCPKG_BASELINE)
+            break()
+        endif()
+    endif()
+endforeach()
+
+# LIEF + Capstone versions from find_package config
+if(DEFINED LIEF_VERSION_STRING)
+    set(ABCPWN_LIEF_VERSION "${LIEF_VERSION_STRING}")
+elseif(DEFINED LIEF_VERSION)
+    set(ABCPWN_LIEF_VERSION "${LIEF_VERSION}")
+else()
+    set(ABCPWN_LIEF_VERSION "unknown")
+endif()
+if(DEFINED capstone_VERSION)
+    set(ABCPWN_CAPSTONE_VERSION "${capstone_VERSION}")
+else()
+    set(ABCPWN_CAPSTONE_VERSION "unknown")
+endif()
+
+# Feature flags as C++ bool literals
+if(ABCPWN_WITH_KEYSTONE)
+    set(ABCPWN_HAVE_KEYSTONE "true")
+else()
+    set(ABCPWN_HAVE_KEYSTONE "false")
+endif()
+if(ABCPWN_WITH_NETWORK)
+    set(ABCPWN_HAVE_NETWORK "true")
+else()
+    set(ABCPWN_HAVE_NETWORK "false")
+endif()
+if(ABCPWN_WITH_UNICORN)
+    set(ABCPWN_HAVE_UNICORN "true")
+else()
+    set(ABCPWN_HAVE_UNICORN "false")
+endif()
+
 configure_file(
     "${CMAKE_SOURCE_DIR}/cmake/version.hpp.in"
     "${CMAKE_BINARY_DIR}/generated/abcpwn/core/version.hpp"

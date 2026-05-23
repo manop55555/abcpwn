@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <iostream>
 #include <memory>
+#include <sstream>
 #include <string>
 #include <vector>
 
@@ -71,6 +72,29 @@ struct DispatchEntry {
     std::unique_ptr<abcpwn::core::ICommand> cmd;
     CLI::App* sub{nullptr};
 };
+
+// STEP/18-shaped --version output. Combines the compact banner
+// header (per STEP/02) with the build provenance block configured
+// from cmake/version.hpp.in. Returned as a single string so CLI11
+// can hand it to the user via set_version_flag's callback.
+std::string build_version_block() {
+    namespace core = abcpwn::core;
+    std::ostringstream os;
+    os << abcpwn::output::compact_header() << "\n\n";
+    os << "abcpwn v" << core::version_string << " (commit " << core::git_commit << ", built "
+       << core::build_date << ")\n";
+    os << "  arch: " << core::arch_triple << "\n";
+    os << "  compiler: " << core::cxx_compiler << "\n";
+    os << "  features: keystone=" << (core::have_keystone ? "yes" : "no")
+       << " network=" << (core::have_network ? "yes" : "no")
+       << " unicorn=" << (core::have_unicorn ? "yes" : "no") << "\n";
+    os << "  vcpkg-baseline: " << core::vcpkg_baseline << "\n";
+    os << "  LIEF: " << core::lief_version << "\n";
+    os << "  Capstone: " << core::capstone_version << "\n";
+    os << "\nApache-2.0 licensed.\n";
+    os << "https://github.com/manop55555/abcpwn\n";
+    return os.str();
+}
 
 template <class C>
 void register_command(CLI::App& root, std::vector<DispatchEntry>& entries) {
@@ -151,7 +175,7 @@ int main(int argc, char** argv) {
     using namespace abcpwn;
 
     CLI::App app{"abcpwn - binary exploitation toolkit"};
-    app.set_version_flag("--version", std::string(core::version_string));
+    app.set_version_flag("--version", &build_version_block);
     app.require_subcommand(0, 1);
 
     // Global flags. After parse they are folded into a Context that

@@ -15,4 +15,18 @@ inline constexpr unsigned version_major = @PROJECT_VERSION_MAJOR@;
 inline constexpr unsigned version_minor = @PROJECT_VERSION_MINOR@;
 inline constexpr unsigned version_patch = @PROJECT_VERSION_PATCH@;
 
+// Build provenance and host context (computed at configure time).
+inline constexpr std::string_view git_commit     = "@ABCPWN_GIT_COMMIT@";
+inline constexpr std::string_view build_date     = "@ABCPWN_BUILD_DATE@";
+inline constexpr std::string_view arch_triple    = "@ABCPWN_ARCH_TRIPLE@";
+inline constexpr std::string_view cxx_compiler   = "@ABCPWN_CXX_COMPILER@";
+inline constexpr std::string_view vcpkg_baseline = "@ABCPWN_VCPKG_BASELINE@";
+inline constexpr std::string_view lief_version   = "@ABCPWN_LIEF_VERSION@";
+inline constexpr std::string_view capstone_version = "@ABCPWN_CAPSTONE_VERSION@";
+
+// Optional features compiled in.
+inline constexpr bool have_keystone = @ABCPWN_HAVE_KEYSTONE@;
+inline constexpr bool have_network  = @ABCPWN_HAVE_NETWORK@;
+inline constexpr bool have_unicorn  = @ABCPWN_HAVE_UNICORN@;
+
 }  // namespace abcpwn::core

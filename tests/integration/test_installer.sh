@@ -58,9 +58,13 @@ for expected in abcpwn LICENSE README.md; do
 done
 
 # Step 4: the extracted binary still reports the expected version.
+# Per STEP/18 the --version output is a multi-line block beginning
+# with the compact banner header followed by the "abcpwn v<semver>"
+# line; match the latter to confirm provenance fields round-trip
+# through the tarball.
 version_out="$("$extract_dir/abcpwn-linux-x86_64/abcpwn" --version 2>&1)"
 case "$version_out" in
-    0.1.0*) ;;
+    *"abcpwn v0.1.0"*) ;;
     *) echo "[-] unexpected --version output: $version_out" >&2; exit 1 ;;
 esac
 
