@@ -84,5 +84,11 @@ if(ABCPWN_BUILD_BENCHES)
     add_subdirectory(benchmarks)
 endif()
 
+# --- install: the binary itself --------------------------------------------
+include(GNUInstallDirs)
+install(TARGETS abcpwn
+        RUNTIME DESTINATION "${CMAKE_INSTALL_BINDIR}"
+        COMPONENT abcpwn)
+
 # --- summary ----------------------------------------------------------------
 abcpwn_platform_summary()
