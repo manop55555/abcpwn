@@ -25,10 +25,6 @@ public:
     std::string target{};
     std::int64_t syscall_number{-1};
     std::vector<std::uint64_t> syscall_args{};
-    std::string ret2win{};
-    std::string leak_symbol{};
-    bool srop{false};
-    std::string format{"pretty"};
 };
 
 } // namespace abcpwn::commands

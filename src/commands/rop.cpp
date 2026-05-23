@@ -62,21 +62,19 @@ void RopCommand::setup(CLI::App& app) {
     app.add_option("--syscall-arg",
                    syscall_args,
                    "Repeat per arg: --syscall 59 --syscall-arg 0x600000 --syscall-arg 0 ...");
-    app.add_option("--ret2win", ret2win, "Symbol name to jump to (currently unsupported)");
-    app.add_option("--leak", leak_symbol, "Symbol whose address to leak (currently unsupported)");
-    app.add_flag("--srop", srop, "Use sigreturn-oriented programming (currently unsupported)");
-    app.add_option("--format", format, "pretty | pwntools (pretty implemented)");
+    // --ret2win, --leak, --srop, --format pwntools were advertised
+    // in --help with "(currently unsupported)" disclaimers per
+    // QA round 1 MAJOR; they parsed flags the binary never
+    // implemented. Removed from the CLI surface entirely; the
+    // dedicated `srop` subcommand covers SROP; ret2win is a
+    // trivial rop with one address that callers can stage from
+    // `syms`. They return in v0.2 if the demand materializes.
 }
 
 core::Result<core::CommandResult> RopCommand::run(const core::Context& /*ctx*/) {
-    if (syscall_number < 0 && ret2win.empty() && leak_symbol.empty() && !srop) {
-        return core::err(core::ErrorCode::UsageError,
-                         "rop: pick a strategy (--syscall N, --ret2win SYM, --leak SYM, --srop)");
-    }
     if (syscall_number < 0) {
-        return core::err(core::ErrorCode::Unsupported,
-                         "rop: only --syscall N is implemented in this milestone; "
-                         "--ret2win, --leak, and --srop land in subsequent versions");
+        return core::err(core::ErrorCode::UsageError,
+                         "rop: pick a strategy (--syscall N --syscall-arg ARG ...)");
     }
 
     auto loaded = formats::load(target);

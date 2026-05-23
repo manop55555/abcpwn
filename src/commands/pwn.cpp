@@ -175,9 +175,8 @@ core::Result<std::vector<DslStep>> parse_dsl(std::string_view source) {
 void PwnCommand::setup(CLI::App& app) {
     app.add_option("target", target, "host:port | unix:/path | ./local-binary")->required();
     app.add_option("-s,--script", script_path, "DSL script to run");
-    app.add_flag("-i,--interactive",
-                 interactive,
-                 "Drop to interactive shell after script (not implemented in v0.1)");
+    // --interactive removed (QA round 1 MAJOR stub). Returns in
+    // v0.2 once the tty-state-machine work lands.
     app.add_option("--log", log_path, "Log all I/O to this file");
     app.add_option("--timeout", timeout_seconds, "Per-recv timeout in seconds");
 }

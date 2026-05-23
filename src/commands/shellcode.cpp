@@ -99,16 +99,26 @@ std::string format_c(std::span<const std::uint8_t> bytes) {
 } // namespace
 
 void ShellcodeCommand::setup(CLI::App& app) {
-    app.add_option("-p,--preset", preset_str, "sh | read-flag | cat-flag | bind | reverse");
+    // The v0.1 shellcode database ships only `sh` across the
+    // three supported arches. `read-flag` / `cat-flag` / `bind` /
+    // `reverse` were advertised in the choice list but not in
+    // the database; they returned ErrorCode::Unsupported when
+    // called. Choice list trimmed to what actually works (QA
+    // round 1 MAJOR).
+    app.add_option("-p,--preset", preset_str, "sh");
     app.add_option("-a,--arch", arch_str, "x86_64 (default) | x86 | aarch64");
-    app.add_option(
-        "-e,--encoder", encoder_str, "none (default) | null-free | xor | printable | alpha");
+    // null-free and xor are implemented; printable + alpha return
+    // ErrorCode::Unsupported and are removed from the choice list
+    // until they ship.
+    app.add_option("-e,--encoder", encoder_str, "none (default) | null-free | xor");
     app.add_option(
         "--xor-key", xor_key_hex, "Hex bytes of the XOR key (required when --encoder xor)");
     app.add_option("--bad-chars", bad_chars_hex, "Hex bytes to exclude from the final payload");
-    app.add_option(
-        "--reverse-addr", reverse_addr, "host:port for --preset reverse (not implemented yet)");
-    app.add_option("--bind-port", bind_port, "TCP port for --preset bind (not implemented yet)");
+    // --reverse-addr / --bind-port removed (QA round 1 MAJOR
+    // stubs). The `reverse` and `bind` presets themselves are
+    // also not in the v0.1 database; only `sh` ships across the
+    // three supported arches. Network shellcode presets return
+    // in v0.2.
     app.add_option("--format", format, "hex (default) | raw | c | escaped");
     app.add_flag("--list", list, "List the built-in database and exit");
 }

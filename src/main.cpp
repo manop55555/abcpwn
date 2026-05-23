@@ -244,7 +244,6 @@ int main(int argc, char** argv) {
     bool no_color{false};
     bool allow_network{false};
     std::string config_path{};
-    std::string log_file_path{};
 
     app.add_option("--format", format_str, "pretty (default) | json");
     app.add_option("--color", color_str, "auto (default) | always | never");
@@ -256,9 +255,9 @@ int main(int argc, char** argv) {
     app.add_flag(
         "--allow-network", allow_network, "Permit network access (libc download, pwninit fetch)");
     app.add_option("--config", config_path, "Path to a TOML config file");
-    app.add_option("--log-file",
-                   log_file_path,
-                   "Write logs to this path (in addition to stderr in pretty mode)");
+    // --log-file was a documented no-op (QA round 1 MAJOR): the
+    // flag accepted a path but never opened the file. Removed
+    // from the CLI; spdlog file-sink wiring returns in v0.2.
 
     std::vector<DispatchEntry> entries;
     register_all(app, entries);
@@ -289,9 +288,6 @@ int main(int argc, char** argv) {
     if (const char* no_net = std::getenv("ABCPWN_NO_NETWORK");
         no_net != nullptr && std::string_view{no_net} == "1") {
         ctx.allow_network = false;
-    }
-    if (!log_file_path.empty()) {
-        ctx.log_file = log_file_path;
     }
     if (!config_path.empty()) {
         auto cfg = core::config::load(config_path);
