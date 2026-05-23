@@ -104,5 +104,9 @@ jobs:
             artifacts/abcpwn-*.tar.gz
             artifacts/SHA256SUMS
           generate_release_notes: true
-          draft: false
+          # Draft mode for v0.1 so the maintainer can inspect the
+          # archive shape (man page, completions, LICENSE-THIRD-PARTY
+          # presence) before publishing. Promote to draft: false in a
+          # v0.2 release-process commit once the pipeline is trusted.
+          draft: true
           prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
