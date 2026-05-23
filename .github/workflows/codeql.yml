@@ -30,7 +30,13 @@ jobs:
       - uses: github/codeql-action/init@v3
         with:
           languages: cpp
-          queries: security-extended,security-and-quality
+          # security-extended only. The security-and-quality suite
+          # added ~285 informational alerts on the first post-config
+          # run (Catch2 macro FPs, vendored-dep style nits, conflicts
+          # with the project's no-comments policy) and zero security
+          # findings. abcpwn is a security tool; the quality suite's
+          # signal-to-noise is too low to be worth the triage cost.
+          queries: security-extended
           config-file: ./.github/codeql/codeql-config.yml
 
       - name: Install prereqs
