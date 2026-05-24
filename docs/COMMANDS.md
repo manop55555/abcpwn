@@ -250,16 +250,22 @@ abcpwn phd ./challenge --offset 0x1000 --length 256
 ### `cyclic` - pwntools-style de Bruijn sequence
 
 ```
-abcpwn cyclic <length>          # generate
-abcpwn cyclic --search <bytes>  # search for offset
+abcpwn cyclic <length>                            # generate
+abcpwn cyclic --find <subseq|0x...|decimal>       # locate offset
+abcpwn cyclic [-n N] [-a ALPHA] <length|--find>
 ```
 
-Compatible with `pwntools.cyclic` (alphabet, period). Lengths up to
-~2.4M characters via the default alphabet.
+Compatible with `pwntools.cyclic`. The default subsequence length
+is 4 and the default alphabet is `abcdefghijklmnopqrstuvwxyz`,
+giving 26^4 = 456976 bytes of unique-window sequence. `--find`
+accepts a literal subsequence (`haaa`), a hex integer (`0x61616168`,
+interpreted as little-endian bytes of width `-n`), or a decimal
+integer (`1633771624`), matching pwntools' calling convention.
 
 ```bash
 abcpwn cyclic 200
-abcpwn cyclic --search 61616168
+abcpwn cyclic --find haaa
+abcpwn cyclic --find 0x61616168
 ```
 
 ## Group: rop

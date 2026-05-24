@@ -78,6 +78,42 @@ TEST_CASE("cyclic_find on absent input returns nullopt", "[cyclic]") {
     REQUIRE_FALSE(missing.has_value());
 }
 
+TEST_CASE("CyclicCommand --find accepts an integer literal like pwntools",
+          "[cyclic][command][find]") {
+    // 0x61616168 little-endian -> bytes {0x68, 0x61, 0x61, 0x61}
+    // == "haaa", which lives at offset 28 in the default abc..xyz
+    // alphabet's de Bruijn sequence (a..g blocks of "<x>aaa" precede
+    // it: 7 blocks * 4 bytes = 28). Whatever the actual offset, the
+    // integer and ASCII forms must agree.
+    abcpwn::core::Context ctx;
+    abcpwn::commands::CyclicCommand cmd;
+    cmd.find = "0x61616168";
+    auto r_hex = cmd.run(ctx);
+    REQUIRE(r_hex);
+    REQUIRE(r_hex->raw_lines.size() == 1);
+    REQUIRE(r_hex->raw_lines[0] == "28");
+
+    cmd.find = "1633771880"; // decimal form of 0x61616168
+    auto r_dec = cmd.run(ctx);
+    REQUIRE(r_dec);
+    REQUIRE(r_dec->raw_lines[0] == "28");
+
+    cmd.find = "haaa"; // ASCII form must agree
+    auto r_ascii = cmd.run(ctx);
+    REQUIRE(r_ascii);
+    REQUIRE(r_ascii->raw_lines[0] == "28");
+}
+
+TEST_CASE("CyclicCommand --find rejects non-integer / non-subseq input",
+          "[cyclic][command][find]") {
+    abcpwn::core::Context ctx;
+    abcpwn::commands::CyclicCommand cmd;
+    cmd.find = "0xZZ"; // not a valid integer literal, not a subseq
+    auto r = cmd.run(ctx);
+    REQUIRE_FALSE(r);
+    REQUIRE(r.error().code == abcpwn::core::ErrorCode::NotFound);
+}
+
 TEST_CASE("CyclicCommand rejects length past unique-window limit", "[cyclic][command][size]") {
     abcpwn::core::Context ctx;
     CyclicCommand cmd;

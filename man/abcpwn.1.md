@@ -120,11 +120,12 @@ Synthesize a ROP chain that calls execve("/bin/sh"):
 
     abcpwn rop ./challenge --execve
 
-Generate a cyclic pattern and search for the offset of a leaked
-four bytes:
+Generate a cyclic pattern and locate the offset of four leaked
+bytes (the integer form is interpreted little-endian, matching
+pwntools.cyclic_find):
 
     abcpwn cyclic 200
-    abcpwn cyclic --search 0x6161616a
+    abcpwn cyclic --find 0x6161616a
 
 Emit JSON output for pipelines:
 

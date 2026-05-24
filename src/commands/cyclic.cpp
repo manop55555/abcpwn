@@ -4,6 +4,7 @@
 #include "abcpwn/commands/cyclic.hpp"
 
 #include <algorithm>
+#include <charconv>
 #include <cstddef>
 #include <cstdint>
 #include <functional>
@@ -116,10 +117,65 @@ void CyclicCommand::setup(CLI::App& app) {
     app.add_option("--find", find, "Subsequence to locate in the cyclic sequence");
 }
 
+namespace {
+
+// pwntools accepts integers as well as byte strings for cyclic_find:
+// `cyclic_find(0x61616168)` and `cyclic_find(b'haaa')` are equivalent.
+// Detect the integer form (decimal or hex 0x...) here and convert it
+// to the little-endian byte representation of width = subseq_length.
+// Returns std::nullopt if the input is not an integer literal.
+[[nodiscard]] std::optional<std::string> needle_from_integer(std::string_view s,
+                                                             std::size_t subseq_length) noexcept {
+    if (s.empty() || subseq_length == 0) {
+        return std::nullopt;
+    }
+    bool negative = false;
+    std::string_view body = s;
+    if (body.front() == '+' || body.front() == '-') {
+        negative = (body.front() == '-');
+        body.remove_prefix(1);
+        if (body.empty()) {
+            return std::nullopt;
+        }
+    }
+    int base = 10;
+    if (body.size() >= 2 && body[0] == '0' && (body[1] == 'x' || body[1] == 'X')) {
+        base = 16;
+        body.remove_prefix(2);
+        if (body.empty()) {
+            return std::nullopt;
+        }
+    }
+    std::uint64_t v = 0;
+    const auto* end = body.data() + body.size();
+    const auto r = std::from_chars(body.data(), end, v, base);
+    if (r.ec != std::errc{} || r.ptr != end) {
+        return std::nullopt;
+    }
+    if (negative) {
+        v = static_cast<std::uint64_t>(-static_cast<std::int64_t>(v));
+    }
+    std::string bytes(subseq_length, '\0');
+    for (std::size_t i = 0; i < subseq_length; ++i) {
+        bytes[i] = static_cast<char>((v >> (8 * i)) & 0xff);
+    }
+    return bytes;
+}
+
+} // namespace
+
 core::Result<core::CommandResult> CyclicCommand::run(const core::Context& /*ctx*/) {
     core::CommandResult res;
     if (!find.empty()) {
-        auto off = cyclic_find(find, alphabet, subseq_length);
+        // Accept both pwntools-style integer needles (0x61616168 ->
+        // little-endian bytes) and literal byte strings. The integer
+        // path lets users paste a register value out of a debugger
+        // straight into --find without converting to ASCII first.
+        std::string needle = find;
+        if (auto fi = needle_from_integer(find, subseq_length)) {
+            needle = *fi;
+        }
+        auto off = cyclic_find(needle, alphabet, subseq_length);
         if (!off) {
             return core::err(core::ErrorCode::NotFound, "cyclic: subsequence not found");
         }
