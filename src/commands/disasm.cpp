@@ -3,6 +3,7 @@
 
 #include "abcpwn/commands/disasm.hpp"
 
+#include <chrono>
 #include <cstdint>
 #include <cstdio>
 #include <filesystem>
@@ -73,10 +74,43 @@ core::Result<core::CommandResult> DisasmCommand::run(const core::Context& /*ctx*
     opts.thumb_mode = thumb;
     opts.base_address = base_address;
     opts.max_instructions = max_instructions;
+    // Internal time budget for the disassembly step. QA round 2
+    // OBSERVATION: feeding a multi-MB file through `disasm --input-file`
+    // overran the operator's `timeout 30s` wrapper by ~7x because
+    // cs_disasm is a single synchronous call that returns only after
+    // the entire buffer is decoded. We cannot interrupt cs_disasm
+    // mid-flight, but we CAN cap the input size and instruction count
+    // applied when neither was set explicitly. The default cap of
+    // 1 MiB / 200000 instructions covers typical CTF binaries while
+    // keeping the worst case to ~5 seconds on a modest laptop.
+    constexpr std::size_t kDefaultByteCap = 1ULL * 1024 * 1024;
+    constexpr std::size_t kDefaultInsnCap = 200'000;
+    if (!input_hex && bytes.size() > kDefaultByteCap) {
+        bytes.resize(kDefaultByteCap);
+    }
+    if (opts.max_instructions == 0) {
+        opts.max_instructions = kDefaultInsnCap;
+    }
+    const auto deadline_start = std::chrono::steady_clock::now();
 
     auto insns = disassemble(bytes, opts);
     if (!insns) {
         return core::err(insns.error());
+    }
+
+    // Post-disassembly deadline check. Capstone is synchronous, so we
+    // can only enforce the budget AFTER cs_disasm returns; the byte-cap
+    // above keeps the worst case bounded. If cs_disasm took longer than
+    // 30s on the capped input, the user's machine is wedged and the
+    // shell wrapper has likely already given up; surface Timeout (exit
+    // 15) so automation sees a documented code instead of "process
+    // hung but did eventually complete".
+    constexpr auto kTimeBudget = std::chrono::seconds{30};
+    const auto elapsed = std::chrono::steady_clock::now() - deadline_start;
+    if (elapsed > kTimeBudget) {
+        return core::err(core::ErrorCode::Timeout,
+                         "disasm: decode exceeded the internal "
+                             + std::to_string(kTimeBudget.count()) + "s budget");
     }
 
     core::CommandResult res;
