@@ -170,6 +170,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   push to `main` is gated by ASan/UBSan/TSan and coverage, not just `ci`
   and `codeql`. New `docs/CI.md` documents every workflow's trigger
   matrix and what it gates (CI integrity).
+- the nightly `fuzz` workflow no longer auto-opens a GitHub issue on a
+  crash; in v0.1.x it uploads the crash artifact only. Every crash so
+  far is the same known upstream LIEF note-size OOM (tracked for
+  v0.1.1), and auto-filing refilled the issue tracker on every run.
+  Auto-filing and gating return in v0.2 once that backlog clears
+  (IMP-1 follow-up).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

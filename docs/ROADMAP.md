@@ -79,6 +79,12 @@
   the LCOV trace as a workflow artifact only; Codecov integration
   needs either a public repo or a paid Codecov plan for private
   repos.
+- Re-enable fuzz auto-issue-filing. `fuzz.yml` is artifact-only in
+  v0.1.x: it uploads the crash artifact but does not open an issue,
+  because the current backlog is the single known upstream LIEF
+  note-size OOM (v0.1.1 item above) and auto-filing refilled the tracker
+  on every run. Once the loader hardening lands, restore the auto-file
+  step and the job's gating so genuinely new crashes surface as issues.
 - Organic test growth from 185 toward 200+. Per session 11 audit:
   pad coverage with rapidcheck property tests (pack/unpack,
   hex/unhex, cyclic invariants) and per-command pretty/json
