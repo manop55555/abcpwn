@@ -101,4 +101,25 @@ if grep -qE '^\[WARNING\]|^\[ERROR\]|^\[CRITICAL\]|Can'"'"'t read' err; then
     exit 1
 fi
 
+# DEF-15: info must not emit a confident mitigation report for a file it
+# cannot identify. A valid ELF magic followed by random bytes parses
+# leniently in LIEF but yields arch=unknown; info now returns Corrupted
+# (11) rather than rc=0 with alarming bogus NX/PIE/Canary findings.
+{ printf '\x7fELF'; head -c 200 /dev/urandom; } > "$tmp/garbage-elf"
+set +e
+"$ABCPWN_BIN" --no-banner info "$tmp/garbage-elf" >/dev/null 2>err
+rc=$?
+set -e
+if [ "$rc" -ne 11 ]; then
+    echo "[-] info on a garbage ELF: expected 11 (Corrupted), got $rc" >&2
+    cat err >&2
+    exit 1
+fi
+# A valid ELF still analyzes cleanly (no false-positive Corrupted).
+set +e
+"$ABCPWN_BIN" --no-banner info /bin/ls >/dev/null 2>/dev/null
+rc=$?
+set -e
+[ "$rc" -eq 0 ] || { echo "[-] info /bin/ls regressed to exit $rc" >&2; exit 1; }
+
 echo "[+] test_corrupt_elf ok"

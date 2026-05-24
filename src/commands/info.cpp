@@ -48,6 +48,18 @@ core::Result<core::CommandResult> InfoCommand::run(const core::Context& ctx) {
     }
     const auto& info = loaded->info();
 
+    // DEF-15: do not emit a confident mitigation report for a file we
+    // could not actually identify. When the architecture is unknown
+    // (e.g. random bytes after the ELF magic, or a smashed e_machine),
+    // the NX / PIE / Canary findings are meaningless and alarmingly
+    // misleading. Treat it as Corrupted unless the user forced an arch.
+    if (arch_override.empty() && (info.arch.empty() || info.arch == "unknown")) {
+        return core::err(core::ErrorCode::Corrupted,
+                         target
+                             + ": could not determine the architecture; the file looks corrupt "
+                               "or is not a supported binary (pass --arch to override)");
+    }
+
     core::CommandResult res;
 
     {

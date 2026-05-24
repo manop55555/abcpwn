@@ -81,6 +81,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `phd` and `disasm --input-file` honor `ABCPWN_MAX_FILE_SIZE`, refusing
   oversized files with `SizeExceeded` (exit 9) like the other
   file-reading commands; they previously read any size (DEF-13).
+- `info` returns `Corrupted` (exit 11) for a file whose architecture
+  cannot be determined (e.g. random bytes after the ELF magic) instead
+  of a confident, alarming NX/PIE/Canary report at exit 0; pass `--arch`
+  to force analysis of an unrecognized binary (DEF-15).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
