@@ -299,12 +299,15 @@ abcpwn rop <target> --syscall N --syscall-arg ARG [--syscall-arg ARG ...]
 
 Builds an x86_64 syscall chain. Supply the syscall number with
 `--syscall` and zero or more arguments with repeated `--syscall-arg`
-flags. The command resolves `pop rax/rdi/rsi/rdx ; ret` and a
-`syscall` gadget from the target's executable sections and emits the
-chain layout. Non-syscall strategies (ret2win, leak, srop-via-rop,
-pwntools snippet emission) are not in v0.1; the dedicated `srop`
-subcommand covers SROP, and `syms` plus manual staging covers
-ret2win.
+flags. The command first looks for exact `pop rax/rdi/rsi/rdx ; ret`
+gadgets; if an exact match is not present it falls back to multi-pop
+forms (`pop <target> ; pop <safe> ; ret`) where the intermediate
+register is not another syscall-arg register. Multi-pop matches add
+padding slots to the chain output so the operator knows where to
+splice junk bytes between gadget values. Non-syscall strategies
+(ret2win, leak, srop-via-rop, pwntools snippet emission) are not in
+v0.1; the dedicated `srop` subcommand covers SROP, and `syms` plus
+manual staging covers ret2win.
 
 ```bash
 # execve("/bin/sh", 0, 0)  ->  syscall 59
