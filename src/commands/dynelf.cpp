@@ -53,7 +53,6 @@ core::Result<LeakPair> parse_leak_arg(std::string_view s) {
 
 void DynelfCommand::setup(CLI::App& app) {
     app.add_option("--leak", leaks, "<addr>=<hex-bytes> (repeatable)");
-    app.add_option("--libc-db", libc_db_path, "Local libc database root (not used in v0.1)");
 }
 
 core::Result<core::CommandResult> DynelfCommand::run(const core::Context& /*ctx*/) {
@@ -77,14 +76,15 @@ core::Result<core::CommandResult> DynelfCommand::run(const core::Context& /*ctx*
                             + " bytes: " + encoding::hex_encode(p->bytes, " "));
         sec.findings.push_back(std::move(f));
     }
-    // libc-db cross-reference is deferred: a full impl walks the
-    // remote libc-database hashes against the leaked bytes. We
-    // surface the inputs so callers can pipe them into their existing
-    // libc-db tools.
+    // libc-db cross-match is not implemented. The honest behavior is to
+    // parse the leak pairs into a structured form and stop there;
+    // callers feed the result into `abcpwn libc id` (or their own
+    // libc-database tooling). The earlier draft of this command shipped
+    // a --libc-db flag that did nothing, so it has been removed.
     sec.findings.emplace_back(core::Severity::Info,
                               "note",
-                              "v0.1 echoes the parsed leaks; libc-db cross-match lands "
-                              "alongside the libc command in step 18");
+                              "leaks parsed; pipe the addresses into `abcpwn libc id` "
+                              "or an external libc-database tool to identify the libc");
     return res;
 }
 

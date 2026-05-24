@@ -34,12 +34,10 @@ core::Result<core::CommandResult> Ret2dlCommand::run(const core::Context& ctx) {
     // Locate plt / plt.got / dynamic / dynstr / dynsym section
     // virtual addresses so callers can build the fake reloc/symbol
     // structures themselves. Full payload synthesis (which fabricates
-    // Elf64_Rela + Elf64_Sym entries pointing at a writable .bss area)
-    // is deferred to a later milestone -- it requires choosing a
-    // writable region, computing reloc indices, and is highly target-
-    // specific. The v0.1 surface reports the structural offsets the
-    // user needs to construct that payload by hand or with pwntools'
-    // ret2dl helper.
+    // Elf64_Rela + Elf64_Sym entries pointing at a writable .bss
+    // area) is not implemented in v0.1 -- the structural offsets
+    // reported below are the inputs that pwntools.rop.ret2dlresolve
+    // (or an equivalent helper) consumes to emit the actual payload.
     std::uint64_t plt_va = 0;
     std::uint64_t dynsym_va = 0;
     std::uint64_t dynstr_va = 0;
@@ -103,8 +101,9 @@ core::Result<core::CommandResult> Ret2dlCommand::run(const core::Context& ctx) {
     }
     sec.findings.emplace_back(core::Severity::Info,
                               "note",
-                              "v0.1 reports structural offsets; full Elf64_Rela + Elf64_Sym "
-                              "fabrication is deferred to a later milestone");
+                              "structural offsets only; feed them into "
+                              "pwntools.rop.ret2dlresolve (or equivalent) for full "
+                              "Elf64_Rela + Elf64_Sym payload synthesis");
     (void) bad_chars_hex; // accepted for forward compat
     return res;
 }

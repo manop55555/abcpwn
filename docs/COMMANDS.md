@@ -336,32 +336,37 @@ v0.1.
 abcpwn srop --arch x86_64 rip=0x4011aa rsp=0x404300
 ```
 
-### `ret2dl` - ret2dlresolve helper
+### `ret2dl` - ret2dlresolve structural inputs
 
 ```
-abcpwn ret2dl <target> <symbol>
+abcpwn ret2dl <target> <symbol> [--base <hex>] [--bad-chars <hex>]
 ```
 
-Locates the dynamic linker structures (`.dynsym`, `.dynstr`,
-`.rel.plt`, `_dl_runtime_resolve`) needed for a ret2dlresolve and
-prints addresses, offsets, and a ready-to-use payload skeleton.
+Locates the dynamic-linker section addresses (`.plt`, `.dynsym`,
+`.dynstr`, `.rel(a).plt`) and the named symbol's PLT trampoline so
+the caller can hand-build, or hand off to `pwntools.rop.ret2dlresolve`,
+the fake `Elf64_Rela + Elf64_Sym` payload. End-to-end payload
+synthesis is not implemented in v0.1.
 
 ```bash
 abcpwn ret2dl ./challenge system
 ```
 
-### `dynelf` - leak-driven libc identification
+### `dynelf` - parse leak pairs for downstream libc identification
 
 ```
-abcpwn dynelf < pairs.txt
+abcpwn dynelf --leak <addr>=<hex-bytes> [--leak ...]
 ```
 
-Reads `address value` leak pairs on stdin and matches them against
-the libc database to identify the running libc. Useful when partial
-leaks accumulate during exploitation.
+Parses one or more `addr=hex` leak pairs into a structured summary
+that downstream tooling (`abcpwn libc id`, or an external
+libc-database client) can consume. Libc identification itself is
+not implemented in this command; the previous `--libc-db` flag did
+nothing and has been removed.
 
 ```bash
-printf 'puts 0x7f0011aabbb0\nprintf 0x7f0011aaca50\n' | abcpwn dynelf
+abcpwn dynelf --leak 0x7f0011aabbb0=66756e6300 \
+              --leak 0x7f0011aaca50=666f6f0000
 ```
 
 ### `aslr-bypass` - ASLR / PIE helpers
@@ -504,16 +509,20 @@ abcpwn seccomp <action> [<input>]
 
 `action`:
 
-- `disasm` - decode a cBPF program (file or hex on stdin) to
-  pseudo-assembly.
-- `dump` - extract embedded seccomp filters from a binary.
-- `asm` - assemble a high-level policy DSL into cBPF.
-- `emu` - emulate the filter against synthetic syscalls (requires
-  `ABCPWN_WITH_UNICORN=ON`).
+- `disasm` - decode a cBPF program (hex on the command line) to
+  pseudo-assembly, annotated with `SYS_*` names per `--arch`.
+- `dump` - extract embedded seccomp filters from a binary. Not
+  implemented in v0.1 (target-specific; the command surfaces the
+  manual extraction recipe and recommends piping the bytes through
+  `seccomp disasm`).
+
+Filter assembly (`asm`) and emulation (`emu`) are not in v0.1; the
+disassembler covers the common CTF case, and emulation would
+introduce a dependency on Unicorn that this build does not
+currently link.
 
 ```bash
-abcpwn seccomp dump ./challenge
-abcpwn seccomp disasm < filter.bpf
+abcpwn seccomp disasm 20000000040000001500000003000000...
 ```
 
 ### `libc` - libc identification and inspection

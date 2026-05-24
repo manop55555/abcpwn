@@ -73,15 +73,28 @@ TEST_CASE("SeccompCommand disasm action runs end-to-end", "[seccomp][command]") 
     REQUIRE(r->summary->find("4 BPF") != std::string::npos);
 }
 
-TEST_CASE("SeccompCommand surfaces Unsupported for dump / asm / emu", "[seccomp][command]") {
+TEST_CASE("SeccompCommand dump action surfaces Unsupported with a manual-recipe hint",
+          "[seccomp][command]") {
     abcpwn::core::Context ctx;
     abcpwn::commands::seccomp::SeccompCommand cmd;
-    for (const auto& a : {std::string("dump"), std::string("asm"), std::string("emu")}) {
+    cmd.action = "dump";
+    cmd.input = "/bin/ls";
+    auto r = cmd.run(ctx);
+    REQUIRE_FALSE(r);
+    REQUIRE(r.error().code == abcpwn::core::ErrorCode::Unsupported);
+    REQUIRE(r.error().message.find("disasm") != std::string::npos);
+}
+
+TEST_CASE("SeccompCommand rejects asm/emu as unknown actions (removed from v0.1 surface)",
+          "[seccomp][command]") {
+    abcpwn::core::Context ctx;
+    abcpwn::commands::seccomp::SeccompCommand cmd;
+    for (const auto& a : {std::string("asm"), std::string("emu")}) {
         cmd.action = a;
         cmd.input = "x";
         auto r = cmd.run(ctx);
         REQUIRE_FALSE(r);
-        REQUIRE(r.error().code == abcpwn::core::ErrorCode::Unsupported);
+        REQUIRE(r.error().code == abcpwn::core::ErrorCode::UsageError);
     }
 }
 

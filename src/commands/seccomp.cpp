@@ -221,9 +221,8 @@ std::vector<std::string> disassemble_bpf(std::span<const BpfInsn> insns,
 }
 
 void SeccompCommand::setup(CLI::App& app) {
-    app.add_option("action", action, "disasm | dump | asm | emu")->required();
-    app.add_option(
-        "input", input, "Hex BPF bytes for disasm/emu; BPF source for asm; path for dump");
+    app.add_option("action", action, "disasm | dump")->required();
+    app.add_option("input", input, "Hex BPF bytes for disasm; binary path for dump");
     app.add_option("--arch", arch_str, "Arch for syscall-name annotations (x86_64 default)");
 }
 
@@ -249,24 +248,18 @@ core::Result<core::CommandResult> SeccompCommand::run(const core::Context& /*ctx
         return res;
     }
     if (action == "dump") {
-        // dump <binary>: find seccomp_load() in the target. The full
+        // dump <binary>: find seccomp_load() in the target. Full
         // implementation walks .rodata for a struct sock_fprog
         // referenced by a seccomp_load call site -- target-specific
-        // and significantly more analysis. v0.1 defers and tells the
-        // user to pipe the filter bytes through `seccomp disasm`.
+        // and significantly more analysis. Not implemented in v0.1;
+        // the disassembler is the supported path.
         return core::err(core::ErrorCode::Unsupported,
-                         "seccomp: 'dump' is deferred to a later milestone. "
-                         "Extract the filter bytes manually (gdb / ldd / strace) "
-                         "and run `abcpwn seccomp disasm <hex>`.");
+                         "seccomp: 'dump' is not implemented. Extract the filter "
+                         "bytes from the target (strace -e bpf, gdb x/<n>x, manual "
+                         "objdump) and run `abcpwn seccomp disasm <hex>`.");
     }
-    if (action == "asm" || action == "emu") {
-        return core::err(core::ErrorCode::Unsupported,
-                         "seccomp: '" + action
-                             + "' is deferred to a later milestone. "
-                               "The BPF disassembler is in place and the emulator path "
-                               "follows once Unicorn (ABCPWN_WITH_UNICORN) lands.");
-    }
-    return core::err(core::ErrorCode::UsageError, "seccomp: unknown action '" + action + "'");
+    return core::err(core::ErrorCode::UsageError,
+                     "seccomp: unknown action '" + action + "' (supported: disasm | dump)");
 }
 
 } // namespace abcpwn::commands::seccomp

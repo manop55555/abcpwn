@@ -27,13 +27,12 @@ public:
         return "dynelf";
     }
     [[nodiscard]] std::string_view description() const noexcept override {
-        return "consume leak pairs to identify libc and report offsets";
+        return "parse leak pairs into a structured form for downstream tools";
     }
     void setup(CLI::App& app) override;
     [[nodiscard]] core::Result<core::CommandResult> run(const core::Context& ctx) override;
 
     std::vector<std::string> leaks{};
-    std::string libc_db_path{};
 };
 
 } // namespace abcpwn::commands::dynelf
