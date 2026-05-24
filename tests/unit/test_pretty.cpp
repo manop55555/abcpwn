@@ -9,6 +9,7 @@
 
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/core/result.hpp"
+#include "abcpwn/core/version.hpp"
 #include "abcpwn/output/markers.hpp"
 #include "abcpwn/output/pretty.hpp"
 
@@ -36,7 +37,8 @@ TEST_CASE("pretty header lists tool name and tagline", "[pretty]") {
     std::ostringstream oss;
     pp.print_command_header(oss);
     const std::string out = oss.str();
-    REQUIRE(out.find("abcpwn v0.1.0") != std::string::npos);
+    REQUIRE(out.find(std::string("abcpwn v") + std::string(abcpwn::core::semver_string))
+            != std::string::npos);
     REQUIRE(out.find("binary exploitation toolkit") != std::string::npos);
     REQUIRE(out.find("\x1b[") == std::string::npos); // no ANSI without color
 }

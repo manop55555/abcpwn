@@ -10,6 +10,7 @@
 #include <string>
 #include <string_view>
 
+#include "abcpwn/output/banner.hpp"
 #include "abcpwn/output/markers.hpp"
 
 #if defined(__unix__) || defined(__APPLE__)
@@ -112,7 +113,7 @@ bool PrettyPrinter::should_color(const core::Context& ctx, std::ostream& os) noe
 void PrettyPrinter::print_command_header(std::ostream& os) {
     color_active_ = should_color(ctx_, os);
     maybe_color(os, Ansi::dim_white, color_active_);
-    emit(os, " ===[ abcpwn v0.1.0 ]=== binary exploitation toolkit ===");
+    emit(os, compact_header());
     maybe_color(os, Ansi::reset, color_active_);
     os << "\n\n";
 }
