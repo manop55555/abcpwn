@@ -222,14 +222,21 @@ abcpwn asm 'xor rdi, rdi; mov rax, 60; syscall' --arch x86_64
 ### `disasm` - disassemble raw bytes
 
 ```
-abcpwn disasm <input> [--arch ...] [--syntax intel|att] [--offset N]
+abcpwn disasm <input> [--arch ...] [--base-address HEX] [--count N]
+                       [--input-file|--input-hex] [--be] [--thumb]
 ```
 
-Input is hex by default; pass a file path to disassemble all
-executable bytes of a file.
+Supported `--arch` values: `x86_64`, `i386` (alias `x86`), `arm`,
+`aarch64` (alias `arm64`), `mips`, `mips64`, `ppc` (alias
+`powerpc`), `ppc64`, `riscv`. Input is hex by default; pass
+`--input-file` to disassemble bytes from a file path. `--be`
+forces big-endian decoding for arches that support both byte
+orders; PPC and PPC64 default to big-endian (the dominant ABI
+convention), so most CTF inputs decode without an explicit flag.
 
 ```bash
 abcpwn disasm 4831ff48c7c03c0000000f05 --arch x86_64
+abcpwn disasm 7c0802a6 --arch ppc      # PPC defaults to big-endian
 ```
 
 ### `phd` - pretty hex dump

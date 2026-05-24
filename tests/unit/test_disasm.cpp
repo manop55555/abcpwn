@@ -3,12 +3,15 @@
 
 #include <array>
 #include <cstdint>
+#include <vector>
 
 #include <catch2/catch_test_macros.hpp>
 
 #include "abcpwn/arch/arch.hpp"
 #include "abcpwn/arch/disasm.hpp"
 #include "abcpwn/arch/syscalls.hpp"
+#include "abcpwn/commands/disasm.hpp"
+#include "abcpwn/core/context.hpp"
 
 TEST_CASE("arch_from_string handles common aliases", "[arch]") {
     using namespace abcpwn::arch;
@@ -72,4 +75,32 @@ TEST_CASE("syscall lookup x86 differs from x86_64", "[arch][syscalls]") {
     // x86 execve is 11, x86_64 is 59.
     REQUIRE(*by_name(Arch::X86, "execve") == 11);
     REQUIRE(*by_name(Arch::X86_64, "execve") == 59);
+}
+
+TEST_CASE("DisasmCommand defaults to big-endian for PPC and PPC64",
+          "[disasm][command][ppc][endian]") {
+    // 7c0802a6 big-endian decodes as `mflr r0` on PowerPC; little-endian
+    // it decodes to gibberish or empty. Without an explicit --be, the
+    // user expects the dominant ABI (big-endian) to Just Work.
+    abcpwn::core::Context ctx;
+    abcpwn::commands::DisasmCommand cmd;
+    cmd.input = "7c0802a6";
+    cmd.arch_name = "ppc";
+    cmd.input_hex = true;
+    auto r = cmd.run(ctx);
+    REQUIRE(r);
+    REQUIRE_FALSE(r->raw_lines.empty());
+    bool any_mflr = false;
+    for (const auto& l : r->raw_lines) {
+        if (l.find("mflr") != std::string::npos) {
+            any_mflr = true;
+        }
+    }
+    REQUIRE(any_mflr);
+
+    // ppc64 (powerpc alias) inherits the same default.
+    cmd.arch_name = "ppc64";
+    auto r2 = cmd.run(ctx);
+    REQUIRE(r2);
+    REQUIRE_FALSE(r2->raw_lines.empty());
 }

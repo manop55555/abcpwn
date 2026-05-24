@@ -57,7 +57,19 @@ core::Result<core::CommandResult> DisasmCommand::run(const core::Context& /*ctx*
     }
     DisasmOptions opts;
     opts.arch = *a;
-    opts.endian = big_endian ? Endian::Big : Endian::Little;
+    // PPC big-endian is the dominant convention (System V PowerOpen ABI,
+    // most CTF challenges that ship a PPC binary use BE). Capstone
+    // returns an empty decode silently when the byte order is wrong, so
+    // a user who typed `disasm --arch ppc64 ...` with the default LE
+    // mode just saw an empty output and assumed the bytes were wrong.
+    // Default PPC and PPC64 to big-endian; users who actually need LE
+    // can opt out with `--be=false` (CLI11 accepts that form for the
+    // flag).
+    Endian endian = big_endian ? Endian::Big : Endian::Little;
+    if (!big_endian && (*a == Arch::Ppc || *a == Arch::Ppc64)) {
+        endian = Endian::Big;
+    }
+    opts.endian = endian;
     opts.thumb_mode = thumb;
     opts.base_address = base_address;
     opts.max_instructions = max_instructions;
