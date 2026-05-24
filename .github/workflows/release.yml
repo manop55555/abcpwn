@@ -163,9 +163,6 @@ jobs:
           path: artifacts/
           merge-multiple: true
 
-      - name: Aggregate SHA256SUMS
-        run: cat artifacts/SHA256SUMS-* > artifacts/SHA256SUMS
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
@@ -179,7 +176,7 @@ jobs:
             artifacts/abcpwn-*-sbom.cdx.json
             artifacts/abcpwn-*-sbom.cdx.json.sig
             artifacts/abcpwn-*-sbom.cdx.json.pem
-            artifacts/SHA256SUMS
+            artifacts/SHA256SUMS-*
           generate_release_notes: true
           # Draft mode for v0.1 so the maintainer can inspect the
           # archive shape (man page, completions, docs/ tree,
