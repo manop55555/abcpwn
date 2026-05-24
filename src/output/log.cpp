@@ -45,10 +45,11 @@ void setup_logging(const core::Context& ctx) {
         auto console = std::make_shared<spdlog::sinks::stderr_color_sink_mt>();
         sinks.push_back(std::move(console));
     }
+    // --log-file is a JSON run-record written directly by the dispatcher
+    // (see write_run_log in main.cpp), not an spdlog text sink. Record
+    // the configured path for diagnostics, but do not attach a file sink
+    // here -- a mixed spdlog-text + JSON file would not parse as JSON.
     if (ctx.log_file && !ctx.log_file->empty()) {
-        auto file =
-            std::make_shared<spdlog::sinks::basic_file_sink_mt>(*ctx.log_file, /*truncate=*/false);
-        sinks.push_back(std::move(file));
         g_log_path = *ctx.log_file;
     } else {
         g_log_path.clear();

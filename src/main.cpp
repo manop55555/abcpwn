@@ -22,6 +22,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdlib>
+#include <fstream>
 #include <iostream>
 #include <map>
 #include <memory>
@@ -32,6 +33,7 @@
 #include <vector>
 
 #include <CLI/CLI.hpp>
+#include <nlohmann/json.hpp>
 
 #include "abcpwn/commands/aslr_bypass.hpp"
 #include "abcpwn/commands/asm_cmd.hpp"
@@ -77,6 +79,37 @@ struct DispatchEntry {
     std::unique_ptr<abcpwn::core::ICommand> cmd;
     CLI::App* sub{nullptr};
 };
+
+// --log-file: write a single JSON record describing the run to the
+// configured path (verification #20). The man page documents the flag
+// as "a JSON log of the run", so we honor that literally rather than
+// emitting spdlog text. Best-effort: a path that cannot be opened is
+// skipped silently so logging never changes a command's exit status.
+void write_run_log(const abcpwn::core::Context& ctx,
+                   const std::string& command,
+                   const std::string& command_line,
+                   int exit_code,
+                   bool ok,
+                   const std::string& error_message,
+                   std::chrono::nanoseconds duration) {
+    if (!ctx.log_file || ctx.log_file->empty()) {
+        return;
+    }
+    nlohmann::json j;
+    j["abcpwn_version"] = abcpwn::core::semver_string;
+    j["command"] = command;
+    j["command_line"] = command_line;
+    j["exit_code"] = exit_code;
+    j["ok"] = ok;
+    if (!error_message.empty()) {
+        j["error"] = error_message;
+    }
+    j["duration_ms"] = std::chrono::duration<double, std::milli>(duration).count();
+    std::ofstream out(*ctx.log_file, std::ios::trunc);
+    if (out) {
+        out << j.dump(2) << "\n";
+    }
+}
 
 // STEP/18-shaped --version output. Combines the compact banner
 // header (per STEP/02) with the build provenance block configured
@@ -259,9 +292,8 @@ int main(int argc, char** argv) {
     app.add_flag(
         "--allow-network", allow_network, "Permit network access (libc download, pwninit fetch)");
     app.add_option("--config", config_path, "Path to a TOML config file");
-    // --log-file was a documented no-op (QA round 1 MAJOR): the
-    // flag accepted a path but never opened the file. Removed
-    // from the CLI; spdlog file-sink wiring returns in v0.2.
+    std::string log_file{};
+    app.add_option("--log-file", log_file, "Write a JSON log of the run to PATH");
 
     std::vector<DispatchEntry> entries;
     register_all(app, entries);
@@ -296,6 +328,9 @@ int main(int argc, char** argv) {
     ctx.verbosity = verbose_count - (quiet ? 1 : 0);
     ctx.no_banner = no_banner;
     ctx.allow_network = allow_network;
+    if (!log_file.empty()) {
+        ctx.log_file = log_file;
+    }
 
     // QA round 1 OBSERVATION: a `network=no` build silently accepts
     // --allow-network at parse time and then surfaces FeatureDisabled
@@ -395,33 +430,48 @@ int main(int argc, char** argv) {
     const auto start_at = std::chrono::steady_clock::now();
     auto result = selected->cmd->run(ctx);
     const auto end_at = std::chrono::steady_clock::now();
+    const auto elapsed = std::chrono::duration_cast<std::chrono::nanoseconds>(end_at - start_at);
+
+    // Joined argv, reused by the --log-file run-record and (in JSON
+    // mode) the args.command_line echo so a downstream jq pipeline can
+    // correlate an output blob back to the invocation that produced it.
+    std::string command_line;
+    for (int i = 0; i < argc; ++i) {
+        if (i != 0) {
+            command_line.push_back(' ');
+        }
+        command_line.append(argv[i]);
+    }
+    const std::string cmd_name{selected->cmd->name()};
 
     if (!result) {
-        std::cerr << "[-] " << selected->cmd->name() << ": " << result.error().message << '\n';
+        write_run_log(ctx,
+                      cmd_name,
+                      command_line,
+                      result.error().exit_code(),
+                      false,
+                      result.error().message,
+                      elapsed);
+        std::cerr << "[-] " << cmd_name << ": " << result.error().message << '\n';
         return result.error().exit_code();
     }
 
     if (!result->duration) {
-        result->duration = std::chrono::duration_cast<std::chrono::nanoseconds>(end_at - start_at);
+        result->duration = elapsed;
     }
+    write_run_log(ctx,
+                  cmd_name,
+                  command_line,
+                  result->exit_code,
+                  true,
+                  "",
+                  result->duration.value_or(elapsed));
 
     if (ctx.format == core::OutputFormat::Json) {
-        // Echo the parsed argv under args.command_line so downstream
-        // tooling (jq pipelines, log aggregators) can correlate a
-        // JSON output blob back to the exact invocation that produced
-        // it. Previously every "args" object came back empty, which
-        // defeated the round-trip story.
-        std::string joined;
-        for (int i = 0; i < argc; ++i) {
-            if (i != 0) {
-                joined.push_back(' ');
-            }
-            joined.append(argv[i]);
-        }
         std::map<std::string, std::variant<std::string, std::int64_t, bool>> json_args;
-        json_args.emplace("command_line", joined);
+        json_args.emplace("command_line", command_line);
         output::JsonWriter writer(ctx);
-        writer.write(std::cout, selected->cmd->name(), *result, json_args);
+        writer.write(std::cout, cmd_name, *result, json_args);
     } else {
         output::PrettyPrinter pp(ctx);
         // Compact header and timing footer are decoration -- they

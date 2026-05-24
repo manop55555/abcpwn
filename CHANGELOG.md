@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   parses but has no executable sections; that case is now `Unsupported`
   (exit 10), reserving `NotFound` for a genuinely missing path
   (verification #41).
+- `--log-file PATH` works again: it was documented in the man page and
+  completions but the CLI flag had been removed, so the binary rejected
+  it (exit 2). It now writes a JSON record of the run (command,
+  command_line, exit_code, ok, duration_ms, and error on failure) to
+  PATH for both successful and failed runs (verification #20).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

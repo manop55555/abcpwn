@@ -31,25 +31,21 @@ TEST_CASE("get_logger never returns null", "[log]") {
     REQUIRE(l != nullptr);
 }
 
-TEST_CASE("setup_logging with log_file writes to that file", "[log]") {
+TEST_CASE("setup_logging records the configured log_file path", "[log]") {
+    // --log-file no longer drives an spdlog text sink; it is a JSON
+    // run-record written by the dispatcher (see write_run_log in
+    // main.cpp, exercised end-to-end by test_log_file.sh). setup_logging
+    // only records the path so diagnostics can report it.
     const auto p = tmp_log_path();
     abcpwn::core::Context ctx;
     ctx.log_file = p.string();
-    ctx.verbosity = 1; // debug
     abcpwn::output::setup_logging(ctx);
-
-    auto l = abcpwn::output::get_logger();
-    l->info("hello-from-log-test");
-    l->flush();
-
-    REQUIRE(std::filesystem::exists(p));
-    std::ifstream in(p);
-    std::stringstream ss;
-    ss << in.rdbuf();
-    REQUIRE(ss.str().find("hello-from-log-test") != std::string::npos);
-
     REQUIRE(abcpwn::output::last_log_path_for_testing() == p.string());
-    std::filesystem::remove(p);
+
+    // And an unset log_file clears the recorded path.
+    abcpwn::core::Context ctx2;
+    abcpwn::output::setup_logging(ctx2);
+    REQUIRE(abcpwn::output::last_log_path_for_testing().empty());
 }
 
 TEST_CASE("setup_logging is idempotent", "[log]") {
