@@ -23,7 +23,7 @@ enum class Technique : std::uint8_t {
     UnsortedBin = 5,
 };
 
-// Coarse libc version classes the matrix tracks. Per STEP/14 the
+// Coarse libc version classes the matrix tracks. The
 // supported values are 2.27, 2.31, 2.34, 2.39 -- a representative
 // snapshot of the glibcs CTF challenges target. Versions outside this
 // set get matched to the nearest lower entry for compatibility purposes

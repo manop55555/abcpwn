@@ -12,7 +12,7 @@ namespace abcpwn::output {
 
 namespace {
 
-// Verbatim banner from STEP/02_BRAND.md. Byte-for-byte; UTF-8; LF
+// Verbatim project brand banner. Byte-for-byte; UTF-8; LF
 // line endings; trailing newline preserved. 13 visible lines.
 constexpr std::string_view kBanner = R"BANNER(        P
         W           ┌─┐┌┐ ┌─┐┌─┐┬ ┬┌┐┌
@@ -47,7 +47,7 @@ std::string_view compact_header() noexcept {
 }
 
 void print_banner(std::ostream& os, bool color) {
-    // Color wraps the whole block (per STEP/02 rule 6); the banner
+    // Color wraps the whole block; the banner
     // bytes themselves are never mutated. Per-character coloring is
     // layered on once the pretty printer (step 5) is wired in.
     if (color) {

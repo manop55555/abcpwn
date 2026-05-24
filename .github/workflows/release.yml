@@ -65,14 +65,11 @@ jobs:
           if [ -d completions ]; then
             cp -r completions             "$stage/"
           fi
-          # Bundle the public docs/ reference set. Excludes the
-          # gitignored DECISIONS.md (local design log) which would
-          # only be present in a polluted working tree anyway; the
-          # explicit --exclude makes the intent obvious for anyone
-          # auditing release.yml.
+          # Bundle the public docs/ reference set. The CI checkout
+          # contains only tracked files, so local-only notes are never
+          # present; .* excludes editor and VCS dotfiles defensively.
           if [ -d docs ]; then
             rsync -a \
-              --exclude='DECISIONS.md' \
               --exclude='.*' \
               docs/ "$stage/docs/"
           fi

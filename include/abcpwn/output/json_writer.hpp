@@ -14,11 +14,11 @@
 
 namespace abcpwn::output {
 
-// Schema version emitted in JSON output. Bump per STEP/10 on any
+// Schema version emitted in JSON output. Bump on any
 // non-additive change.
 inline constexpr int kJsonSchemaVersion = 1;
 
-// Render a CommandResult as the STEP/10 JSON envelope.
+// Render a CommandResult as the JSON envelope.
 class JsonWriter {
 public:
     explicit JsonWriter(const core::Context& ctx);

@@ -16,7 +16,7 @@ set(ABCPWN_TESTS_SNAPSHOTS_DIR "${CMAKE_SOURCE_DIR}/tests/snapshots"
 # Unit subdirectory is added by step 3+ as test sources are written.
 add_subdirectory(unit)
 
-# End-to-end integration tests (per STEP/22 step 22). These chain
+# End-to-end integration tests. These chain
 # multiple ICommand classes through a constructed Context to verify
 # realistic CTF flows.
 add_subdirectory(integration)

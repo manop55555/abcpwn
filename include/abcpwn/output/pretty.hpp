@@ -12,8 +12,8 @@
 
 namespace abcpwn::output {
 
-// Render a CommandResult to a stream as pretty-formatted output, per
-// STEP/10. Honors STEP/02 color rules: colors only when stdout is a
+// Render a CommandResult to a stream as pretty-formatted output.
+// Honors the project's color rules: colors only when stdout is a
 // TTY, NO_COLOR is unset, --no-color is not passed, and format is
 // pretty (not json). For tests, the caller can force color via the
 // context.

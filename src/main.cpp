@@ -154,8 +154,8 @@ void write_run_log(const abcpwn::core::Context& ctx,
     }
 }
 
-// STEP/18-shaped --version output. Combines the compact banner
-// header (per STEP/02) with the build provenance block configured
+// Structured --version output. Combines the compact banner
+// header with the build provenance block configured
 // from cmake/version.hpp.in. The banner header is suppressed when
 // include_banner=false (caller pre-checks --no-banner).
 std::string build_version_block(bool include_banner) {
@@ -467,7 +467,7 @@ int main(int argc, char** argv) {
         return 0;
     }
 
-    // --version: print the STEP/18 version block and exit. The
+    // --version: print the version block and exit. The
     // compact_header at the top of the block is omitted when
     // --no-banner is set so callers that pipe `--version` get
     // only the structured fields.

@@ -23,7 +23,7 @@ enum class ColorMode : std::uint8_t {
 };
 
 // Resource limits applied to operations that consume large inputs.
-// See STEP/12_RESOURCE_LIMITS.md for the rationale; the values here
+// These guard against runaway memory on large inputs; the values here
 // are conservative defaults that commands may tighten further per
 // invocation.
 struct Limits {

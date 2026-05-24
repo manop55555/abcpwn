@@ -128,6 +128,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - the `disasm` time budget is configurable via `ABCPWN_DISASM_TIMEOUT_MS`
   (milliseconds), so the `Timeout` exit code (15) is reachable and
   testable; the default stays 30s (DEF-17).
+- public-facing source comments and docs no longer cite internal design
+  documents; `check-no-spec-leak.sh` now also rejects any tracked file
+  that references the local-only spec set, preventing regressions
+  (IMP-2).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
@@ -350,7 +354,7 @@ README inside the tarball.
 - Global flags: `--allow-network`, `--no-color`, `--no-banner`,
   `--format`, `--config`, `--log-file`, `--about-network`,
   `--version`, `--help`.
-- `--version` output per `STEP/18`: banner header + version
+- `--version` output: banner header + version
   string + git commit + build date + arch + compiler + feature
   flags + vcpkg baseline + LIEF and Capstone versions.
 - `--about-network` prints the no-network policy in a form CTF

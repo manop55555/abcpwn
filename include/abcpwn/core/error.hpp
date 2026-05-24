@@ -88,7 +88,7 @@ struct Error {
     }
 };
 
-// Severity tag for findings (see STEP/10 output rules).
+// Severity tag for findings.
 enum class Severity : std::uint8_t {
     Info = 0,
     Low = 1,

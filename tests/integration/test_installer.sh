@@ -6,8 +6,8 @@
 # layout from the just-compiled abcpwn binary plus the tracked
 # LICENSE / README / completions / docs, extracts it into a temp
 # prefix, and verifies the canonical "abcpwn --version" round-trips.
-# This is the cheapest signal that the artifact layout STEP/17
-# expects is something we can actually produce.
+# This is the cheapest signal that the documented archive layout is something we can
+# actually produce.
 #
 # Usage: test_installer.sh <abcpwn-binary> <source-root>
 
@@ -29,8 +29,7 @@ fi
 work_dir="$(mktemp -d)"
 trap 'rm -rf "$work_dir"' EXIT
 
-# Step 1: assemble the canonical archive layout expected by
-# STEP/17_DISTRIBUTION.md.
+# Step 1: assemble the canonical archive layout.
 release_root="$work_dir/abcpwn-linux-x86_64"
 mkdir -p "$release_root"
 cp "$ABCPWN_BIN"                          "$release_root/abcpwn"
@@ -74,7 +73,7 @@ do
 done
 
 # Step 4: the extracted binary still reports the expected version.
-# Per STEP/18 the --version output is a multi-line block beginning
+# The --version output is a multi-line block beginning
 # with the compact banner header followed by the "abcpwn v<semver>"
 # line; match the latter to confirm provenance fields round-trip
 # through the tarball.

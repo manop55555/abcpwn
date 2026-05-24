@@ -28,4 +28,18 @@ if [ -n "$staged" ]; then
     exit 1
 fi
 
-echo "[+] no spec files tracked or staged"
+# Content check (IMP-2): public-facing tracked files must not REFERENCE
+# the local-only spec set (CLAUDE.md, STEP/, DECISIONS.md). The check-*.sh
+# enforcement scripts and .gitignore name these tokens by design and are
+# excluded.
+content_refs=$(git ls-files \
+    | grep -vE '^scripts/check-' \
+    | grep -vE '^(\.gitignore|\.gitattributes)$' \
+    | xargs -r grep -nE 'CLAUDE\.md|STEP/|DECISIONS\.md' 2>/dev/null || true)
+if [ -n "$content_refs" ]; then
+    echo "[-] tracked files reference internal-spec docs (rewrite to self-contained text):"
+    echo "$content_refs"
+    exit 1
+fi
+
+echo "[+] no spec files tracked or staged, no internal-spec references"

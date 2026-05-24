@@ -3,10 +3,9 @@
 //
 // Curated v0.1 shellcode database. Every entry is hand-written in
 // architecture-specific bytecode, Apache-2.0 licensed alongside the
-// rest of the project, and ASCII-comment annotated. STEP/22 calls for
-// roughly 30 entries across (preset x arch); this milestone ships a
-// trustable subset and grows the matrix in later releases. The gap is
-// logged in docs/DECISIONS.md.
+// rest of the project, and ASCII-comment annotated. A full database would span roughly 30
+// entries across (preset x arch); this milestone ships a trustable
+// subset and grows the matrix in later releases.
 
 #include <array>
 #include <cstdint>

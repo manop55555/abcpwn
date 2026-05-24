@@ -132,8 +132,8 @@ private:
 }
 
 // A single finding from a command, suitable for both pretty and JSON
-// rendering. The shape mirrors STEP/10 output rules so the rendering
-// layers in step 5 can consume it directly.
+// rendering. The shape matches the output layer so the renderers
+// can consume it directly.
 struct Finding {
     Severity severity{Severity::Info};
     std::string title{};

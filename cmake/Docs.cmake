@@ -58,7 +58,7 @@ endif()
 
 # ---------------------------------------------------------------
 # Shell completions (always installed when ABCPWN_BUILD_DOCS=ON)
-# Paths match STEP/17 lines 139 - 151 verbatim.
+# Paths match the documented install layout.
 # ---------------------------------------------------------------
 
 install(FILES "${CMAKE_SOURCE_DIR}/completions/abcpwn.bash"

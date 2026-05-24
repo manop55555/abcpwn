@@ -2,7 +2,7 @@
 # SPDX-License-Identifier: Apache-2.0
 # Copyright (c) 2026 manop55555
 #
-# abcpwn one-liner installer (per STEP/17_DISTRIBUTION.md).
+# abcpwn one-liner installer.
 #
 # Usage:
 #   curl -sSL https://raw.githubusercontent.com/manop55555/abcpwn/main/scripts/install.sh | bash

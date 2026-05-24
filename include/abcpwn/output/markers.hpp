@@ -9,7 +9,7 @@
 
 namespace abcpwn::output {
 
-// ASCII status markers (STEP/02). The tokens here are the only
+// ASCII status markers. The tokens here are the only
 // pre-colon glyphs allowed in any abcpwn output.
 struct Marker {
     static constexpr std::string_view ok = "[+]";
@@ -20,7 +20,7 @@ struct Marker {
 };
 
 // ANSI SGR sequences. Keep the set small so the renderer is easy to
-// audit. Bracketed names match the STEP/02 color rules.
+// audit. Bracketed names match the project's color rules.
 struct Ansi {
     static constexpr std::string_view reset = "\x1b[0m";
     static constexpr std::string_view bold = "\x1b[1m";

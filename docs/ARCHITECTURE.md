@@ -131,7 +131,7 @@ Pretty output follows a section-based template:
 ```
 
 JSON output has its own `schema_version` field independent of the
-abcpwn version. See [../STEP/18_VERSIONING.md notes in CONTRIBUTING.md](../CONTRIBUTING.md)
+abcpwn version. See [CONTRIBUTING.md](../CONTRIBUTING.md)
 for the schema versioning policy.
 
 ## File layout

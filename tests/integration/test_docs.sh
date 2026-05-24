@@ -64,7 +64,7 @@ if [ "$bad" -ne 0 ]; then
 fi
 
 # Step 3: README mentions the project name lowercase, never
-# Abcpwn / ABCPWN / etc. (per STEP/02 brand rules).
+# Abcpwn / ABCPWN / etc. (project brand rules).
 if grep -E '\b(Abcpwn|ABCPWN|AbcPwn|ABCPwn|Abc Pwn)\b' "$SOURCE_ROOT/README.md" > /dev/null; then
     echo "[-] README.md contains a non-lowercase project name"
     exit 1
@@ -141,9 +141,6 @@ fi
 broken_links=0
 while IFS= read -r mdfile; do
     [ -z "$mdfile" ] && continue
-    case "$mdfile" in
-        */DECISIONS.md) continue ;;
-    esac
     mddir=$(dirname "$mdfile")
     while IFS= read -r raw; do
         # raw looks like '](path)' or '] (path)'. Strip leading "]"
@@ -178,9 +175,6 @@ fi
 fence_problems=0
 while IFS= read -r mdfile; do
     [ -z "$mdfile" ] && continue
-    case "$mdfile" in
-        */DECISIONS.md) continue ;;
-    esac
     fence_count=$(grep -cE '^```' "$mdfile" 2>/dev/null || true)
     if [ "$((fence_count % 2))" -ne 0 ]; then
         echo "[-] unbalanced triple-backtick fences in ${mdfile#"$SOURCE_ROOT"/}: $fence_count fence lines"
