@@ -59,8 +59,8 @@ void GotCommand::setup(CLI::App& app) {
     app.add_option("--symbol", symbol_filter, "Show only the GOT entry for this symbol");
 }
 
-core::Result<core::CommandResult> GotCommand::run(const core::Context& /*ctx*/) {
-    auto loaded = formats::load(target);
+core::Result<core::CommandResult> GotCommand::run(const core::Context& ctx) {
+    auto loaded = formats::load(target, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
     }

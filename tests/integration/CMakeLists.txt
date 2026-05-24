@@ -45,3 +45,6 @@ add_test(NAME test_readme_quickstart
 add_test(NAME test_version_output
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_version_output.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_max_file_size
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_max_file_size.sh"
+            "$<TARGET_FILE:abcpwn>")

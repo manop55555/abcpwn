@@ -289,6 +289,19 @@ int main(int argc, char** argv) {
         no_net != nullptr && std::string_view{no_net} == "1") {
         ctx.allow_network = false;
     }
+
+    // ABCPWN_MAX_FILE_SIZE overrides the default 2 GB input-file
+    // size cap. Accepts a decimal number of bytes. Invalid values
+    // leave the default in place; the limit is a guard against
+    // OOM from malformed binaries, so a parse failure shouldn't
+    // disable it.
+    if (const char* mfs = std::getenv("ABCPWN_MAX_FILE_SIZE"); mfs != nullptr && *mfs != '\0') {
+        char* endp = nullptr;
+        const auto v = std::strtoull(mfs, &endp, 10);
+        if (endp != mfs && *endp == '\0' && v > 0) {
+            ctx.limits.max_file_bytes = static_cast<std::size_t>(v);
+        }
+    }
     if (!config_path.empty()) {
         auto cfg = core::config::load(config_path);
         if (!cfg) {

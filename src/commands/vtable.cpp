@@ -44,8 +44,8 @@ void VtableCommand::setup(CLI::App& app) {
         "--hijack-target", hijack_target, "Address to install at the chosen method slot (hex)");
 }
 
-core::Result<core::CommandResult> VtableCommand::run(const core::Context& /*ctx*/) {
-    auto loaded = formats::load(target);
+core::Result<core::CommandResult> VtableCommand::run(const core::Context& ctx) {
+    auto loaded = formats::load(target, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
     }

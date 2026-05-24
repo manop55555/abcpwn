@@ -71,13 +71,13 @@ void RopCommand::setup(CLI::App& app) {
     // `syms`. They return in v0.2 if the demand materializes.
 }
 
-core::Result<core::CommandResult> RopCommand::run(const core::Context& /*ctx*/) {
+core::Result<core::CommandResult> RopCommand::run(const core::Context& ctx) {
     if (syscall_number < 0) {
         return core::err(core::ErrorCode::UsageError,
                          "rop: pick a strategy (--syscall N --syscall-arg ARG ...)");
     }
 
-    auto loaded = formats::load(target);
+    auto loaded = formats::load(target, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
     }

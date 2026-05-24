@@ -95,7 +95,7 @@ void GadgetCommand::setup(CLI::App& app) {
 }
 
 core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
-    auto loaded = formats::load(target);
+    auto loaded = formats::load(target, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
     }

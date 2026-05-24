@@ -21,8 +21,8 @@ void Ret2dlCommand::setup(CLI::App& app) {
     app.add_option("--bad-chars", bad_chars_hex, "Hex bytes to avoid");
 }
 
-core::Result<core::CommandResult> Ret2dlCommand::run(const core::Context& /*ctx*/) {
-    auto loaded = formats::load(target);
+core::Result<core::CommandResult> Ret2dlCommand::run(const core::Context& ctx) {
+    auto loaded = formats::load(target, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
     }

@@ -19,8 +19,8 @@ void SymsCommand::setup(CLI::App& app) {
     app.add_option("--filter", filter, "Regex applied to symbol names");
 }
 
-core::Result<core::CommandResult> SymsCommand::run(const core::Context& /*ctx*/) {
-    auto loaded = formats::load(target);
+core::Result<core::CommandResult> SymsCommand::run(const core::Context& ctx) {
+    auto loaded = formats::load(target, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
     }

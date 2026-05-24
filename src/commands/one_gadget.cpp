@@ -48,12 +48,13 @@ void OneGadgetCommand::setup(CLI::App& app) {
     app.add_flag("--all", all, "Show all candidates (default: filter to highest-confidence)");
 }
 
-core::Result<core::CommandResult> OneGadgetCommand::run(const core::Context& /*ctx*/) {
-    auto loaded = formats::load(libc);
+core::Result<core::CommandResult> OneGadgetCommand::run(const core::Context& ctx) {
+    auto loaded = formats::load(libc, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
     }
-    auto raw = core::safe_io::read_file(libc);
+    auto raw =
+        core::safe_io::read_file(libc, core::safe_io::ReadOptions{ctx.limits.max_file_bytes, true});
     if (!raw) {
         return core::err(raw.error());
     }
