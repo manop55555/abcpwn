@@ -144,6 +144,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `fmt --offset`), and unimplemented features (`shellcode --preset
   read-flag`, `seccomp emu`). `test_tutorial_walkthrough.sh` runs every
   bash block and asserts exit 0 (IMP-5).
+- SECURITY.md documents the release verification that is actually live --
+  cosign keyless signature, SLSA build-provenance attestation, and the
+  CycloneDX SBOM -- with copy-pasteable `cosign verify-blob` and
+  `gh attestation verify` commands, replacing the stale "signing is
+  planned" note; the README points to it (IMP-7).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

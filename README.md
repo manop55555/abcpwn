@@ -108,6 +108,11 @@ sudo install -m 644 completions/abcpwn.fish \
     /usr/local/share/fish/vendor_completions.d/abcpwn.fish
 ```
 
+Each release is signed (Sigstore/cosign keyless) and ships a CycloneDX
+SBOM plus an SLSA build-provenance attestation. See
+[SECURITY.md](SECURITY.md) to verify the signature and provenance before
+installing.
+
 ### One-liner
 
 ```bash

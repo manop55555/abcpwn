@@ -49,13 +49,41 @@ See [docs/SUPPORT.md](docs/SUPPORT.md) for the long-term support policy.
 
 ## Verifying Releases
 
-Every release archive is published with a `SHA256SUMS` file. Verify with:
+Each release archive ships with a `SHA256SUMS` file, a Sigstore (cosign)
+keyless signature, and a CycloneDX SBOM; the build also publishes an
+SLSA build-provenance attestation. Verify in increasing order of
+assurance:
+
+1. Checksum:
 
 ```bash
 sha256sum -c SHA256SUMS --ignore-missing
 ```
 
-Sigstore-based signature verification is planned for a future release.
+2. Cosign keyless signature (binds the archive to this repository's
+   release workflow via Fulcio, transparency-logged to Rekor). Needs
+   [cosign](https://github.com/sigstore/cosign):
+
+```bash
+cosign verify-blob \
+  --certificate abcpwn-linux-x86_64.tar.gz.pem \
+  --signature   abcpwn-linux-x86_64.tar.gz.sig \
+  --certificate-identity-regexp '^https://github.com/manop55555/abcpwn/' \
+  --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+  abcpwn-linux-x86_64.tar.gz
+```
+
+   The same command verifies the SBOM (`abcpwn-linux-x86_64-sbom.cdx.json`
+   with its own `.sig` / `.pem`).
+
+3. SLSA build provenance, via the GitHub CLI:
+
+```bash
+gh attestation verify abcpwn-linux-x86_64.tar.gz --repo manop55555/abcpwn
+```
+
+The CycloneDX SBOM (`abcpwn-linux-x86_64-sbom.cdx.json`) inventories the
+statically bundled dependencies for supply-chain auditing.
 
 ## Threat Model
 
