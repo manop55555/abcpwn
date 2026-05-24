@@ -15,7 +15,7 @@ public:
         return "syms";
     }
     [[nodiscard]] std::string_view description() const noexcept override {
-        return "list symbols (dynamic/static/imports/exports)";
+        return "list dynamic imports; flag dangerous functions with --dangerous";
     }
     void setup(CLI::App& app) override;
     [[nodiscard]] core::Result<core::CommandResult> run(const core::Context& ctx) override;

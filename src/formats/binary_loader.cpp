@@ -364,10 +364,33 @@ core::Result<LoadedBinary> load(const std::filesystem::path& path, const LoadOpt
             detect_macho_mitigations(*mh, info.mitigations);
         }
 
+        // Match dangerous-function names with awareness of the glibc
+        // versioned wrappers: __isoc99_scanf, __isoc99_fscanf, etc.
+        // are the same scanf-family routines under a versioned ABI
+        // symbol; the dangerous-function listing must include them.
+        // glibc fortified variants like __scanf_chk are intentionally
+        // NOT flagged -- those are the safer compiler-inserted form.
+        auto strip_isoc_prefix = [](std::string_view n) noexcept -> std::string_view {
+            // Match __isoc<digits>_ prefix.
+            constexpr std::string_view kIso = "__isoc";
+            if (n.size() <= kIso.size() + 1 || n.substr(0, kIso.size()) != kIso) {
+                return n;
+            }
+            std::size_t i = kIso.size();
+            while (i < n.size() && n[i] >= '0' && n[i] <= '9') {
+                ++i;
+            }
+            if (i < n.size() && n[i] == '_' && i + 1 < n.size()) {
+                return n.substr(i + 1);
+            }
+            return n;
+        };
         for (const auto& n : info.dynamic_imports) {
+            const auto canonical = strip_isoc_prefix(n);
             for (const auto& d : kDangerous) {
-                if (n == d) {
+                if (canonical == d) {
                     info.dangerous_functions.emplace_back(n);
+                    break;
                 }
             }
         }

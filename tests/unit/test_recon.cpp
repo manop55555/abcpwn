@@ -68,6 +68,32 @@ TEST_CASE("SymsCommand --dangerous lists gets/strcpy", "[recon][syms]") {
     REQUIRE(any_dangerous);
 }
 
+TEST_CASE("SymsCommand --dangerous catches glibc-versioned scanf wrappers", "[recon][syms][isoc]") {
+    if (!std::filesystem::exists(fixture("scanf-fixture"))) {
+        SKIP("scanf-fixture not present");
+    }
+    abcpwn::core::Context ctx;
+    abcpwn::commands::SymsCommand cmd;
+    cmd.target = fixture("scanf-fixture").string();
+    cmd.dangerous_only = true;
+    auto r = cmd.run(ctx);
+    REQUIRE(r);
+    // Modern glibc exports scanf via an ABI-versioning wrapper:
+    // __isoc99_scanf on 2.7-2.37, __isoc23_scanf on 2.38+. Either
+    // form must surface as a dangerous-function finding, otherwise
+    // a release-mode binary that uses scanf silently slips past the
+    // hardening audit. We accept either name.
+    bool any_scanf = false;
+    for (const auto& s : r->sections) {
+        for (const auto& f : s.findings) {
+            if (f.title.find("scanf") != std::string::npos) {
+                any_scanf = true;
+            }
+        }
+    }
+    REQUIRE(any_scanf);
+}
+
 TEST_CASE("extract_ascii_strings finds the ELF magic and a known string", "[recon][strings]") {
     if (!std::filesystem::exists(fixture("hello-hardened"))) {
         SKIP("hello-hardened fixture not present");
