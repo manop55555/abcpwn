@@ -165,11 +165,7 @@ while IFS= read -r mdfile; do
             broken_links=1
         fi
     done < <(grep -oE '\][[:space:]]*\([^)]+\)' "$mdfile" 2>/dev/null || true)
-done < <(find "$SOURCE_ROOT" -type f -name '*.md' \
-              -not -path "*/STEP/*" \
-              -not -path "*/build/*" \
-              -not -path "*/vcpkg_installed/*" \
-              -not -path "*/.git/*" 2>/dev/null)
+done < <(git -C "$SOURCE_ROOT" ls-files '*.md' 2>/dev/null | sed "s|^|$SOURCE_ROOT/|")
 if [ "$broken_links" -ne 0 ]; then
     exit 1
 fi
@@ -190,11 +186,7 @@ while IFS= read -r mdfile; do
         echo "[-] unbalanced triple-backtick fences in ${mdfile#"$SOURCE_ROOT"/}: $fence_count fence lines"
         fence_problems=1
     fi
-done < <(find "$SOURCE_ROOT" -type f -name '*.md' \
-              -not -path "*/STEP/*" \
-              -not -path "*/build/*" \
-              -not -path "*/vcpkg_installed/*" \
-              -not -path "*/.git/*" 2>/dev/null)
+done < <(git -C "$SOURCE_ROOT" ls-files '*.md' 2>/dev/null | sed "s|^|$SOURCE_ROOT/|")
 if [ "$fence_problems" -ne 0 ]; then
     exit 1
 fi
