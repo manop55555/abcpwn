@@ -34,9 +34,14 @@ else()
 
     file(MAKE_DIRECTORY "${_abcpwn_man_out_dir}")
 
+    # --from=markdown-smart disables pandoc's "smart" extension so
+    # double-hyphen flags like "--format" survive as literal hyphens
+    # instead of being rewritten to a Roff en-dash escape (\(en),
+    # which would render as a single dash in man(1) and break
+    # copy-paste of CLI examples.
     add_custom_command(
         OUTPUT  "${_abcpwn_man_out}"
-        COMMAND "${PANDOC}" -s -t man
+        COMMAND "${PANDOC}" -s --from=markdown-smart -t man
                 "${_abcpwn_man_src}"
                 -o "${_abcpwn_man_out}"
         DEPENDS "${_abcpwn_man_src}"

@@ -243,4 +243,26 @@ if [ "$completion_problems" -ne 0 ]; then
     exit 1
 fi
 
-echo "[+] docs hygiene OK: orchestrator, subcommand names, README casing, URLs, required docs, internal links, code-fence balance, completion coverage"
+# Step 9: rendered man page preserves double-hyphen CLI flags. Pandoc's
+# "smart" extension is on by default and rewrites "--flag" into the Roff
+# en-dash escape "\(en" which displays as a single dash in man(1) and
+# breaks copy-paste of CLI examples. Docs.cmake passes --from=markdown-smart
+# to disable that; this step is the regression sentinel.
+if command -v pandoc >/dev/null 2>&1; then
+    rendered=$(pandoc -s --from=markdown-smart -t man "$SOURCE_ROOT/man/abcpwn.1.md" 2>/dev/null || true)
+    if [ -z "$rendered" ]; then
+        echo "[-] pandoc rendered the man page to an empty document"
+        exit 1
+    fi
+    if printf '%s\n' "$rendered" | grep -q '\\(en'; then
+        echo "[-] rendered man page contains \\(en (en-dash); pandoc smartypants is munging --flags"
+        exit 1
+    fi
+    # Spot-check: at least one well-known flag survives literally.
+    if ! printf '%s\n' "$rendered" | grep -q '\\-\\-format'; then
+        echo "[-] rendered man page does not contain literal --format"
+        exit 1
+    fi
+fi
+
+echo "[+] docs hygiene OK: orchestrator, subcommand names, README casing, URLs, required docs, internal links, code-fence balance, completion coverage, man-page flag rendering"
