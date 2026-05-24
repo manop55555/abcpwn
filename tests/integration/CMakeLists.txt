@@ -51,3 +51,6 @@ add_test(NAME test_max_file_size
 add_test(NAME test_cli_exit_codes
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_cli_exit_codes.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_corrupt_elf
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_corrupt_elf.sh"
+            "$<TARGET_FILE:abcpwn>")

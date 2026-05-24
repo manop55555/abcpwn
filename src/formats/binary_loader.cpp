@@ -8,6 +8,7 @@
 #include <cstdint>
 #include <cstring>
 #include <memory>
+#include <optional>
 #include <span>
 #include <string>
 #include <string_view>
@@ -15,6 +16,7 @@
 #include <vector>
 
 #include <LIEF/LIEF.hpp>
+#include <LIEF/logging.hpp>
 
 #include "abcpwn/core/safe_io.hpp"
 
@@ -316,7 +318,51 @@ void LoadedBinary::reset(std::unique_ptr<LIEF::Binary> b, BinaryInfo info) {
     impl_->info = std::move(info);
 }
 
+namespace {
+
+// Quiet LIEF's own logger the first time anyone calls into the loader.
+// By default LIEF spams structured warnings to stderr (e.g. "Can't read
+// the corrupt section table"), which leaks past our output layer and
+// confuses callers piping abcpwn output into other tools. Disable the
+// module globally; we surface our own Corrupted findings instead.
+void quiet_lief_once() {
+    [[maybe_unused]] static const bool initialised = [] {
+        LIEF::logging::disable();
+        return true;
+    }();
+}
+
+// Cheap, upfront structural sanity check. Reject obviously-truncated
+// ELFs before LIEF's lenient parser tries to interpret them. We only
+// validate the e_ident bytes + the bare-minimum header size because
+// LIEF handles partial section tables gracefully; the goal is just
+// to convert the most common "user fed us 32 random bytes" case into
+// a clean Corrupted error instead of an empty parse result.
+[[nodiscard]] std::optional<std::string>
+truncation_complaint(std::span<const std::uint8_t> bytes) noexcept {
+    if (bytes.size() < 4) {
+        return std::string{"file too small to identify format"};
+    }
+    if (bytes[0] == 0x7f && bytes[1] == 'E' && bytes[2] == 'L' && bytes[3] == 'F') {
+        if (bytes.size() < 5) {
+            return std::string{"truncated ELF: missing e_ident[EI_CLASS]"};
+        }
+        // EI_CLASS = bytes[4]: 1 -> ELF32 (52-byte Ehdr),
+        //                     2 -> ELF64 (64-byte Ehdr).
+        const std::size_t min_ehdr = (bytes[4] == 2) ? 64 : 52;
+        if (bytes.size() < min_ehdr) {
+            return std::string{"truncated ELF: file is "} + std::to_string(bytes.size())
+                   + " bytes, smaller than the " + std::to_string(min_ehdr) + "-byte ELF header";
+        }
+    }
+    return std::nullopt;
+}
+
+} // namespace
+
 core::Result<LoadedBinary> load(const std::filesystem::path& path, const LoadOptions& opts) {
+    quiet_lief_once();
+
     core::safe_io::ReadOptions read_opts;
     read_opts.max_bytes = opts.max_bytes;
     auto bytes = core::safe_io::read_file(path, read_opts);
@@ -324,9 +370,10 @@ core::Result<LoadedBinary> load(const std::filesystem::path& path, const LoadOpt
         return core::err(bytes.error());
     }
 
-    if (bytes->size() < 4) {
-        return core::err(core::ErrorCode::Corrupted,
-                         path.string() + ": file too small to identify format");
+    std::span<const std::uint8_t> view(reinterpret_cast<const std::uint8_t*>(bytes->data()),
+                                       bytes->size());
+    if (auto complaint = truncation_complaint(view)) {
+        return core::err(core::ErrorCode::Corrupted, path.string() + ": " + *complaint);
     }
 
     // Use the in-memory parser so we can apply our own size caps.
