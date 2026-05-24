@@ -7,6 +7,7 @@
 #include <cstdio>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <random>
 #include <span>
 #include <string>
@@ -87,8 +88,34 @@ Result<std::uintmax_t> file_size(const std::filesystem::path& path) {
     return size;
 }
 
+namespace {
+
+// DEF-16: "-" means read from standard input. stdin is not seekable, so
+// read it incrementally and enforce the cap as we go. Binary-safe on the
+// supported platforms (Linux/WSL2 stdin has no newline translation).
+Result<std::vector<std::byte>> read_stdin(const ReadOptions& opts) {
+    std::vector<std::byte> buf;
+    char chunk[65536];
+    while (std::cin.read(chunk, sizeof chunk) || std::cin.gcount() > 0) {
+        const auto n = static_cast<std::size_t>(std::cin.gcount());
+        if (opts.max_bytes > 0 && buf.size() + n > opts.max_bytes) {
+            return err(ErrorCode::SizeExceeded,
+                       "stdin: input exceeds limit of " + std::to_string(opts.max_bytes)
+                           + " bytes");
+        }
+        const auto* p = reinterpret_cast<const std::byte*>(chunk);
+        buf.insert(buf.end(), p, p + n);
+    }
+    return buf;
+}
+
+} // namespace
+
 Result<std::vector<std::byte>> read_file(const std::filesystem::path& path,
                                          const ReadOptions& opts) {
+    if (path == "-") {
+        return read_stdin(opts);
+    }
     const auto sz = safe_io::file_size(path);
     if (!sz) {
         return err(sz.error());

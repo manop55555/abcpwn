@@ -75,3 +75,6 @@ add_test(NAME test_enum_validation
 add_test(NAME test_cyclic_limits
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_cyclic_limits.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_stdin
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_stdin.sh"
+            "$<TARGET_FILE:abcpwn>")

@@ -86,6 +86,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   of a confident, alarming NX/PIE/Canary report at exit 0; pass `--arch`
   to force analysis of an unrecognized binary (DEF-15).
 
+### Added
+
+- file-path subcommands accept `-` to read the target from standard
+  input (`cat ./vuln | abcpwn info -`, `... | abcpwn gadget -`,
+  `... | abcpwn hash -`). The read is binary-safe and honors
+  `ABCPWN_MAX_FILE_SIZE`; empty stdin is handled gracefully. Implemented
+  once in `safe_io::read_file`, so every command that loads a file
+  (info, syms, strings, search, gadget, hash, disasm `--input-file`,
+  phd, ...) gains it (DEF-16).
+
 ## [0.1.0-alpha.3] - 2026-05-24
 
 Bulk QA pass: 41 findings from three independent rounds of
