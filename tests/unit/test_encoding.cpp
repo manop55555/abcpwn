@@ -50,6 +50,22 @@ TEST_CASE("pack rejects unsupported width", "[encoding][pack]") {
     REQUIRE_FALSE(pack(0, 16, Endian::Little));
 }
 
+TEST_CASE("pack rejects values that do not fit the requested width", "[encoding][pack][overflow]") {
+    // 0x100 needs 2 bytes; passing width=1 should NOT silently
+    // truncate to 0x00. Same for the 2/4-byte boundaries.
+    REQUIRE_FALSE(pack(0x100, 1, Endian::Little));
+    REQUIRE_FALSE(pack(0x10000, 2, Endian::Little));
+    REQUIRE_FALSE(pack(0x100000000ULL, 4, Endian::Little));
+
+    // Exact boundary values still fit.
+    REQUIRE(pack(0xff, 1, Endian::Little));
+    REQUIRE(pack(0xffff, 2, Endian::Little));
+    REQUIRE(pack(0xffffffff, 4, Endian::Little));
+
+    // Width 8 is full-range; nothing overflows.
+    REQUIRE(pack(0xffffffffffffffffULL, 8, Endian::Little));
+}
+
 TEST_CASE("hex roundtrip", "[encoding][hex]") {
     const auto bytes = as_bytes("Hello");
     REQUIRE(hex_encode(bytes) == "48656c6c6f");

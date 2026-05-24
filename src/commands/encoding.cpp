@@ -8,6 +8,7 @@
 #include <cctype>
 #include <cerrno>
 #include <cstdint>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <string_view>
@@ -34,6 +35,23 @@ int hex_val(char c) noexcept {
 core::Result<std::vector<std::uint8_t>> pack(std::uint64_t value, unsigned width, Endian endian) {
     if (width != 1 && width != 2 && width != 4 && width != 8) {
         return core::err(core::ErrorCode::InvalidInput, "pack: width must be 1, 2, 4, or 8");
+    }
+    // Refuse to silently drop high bits. Anything that does not fit in
+    // the requested width is a user error: the operator either passed
+    // the wrong width, or the value carries information they don't
+    // want to lose. Width 8 is full-range so the check is a no-op.
+    if (width < 8) {
+        const std::uint64_t max_value = (1ULL << (width * 8U)) - 1ULL;
+        if (value > max_value) {
+            char buf[96];
+            std::snprintf(buf,
+                          sizeof buf,
+                          "pack: value 0x%llx does not fit in %u byte(s) (max 0x%llx)",
+                          static_cast<unsigned long long>(value),
+                          width,
+                          static_cast<unsigned long long>(max_value));
+            return core::err(core::ErrorCode::InvalidInput, buf);
+        }
     }
     std::vector<std::uint8_t> out(width);
     for (unsigned i = 0; i < width; ++i) {
