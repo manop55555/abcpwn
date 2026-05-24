@@ -11,7 +11,7 @@ _abcpwn() {
     subcommands=(
         # recon
         'info:show mitigations, arch, symbols, libc hint'
-        'syms:list symbols (dynamic/static/imports/exports)'
+        'syms:list dynamic imports'
         'strings:list printable strings in a binary'
         'search:search a binary for ASCII or hex byte patterns'
         'hash:compute file hash (sha256 default)'

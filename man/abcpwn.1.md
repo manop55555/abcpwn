@@ -118,7 +118,8 @@ Find ROP gadgets matching a pattern:
 
 Synthesize a ROP chain that calls execve("/bin/sh"):
 
-    abcpwn rop ./challenge --execve
+    abcpwn rop ./challenge --syscall 59 \
+        --syscall-arg 0x404020 --syscall-arg 0 --syscall-arg 0
 
 Generate a cyclic pattern and locate the offset of four leaked
 bytes (the integer form is interpreted little-endian, matching

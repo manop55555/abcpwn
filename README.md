@@ -20,7 +20,7 @@
 [![Sanitizers](https://github.com/manop55555/abcpwn/actions/workflows/sanitizers.yml/badge.svg)](https://github.com/manop55555/abcpwn/actions/workflows/sanitizers.yml)
 [![License: Apache 2.0](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](LICENSE)
 [![C++20](https://img.shields.io/badge/C%2B%2B-20-blue.svg)](https://en.cppreference.com/w/cpp/20)
-[![Platforms](https://img.shields.io/badge/platforms-linux%20%7C%20macos-blue.svg)](#supported-platforms)
+[![Platforms](https://img.shields.io/badge/platforms-linux-blue.svg)](#supported-platforms)
 
 Native C++20 CLI toolkit for binary exploitation. Dynamically linked
 against system libc/libm; every third-party library (LIEF, Capstone,

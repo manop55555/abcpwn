@@ -7,7 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-Reserved for changes accumulating against the next published tag.
+### Fixed
+
+- man page EXAMPLES no longer references the removed `rop --execve`
+  flag; the ROP example uses `--syscall` (matches the README Quick
+  Start).
+- README platforms badge dropped `macos`; macOS is build-from-source,
+  not a tier-1 pre-built platform.
+- zsh completion description for `syms` shortened to "list dynamic
+  imports" to match `--help` (the `--type` variant was removed).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
