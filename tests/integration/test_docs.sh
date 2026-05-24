@@ -235,6 +235,17 @@ if [ "$completion_problems" -ne 0 ]; then
     exit 1
 fi
 
+# Step 8b (DEF-2): the "N subcommands" prose in README and the man page
+# must match the actual number of registered subcommands, so the count
+# cannot drift out of sync again.
+sub_count=${#canonical_names[@]}
+for doc in README.md man/abcpwn.1.md; do
+    if ! grep -qE "(^| )${sub_count} subcommands" "$SOURCE_ROOT/$doc"; then
+        echo "[-] $doc does not state the actual subcommand count (${sub_count})"
+        exit 1
+    fi
+done
+
 # Step 9: rendered man page preserves double-hyphen CLI flags. Pandoc's
 # "smart" extension is on by default and rewrites "--flag" into the Roff
 # en-dash escape "\(en" which displays as a single dash in man(1) and

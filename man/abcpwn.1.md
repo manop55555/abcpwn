@@ -71,14 +71,14 @@ target.
 
 # COMMANDS
 
-The 38 subcommands are organized into 13 groups. **abcpwn**
+The 39 subcommands are organized into 13 groups. **abcpwn**
 *subcommand* **--help** prints the canonical option list for any
 subcommand.
 
 **recon**: **info**, **syms**, **strings**, **search**, **hash**
 
 **encoding**: **pack**, **unpack**, **hex**, **unhex**, **b64**,
-**xor**, **errno**, **constgrep**
+**xor**, **errno**, **signal**, **constgrep**
 
 **asm**: **asm**, **disasm**, **phd**
 

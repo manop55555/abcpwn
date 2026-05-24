@@ -105,6 +105,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (exit 16) with a clear message; the target argument is still
   validated. The live process/socket tube driver lands in a later
   release (DEF-9).
+- the subcommand count in the README and man page now reads 39 (the
+  actual registered count); both previously said 38, and the man page
+  omitted `signal` from the encoding group. `test_docs.sh` asserts the
+  count prose stays in sync with the registered commands (DEF-2).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

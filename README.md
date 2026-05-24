@@ -115,7 +115,7 @@ Full command reference: [docs/COMMANDS.md](docs/COMMANDS.md).
 
 ## Subcommands
 
-38 subcommands across 13 groups.
+39 subcommands across 13 groups.
 
 | Group       | Commands                                                       |
 |-------------|----------------------------------------------------------------|
