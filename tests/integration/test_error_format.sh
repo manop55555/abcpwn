@@ -63,4 +63,25 @@ if [ -n "$gtarget" ]; then
     fi
 fi
 
-echo "[+] error format OK: single prefix, message preserved, rop missing-gadget not NotFound"
+# DEF-4: under --format json, failures emit a JSON error envelope on
+# stdout (not plaintext on stderr), with the exit code preserved.
+def4_err=$("$ABCPWN_BIN" --format json info /nonexistent 2>&1 1>/dev/null || true)
+if [ -n "$def4_err" ]; then
+    echo "[-] json-mode error leaked to stderr: $def4_err"; exit 1
+fi
+def4_out=$("$ABCPWN_BIN" --format json info /nonexistent 2>/dev/null || true)
+printf '%s' "$def4_out" | grep -q '"error"' \
+    || { echo "[-] no JSON error object on stdout: $def4_out"; exit 1; }
+printf '%s' "$def4_out" | grep -q '"NotFound"' \
+    || { echo "[-] JSON error missing name: $def4_out"; exit 1; }
+if command -v jq >/dev/null 2>&1; then
+    printf '%s' "$def4_out" \
+        | jq -e '.error.code==7 and .command=="info" and .schema_version==1' >/dev/null \
+        || { echo "[-] JSON error envelope shape wrong: $def4_out"; exit 1; }
+fi
+# Parse errors are JSON too (the Context is not built yet at parse time).
+po=$("$ABCPWN_BIN" --format json pack notanumber 2>/dev/null || true)
+printf '%s' "$po" | grep -q '"error"' \
+    || { echo "[-] CLI parse error not emitted as JSON: $po"; exit 1; }
+
+echo "[+] error format OK: single prefix, rop not NotFound, JSON errors on stdout"

@@ -95,6 +95,35 @@ void count_severity(const core::Section& s, int& info, int& low, int& med, int& 
 
 } // namespace
 
+void JsonWriter::write_error(
+    std::ostream& os,
+    std::string_view command,
+    int code,
+    std::string_view name,
+    std::string_view message,
+    const std::map<std::string, std::variant<std::string, std::int64_t, bool>>& args) const {
+    (void) ctx_;
+
+    json envelope;
+    envelope["abcpwn_version"] = std::string(core::semver_string);
+    envelope["schema_version"] = kJsonSchemaVersion;
+    envelope["command"] = std::string(command);
+
+    json args_json = json::object();
+    for (const auto& [k, v] : args) {
+        std::visit([&](const auto& val) { args_json[k] = val; }, v);
+    }
+    envelope["args"] = std::move(args_json);
+
+    envelope["error"] = json{
+        {"code", code},
+        {"name", std::string(name)},
+        {"message", std::string(message)},
+    };
+
+    os << envelope.dump(2) << "\n";
+}
+
 void JsonWriter::write(
     std::ostream& os,
     std::string_view command,

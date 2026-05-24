@@ -104,6 +104,24 @@ std::string strip_cmd_prefix(std::string_view cmd, std::string_view message) {
     return is_prefix ? std::string(message.substr(colon + 2)) : std::string(message);
 }
 
+// Detect "--format json" / "-f json" from raw argv. The Context (and
+// thus ctx.format) is only built after a successful parse, so a parse
+// FAILURE must consult argv directly to decide whether to render the
+// error as JSON (DEF-4).
+bool argv_requests_json(int argc, char** argv) {
+    for (int i = 1; i < argc; ++i) {
+        const std::string_view a = argv[i];
+        if ((a == "--format" || a == "-f") && i + 1 < argc) {
+            if (std::string_view(argv[i + 1]) == "json") {
+                return true;
+            }
+        } else if (a == "--format=json" || a == "-fjson") {
+            return true;
+        }
+    }
+    return false;
+}
+
 // --log-file: write a single JSON record describing the run to the
 // configured path (verification #20). The man page documents the flag
 // as "a JSON log of the run", so we honor that literally rather than
@@ -325,18 +343,30 @@ int main(int argc, char** argv) {
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError& e) {
-        // CLI11's own exit codes (104 RequiredError, 106 ExtrasError,
-        // 109 RequiresError, 102/103/105/108 family) are leaked
-        // straight through if we hand the exception to app.exit().
-        // Operators see "exit 109" with no entry in docs/ERROR_CODES.md
-        // and assume the binary has crashed. Funnel every parse-time
-        // error through exit 2 (UsageError) so the documented exit
-        // table is the single source of truth; CLI11 still writes
-        // its own diagnostic to stderr before we return.
-        const int cli_rc = app.exit(e);
-        if (cli_rc == 0) {
-            return 0; // --help / --version / -- caught as ParseError
+        // --help / --version / "--" surface as ParseError with exit code
+        // 0; let CLI11 print them to stdout and exit cleanly.
+        if (e.get_exit_code() == 0) {
+            return app.exit(e);
         }
+        // A real parse error. CLI11's own exit codes (104 RequiredError,
+        // 106 ExtrasError, 109 RequiresError, ...) are leaked straight
+        // through by app.exit(); operators see "exit 109" with no entry
+        // in docs/ERROR_CODES.md. Funnel every parse-time error through
+        // exit 2 (UsageError) so the documented exit table is the single
+        // source of truth. In JSON mode, render the failure as a JSON
+        // envelope on stdout (DEF-4) -- the Context is not built yet, so
+        // detect the format from argv.
+        if (argv_requests_json(argc, argv)) {
+            core::Context json_ctx;
+            json_ctx.format = core::OutputFormat::Json;
+            output::JsonWriter(json_ctx).write_error(std::cout,
+                                                     "",
+                                                     static_cast<int>(core::ErrorCode::UsageError),
+                                                     "UsageError",
+                                                     e.what());
+            return static_cast<int>(core::ErrorCode::UsageError);
+        }
+        app.exit(e); // CLI11 writes its own diagnostic to stderr
         return static_cast<int>(core::ErrorCode::UsageError);
     }
 
@@ -469,16 +499,20 @@ int main(int argc, char** argv) {
     const std::string cmd_name{selected->cmd->name()};
 
     if (!result) {
-        write_run_log(ctx,
-                      cmd_name,
-                      command_line,
-                      result.error().exit_code(),
-                      false,
-                      result.error().message,
-                      elapsed);
-        std::cerr << "[-] " << cmd_name << ": "
-                  << strip_cmd_prefix(cmd_name, result.error().message) << '\n';
-        return result.error().exit_code();
+        const auto& e = result.error();
+        const std::string msg = strip_cmd_prefix(cmd_name, e.message);
+        write_run_log(ctx, cmd_name, command_line, e.exit_code(), false, msg, elapsed);
+        if (ctx.format == core::OutputFormat::Json) {
+            // DEF-4: emit a JSON error envelope on stdout so pipelines can
+            // parse failures rather than scrape human-readable stderr.
+            std::map<std::string, std::variant<std::string, std::int64_t, bool>> json_args;
+            json_args.emplace("command_line", command_line);
+            output::JsonWriter(ctx).write_error(
+                std::cout, cmd_name, e.exit_code(), core::error_code_name(e.code), msg, json_args);
+        } else {
+            std::cerr << "[-] " << cmd_name << ": " << msg << '\n';
+        }
+        return e.exit_code();
     }
 
     if (!result->duration) {

@@ -30,6 +30,19 @@ public:
                const std::map<std::string, std::variant<std::string, std::int64_t, bool>>& args =
                    {}) const;
 
+    // Render a failed command as a JSON error envelope (DEF-4): the same
+    // top-level shape as write(), with an `error` object {code, name,
+    // message} in place of result/findings/summary so a pipeline can
+    // parse failures instead of scraping stderr. `message` is expected
+    // already stripped of any "<cmd>: " self-prefix by the caller.
+    void write_error(std::ostream& os,
+                     std::string_view command,
+                     int code,
+                     std::string_view name,
+                     std::string_view message,
+                     const std::map<std::string, std::variant<std::string, std::int64_t, bool>>&
+                         args = {}) const;
+
 private:
     const core::Context& ctx_;
 };

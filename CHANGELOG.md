@@ -61,6 +61,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   when the target lacks the gadgets to build the requested chain;
   `NotFound` is reserved for a genuinely missing path (DEF-1 / DEF-19,
   consistent with the gadget no-executable-sections fix).
+- under `--format json`, a failing command emits a JSON error envelope
+  on stdout (`{abcpwn_version, schema_version, command, args,
+  error:{code, name, message}}`) instead of plaintext on stderr, so
+  pipelines can parse failures. Covers both command errors and CLI
+  parse errors, with the exit code preserved (DEF-4).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
