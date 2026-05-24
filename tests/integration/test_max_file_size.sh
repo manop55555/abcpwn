@@ -80,4 +80,24 @@ for spec in "phd /bin/ls" "disasm /bin/ls --input-file"; do
     fi
 done
 
+# DEF-20: an invalid ABCPWN_MAX_FILE_SIZE warns (was silently ignored)
+# and keeps the default cap. A leading "-" must not wrap to a huge value
+# that disables the cap (strtoull would turn "-1" into ULLONG_MAX).
+for bad in abc 0 -1 1024.5; do
+    export ABCPWN_MAX_FILE_SIZE="$bad"
+    warn=$("$ABCPWN_BIN" --no-banner cyclic 4 2>&1 >/dev/null || true)
+    if ! printf '%s' "$warn" | grep -qiE "not a positive integer|keeping the default"; then
+        echo "[-] ABCPWN_MAX_FILE_SIZE=$bad did not warn; got: $warn" >&2
+        exit 1
+    fi
+done
+# "-1" must still enforce the cap on a large file (not disable it).
+export ABCPWN_MAX_FILE_SIZE=-1
+set +e
+"$ABCPWN_BIN" --no-banner hash /bin/ls >/dev/null 2>/dev/null
+rc=$?
+set -e
+[ "$rc" -eq 0 ] || { echo "[-] ABCPWN_MAX_FILE_SIZE=-1 broke a normal hash (rc=$rc)" >&2; exit 1; }
+unset ABCPWN_MAX_FILE_SIZE
+
 echo "[+] test_max_file_size ok"

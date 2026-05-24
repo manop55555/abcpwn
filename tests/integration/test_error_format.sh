@@ -84,4 +84,25 @@ po=$("$ABCPWN_BIN" --format json pack notanumber 2>/dev/null || true)
 printf '%s' "$po" | grep -q '"error"' \
     || { echo "[-] CLI parse error not emitted as JSON: $po"; exit 1; }
 
-echo "[+] error format OK: single prefix, rop not NotFound, JSON errors on stdout"
+# DEF-19: rop on a parseable file with no executable sections is
+# Unsupported (10), not NotFound (7) -- the same class as gadget's case.
+if [ -n "$gtarget" ]; then
+    ho=$(mktemp)
+    head -c 100 "$gtarget" > "$ho"
+    set +e
+    "$ABCPWN_BIN" --no-banner rop "$ho" --syscall 59 --syscall-arg 1 >/dev/null 2>/dev/null
+    rop_ho_rc=$?
+    set -e
+    rm -f "$ho"
+    [ "$rop_ho_rc" -ne 7 ] \
+        || { echo "[-] rop on a no-exec-sections file still returns NotFound (7)"; exit 1; }
+fi
+
+# DEF-21: user-facing errors must not leak internal object names.
+libc_err=$("$ABCPWN_BIN" --no-banner libc download nonexistent-id 2>&1 || true)
+if printf '%s' "$libc_err" | grep -qF "Context"; then
+    echo "[-] libc error leaks the internal 'Context' object name: $libc_err"
+    exit 1
+fi
+
+echo "[+] error format OK: single prefix, rop/Context honest, JSON errors on stdout"

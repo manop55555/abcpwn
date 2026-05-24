@@ -113,6 +113,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   info-level chrome), and `-v`/`-vv` raise the logger level and emit a
   debug dispatch line, so verbosity has an observable effect; both were
   previously accepted but inert (DEF-18).
+- user-facing errors no longer leak the internal object name `Context`
+  (`libc download`, `pwninit`) (DEF-21).
+- an invalid `ABCPWN_MAX_FILE_SIZE` (non-numeric, zero, negative, or
+  fractional) warns on stderr and keeps the default cap instead of being
+  silently ignored; a leading `-` no longer wraps to a huge value that
+  disabled the cap entirely (DEF-20).
+- `rop` (no executable sections) and `libc offsets` (no in-binary DB
+  entry) return `Unsupported` (exit 10) rather than `NotFound` (exit 7),
+  reserving `NotFound` for a genuinely missing path (DEF-19).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

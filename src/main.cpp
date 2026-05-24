@@ -435,8 +435,15 @@ int main(int argc, char** argv) {
     if (const char* mfs = std::getenv("ABCPWN_MAX_FILE_SIZE"); mfs != nullptr && *mfs != '\0') {
         char* endp = nullptr;
         const auto v = std::strtoull(mfs, &endp, 10);
-        if (endp != mfs && *endp == '\0' && v > 0) {
+        // Reject a leading '-' explicitly: strtoull would wrap "-1" to
+        // ULLONG_MAX and silently DISABLE the cap. A non-positive or
+        // non-numeric value keeps the default and now warns (DEF-20).
+        const bool valid = mfs[0] != '-' && endp != mfs && *endp == '\0' && v > 0;
+        if (valid) {
             ctx.limits.max_file_bytes = static_cast<std::size_t>(v);
+        } else if (!ctx.quiet()) {
+            std::cerr << "[!] ABCPWN_MAX_FILE_SIZE='" << mfs
+                      << "' is not a positive integer; keeping the default size cap\n";
         }
     }
     if (!config_path.empty()) {

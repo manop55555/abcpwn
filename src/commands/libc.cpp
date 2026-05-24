@@ -190,9 +190,12 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
                 core::Severity::Info, std::string(fp.symbol), hex_str(fp.offset));
         }
         if (sec.findings.empty()) {
-            return core::err(core::ErrorCode::NotFound,
+            // DEF-19: the in-binary DB simply has no data for this
+            // version/symbol -- a coverage gap, not a missing file.
+            return core::err(core::ErrorCode::Unsupported,
                              "libc offsets: no entries for '" + identifier
-                                 + (symbol.empty() ? "" : "' / symbol '" + symbol) + "'");
+                                 + (symbol.empty() ? "" : "' / symbol '" + symbol)
+                                 + "' in the in-binary database");
         }
         return res;
     }
@@ -230,7 +233,8 @@ core::Result<core::CommandResult> LibcCommand::run(const core::Context& ctx) {
     if (action == "download") {
         if (!ctx.allow_network) {
             return core::err(core::ErrorCode::NetworkDisabled,
-                             "libc download: --allow-network not set on Context");
+                             "libc download: network access is disabled; pass --allow-network "
+                             "to enable it");
         }
         if (!network_compiled_in()) {
             return core::err(core::ErrorCode::FeatureDisabled,

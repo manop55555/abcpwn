@@ -129,7 +129,10 @@ core::Result<core::CommandResult> RopCommand::run(const core::Context& ctx) {
 
     auto sections = collect_executable_sections(*loaded);
     if (sections.empty()) {
-        return core::err(core::ErrorCode::NotFound, "rop: no executable sections in target");
+        // DEF-19: the binary parsed but has no code to scan -- not a
+        // missing path. Match gadget's no-exec-sections code (Unsupported).
+        return core::err(core::ErrorCode::Unsupported,
+                         "rop: no executable sections in target (parsed, but nothing to scan)");
     }
 
     rop::GadgetSearchOptions opts;

@@ -115,7 +115,7 @@ core::Result<core::CommandResult> PwninitCommand::run(const core::Context& ctx) 
         steps.findings.emplace_back(core::Severity::Medium,
                                     "note",
                                     "this build will not actually download anything: network "
-                                    "not compiled in or --allow-network not set on Context");
+                                    "is not compiled in, or --allow-network was not passed");
     }
     return res;
 }
