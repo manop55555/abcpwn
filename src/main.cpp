@@ -297,6 +297,20 @@ int main(int argc, char** argv) {
     ctx.no_banner = no_banner;
     ctx.allow_network = allow_network;
 
+    // QA round 1 OBSERVATION: a `network=no` build silently accepts
+    // --allow-network at parse time and then surfaces FeatureDisabled
+    // later when the network-using subcommand fires. Warn at parse
+    // time so the operator sees the mismatch immediately and does not
+    // build automation against a flag that has no effect on this
+    // binary. The warning goes to stderr; we do NOT abort the command
+    // because non-network subcommands work fine and the user might
+    // have inherited the flag from a shell alias.
+    if (allow_network && !core::have_network) {
+        std::cerr << "[!] --allow-network passed but this build was produced without "
+                  << "ABCPWN_WITH_NETWORK=ON; the libc download and pwninit fetch paths "
+                  << "are compiled out and the flag has no effect.\n";
+    }
+
     // Defense-in-depth: ABCPWN_NO_NETWORK=1 in the environment forces
     // network access off even when --allow-network is passed. Lets
     // locked-down CI and shared infrastructure prevent operators from

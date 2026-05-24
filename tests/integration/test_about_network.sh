@@ -68,4 +68,20 @@ case "$override_exit" in
     *) echo "[-] ABCPWN_NO_NETWORK=1 did not force NetworkDisabled (got exit $override_exit)"; exit 1 ;;
 esac
 
-echo "[+] about-network OK: policy block, env override forces NetworkDisabled"
+# 4. On a network=no build, --allow-network warns at parse time on
+#    stderr. The flag has no effect (libc download still returns
+#    FeatureDisabled), so silence would be misleading; the warning
+#    is what gives the operator a chance to notice the build mismatch
+#    before automation builds up around a no-op flag.
+#    Detect "network=no" from --version to gate this assertion to the
+#    builds where it applies.
+if "$ABCPWN_BIN" --no-banner --version 2>&1 | grep -q 'network=no'; then
+    warn_out="$("$ABCPWN_BIN" --no-banner --allow-network errno 13 2>&1 1>/dev/null)"
+    if ! echo "$warn_out" | grep -qE 'ABCPWN_WITH_NETWORK|network.*compiled out|no effect'; then
+        echo "[-] --allow-network on network=no build did not warn"
+        echo "    stderr was: $warn_out"
+        exit 1
+    fi
+fi
+
+echo "[+] about-network OK: policy block, env override forces NetworkDisabled, parse-time warning"
