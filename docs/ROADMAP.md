@@ -2,7 +2,7 @@
 
 ## v0.1.x (current line)
 
-- 38 subcommands across 13 groups.
+- 39 subcommands across 13 groups.
 - Pre-built binary ships for Linux x86_64 (and runs on WSL2). Other
   platforms (Linux aarch64, macOS arm64/x86_64) build from source
   per [../BUILDING.md](../BUILDING.md); pre-built binaries for them
@@ -16,6 +16,20 @@
   fuzz schedule.
 - AddressSanitizer, UndefinedBehaviorSanitizer, ThreadSanitizer
   presets exercised on every pull request.
+
+## v0.1.1 (next patch)
+
+- Harden the binary loader against the upstream LIEF note-size
+  out-of-memory. A crafted ELF with an oversized note descriptor
+  (`n_descsz`) makes LIEF allocate an attacker-controlled amount of
+  memory while parsing; the `fuzz_binary_loader` harness reproduces it
+  as an OOM crash. The harness already skips such *section*-note inputs;
+  v0.1.1 extends that to program-header (`PT_NOTE`) notes and adds a
+  production-side size sanity check before delegating to LIEF, so
+  `info` / `gadget` and friends cannot be OOM'd by a small malicious
+  ELF. (Tracks the auto-filed `fuzz_binary_loader` crash reports; the
+  root cause is upstream in LIEF, which does not bound note size fields
+  against the enclosing file.)
 
 ## v0.2 (next)
 
