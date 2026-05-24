@@ -71,7 +71,7 @@ TEST_CASE("ret2win flow chains info -> syms -> rop -> cyclic", "[integration][re
     }
 
     // Stage 3: rop --syscall requires gadget classes the C fixture
-    // does not contain (no pop rax). The flow returns NotFound with a
+    // does not contain (no pop rax). The flow returns Unsupported with a
     // descriptive list of missing gadgets -- exactly the feedback a
     // CTF player needs to switch strategies.
     {
@@ -81,11 +81,12 @@ TEST_CASE("ret2win flow chains info -> syms -> rop -> cyclic", "[integration][re
         rop.syscall_args = {0x600000};
         auto r = rop.run(ctx);
         // Either the fixture has enough gadgets -> Ok, or it does not
-        // -> NotFound with "missing gadgets" message. Both are valid
+        // -> Unsupported with "missing gadgets" message (DEF-19: not
+        // NotFound, which is reserved for a missing path). Both are valid
         // ret2win flow outcomes; the integration check is that the
         // command runs and the response is shaped correctly.
         if (!r) {
-            REQUIRE(r.error().code == abcpwn::core::ErrorCode::NotFound);
+            REQUIRE(r.error().code == abcpwn::core::ErrorCode::Unsupported);
             REQUIRE(r.error().message.find("missing") != std::string::npos);
         } else {
             REQUIRE_FALSE(r->sections.empty());

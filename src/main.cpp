@@ -80,6 +80,30 @@ struct DispatchEntry {
     CLI::App* sub{nullptr};
 };
 
+// Strip a leading "<cmd>: " or "<cmd> <action>: " that a command added
+// to its own error message, so the single dispatcher prefix
+// ("[-] <cmd>: ") is never doubled (DEF-1). Shared by the pretty and the
+// JSON (DEF-4) error paths.
+std::string strip_cmd_prefix(std::string_view cmd, std::string_view message) {
+    if (!message.starts_with(cmd)) {
+        return std::string(message);
+    }
+    const auto colon = message.find(": ", cmd.size());
+    if (colon == std::string_view::npos) {
+        return std::string(message);
+    }
+    // The text between <cmd> and ": " must be empty (exact "<cmd>: ") or a
+    // single action word (" <action>"), so a real message that merely
+    // starts with the command's name is never truncated.
+    const std::string_view gap = message.substr(cmd.size(), colon - cmd.size());
+    bool is_prefix = gap.empty();
+    if (!is_prefix && gap.front() == ' ') {
+        const std::string_view word = gap.substr(1);
+        is_prefix = !word.empty() && word.find(' ') == std::string_view::npos;
+    }
+    return is_prefix ? std::string(message.substr(colon + 2)) : std::string(message);
+}
+
 // --log-file: write a single JSON record describing the run to the
 // configured path (verification #20). The man page documents the flag
 // as "a JSON log of the run", so we honor that literally rather than
@@ -452,7 +476,8 @@ int main(int argc, char** argv) {
                       false,
                       result.error().message,
                       elapsed);
-        std::cerr << "[-] " << cmd_name << ": " << result.error().message << '\n';
+        std::cerr << "[-] " << cmd_name << ": "
+                  << strip_cmd_prefix(cmd_name, result.error().message) << '\n';
         return result.error().exit_code();
     }
 

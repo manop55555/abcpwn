@@ -54,6 +54,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   the build-time SemVer (previously the header and JSON showed the
   short `0.1.0` while `--version` showed `0.1.0-alpha.4`). The
   decorative ASCII banner keeps its static brand mark (verification N3).
+- error messages carry a single `[-] <cmd>: ` prefix; a command that
+  self-prefixed its own message no longer produces a doubled command
+  name such as `[-] pack: pack: ...` (DEF-1).
+- `rop --syscall` reports `Unsupported` (exit 10), not `NotFound` (7),
+  when the target lacks the gadgets to build the requested chain;
+  `NotFound` is reserved for a genuinely missing path (DEF-1 / DEF-19,
+  consistent with the gadget no-executable-sections fix).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

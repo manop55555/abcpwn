@@ -257,7 +257,11 @@ core::Result<core::CommandResult> RopCommand::run(const core::Context& ctx) {
             }
             m += missing[i];
         }
-        return core::err(core::ErrorCode::NotFound,
+        // The args parsed fine; the target simply lacks the gadgets to
+        // build this chain. NotFound (7) means "path does not exist", so
+        // route to Unsupported (10) -- consistent with gadget's
+        // no-exec-sections case (DEF-1 / DEF-19, cross-tier note from #41).
+        return core::err(core::ErrorCode::Unsupported,
                          "rop: cannot build syscall chain, missing gadgets: " + m);
     }
 
