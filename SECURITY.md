@@ -3,6 +3,16 @@
 `abcpwn` parses attacker-controlled binaries. A bug in the parser is a
 real vulnerability. We take security seriously.
 
+## Authorized use only
+
+abcpwn is for authorized security work only -- research, CTF, teaching,
+and penetration testing you are permitted to perform. You are
+responsible for complying with the law in your jurisdiction (for
+example Germany's StGB §202c, the UK Computer Misuse Act 1990, and the
+US Computer Fraud and Abuse Act). The software is provided "as is"
+under Apache-2.0, without warranty. See the README's "Defensive use and
+legal notice" for the full statement.
+
 ## Reporting a Vulnerability
 
 Please report security vulnerabilities through GitHub Security Advisories:

@@ -95,6 +95,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   once in `safe_io::read_file`, so every command that loads a file
   (info, syms, strings, search, gadget, hash, disasm `--input-file`,
   phd, ...) gains it (DEF-16).
+- a "Defensive use and legal notice" to the README (with a short
+  equivalent in SECURITY.md): authorized-use-only scope, user
+  responsibility, references to applicable law (Germany StGB §202c, UK
+  Computer Misuse Act 1990, US CFAA), and the Apache-2.0 "as is"
+  disclaimer in plain language (IMP-3).
 
 ### Changed
 

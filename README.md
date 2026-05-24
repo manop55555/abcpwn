@@ -50,6 +50,25 @@ past v0.1. See [CHANGELOG.md](CHANGELOG.md) for the
 release history. The CLI surface is approaching stable; breaking changes
 are still possible in MINOR bumps until 1.0.
 
+## Defensive use and legal notice
+
+abcpwn is a tool for **authorized** security work: binary-exploitation
+research, CTF competitions, teaching, and penetration testing you have
+explicit permission to perform. It analyzes binaries and helps build
+exploit primitives offline; it never attacks remote systems on its own
+and never executes the target it inspects.
+
+You are responsible for how you use it. Applying these techniques to
+systems you do not own or are not authorized to test may be a crime.
+"Hacking tools" and unauthorized access are regulated by laws such as
+**Germany's StGB §202c**, the **United Kingdom's Computer Misuse Act
+1990**, and the **United States' Computer Fraud and Abuse Act**, among
+many others. Know the law in your jurisdiction before you act.
+
+abcpwn is provided **"as is", without warranty of any kind**, under the
+Apache License 2.0 (see [LICENSE](LICENSE)). The authors accept no
+liability for any damage or legal consequence arising from its use.
+
 ## Supported platforms
 
 | OS    | Arch    | Status                          |
