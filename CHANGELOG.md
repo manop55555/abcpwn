@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+_Nothing yet; changes for the next release land here._
+
+## [0.1.0] - 2026-05-24
+
+First public release. The 0.1.x line is the offline, analysis,
+and exploit-primitives subset of the toolkit; the live process I/O
+driver and the advanced heap / one-gadget / SROP-ret2dlresolve-BROP
+automation are on the v0.2 roadmap. The entries below are the
+changes since the alpha series.
+
 ### Added
 
 - `seccomp dump <binary>` is implemented (verification #7). It
@@ -16,77 +26,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   annotations. abcpwn never executes the target, so runtime-built
   (libseccomp) filters report a clear message pointing at strace /
   seccomp-tools instead.
-
-### Fixed
-
-- man page EXAMPLES no longer references the removed `rop --execve`
-  flag; the ROP example uses `--syscall` (matches the README Quick
-  Start).
-- README platforms badge dropped `macos`; macOS is build-from-source,
-  not a tier-1 pre-built platform.
-- zsh completion description for `syms` shortened to "list dynamic
-  imports" to match `--help` (the `--type` variant was removed).
-- `gadget` no longer silently truncates: the default `--max-results`
-  cap was raised from 200000 to 1000000 (fits a typical libc), and
-  hitting the cap now warns on stderr so the truncation is visible
-  when stdout is redirected to a file.
-- `disasm` no longer silently caps output: the default instruction cap
-  was raised to 1000000, and both the 1 MiB input-file cap and the
-  instruction cap now print a warning on stderr when they truncate.
-- `gadget` no longer reports `NotFound` (exit 7) for a binary that
-  parses but has no executable sections; that case is now `Unsupported`
-  (exit 10), reserving `NotFound` for a genuinely missing path
-  (verification #41).
-- `--log-file PATH` works again: it was documented in the man page and
-  completions but the CLI flag had been removed, so the binary rejected
-  it (exit 2). It now writes a JSON record of the run (command,
-  command_line, exit_code, ok, duration_ms, and error on failure) to
-  PATH for both successful and failed runs (verification #20).
-- `rop --syscall` now combines multi-pop gadgets: a single
-  `pop rdi ; pop rsi ; pop rdx ; ret` can populate several argument
-  registers at once (greedy set cover over the needed registers),
-  instead of requiring a dedicated `pop <reg> ; ret` per register. It
-  also covers all six syscall argument registers (rdi, rsi, rdx, r10,
-  r8, r9) and finds a bare `syscall` gadget, not only `syscall ; ret`
-  (verification #31).
-- the version string is consistent across surfaces: the compact CLI
-  header, `--version`, and the JSON `abcpwn_version` field all report
-  the build-time SemVer (previously the header and JSON showed the
-  short `0.1.0` while `--version` showed `0.1.0-alpha.4`). The
-  decorative ASCII banner keeps its static brand mark (verification N3).
-- error messages carry a single `[-] <cmd>: ` prefix; a command that
-  self-prefixed its own message no longer produces a doubled command
-  name such as `[-] pack: pack: ...` (DEF-1).
-- `rop --syscall` reports `Unsupported` (exit 10), not `NotFound` (7),
-  when the target lacks the gadgets to build the requested chain;
-  `NotFound` is reserved for a genuinely missing path (DEF-1 / DEF-19,
-  consistent with the gadget no-executable-sections fix).
-- under `--format json`, a failing command emits a JSON error envelope
-  on stdout (`{abcpwn_version, schema_version, command, args,
-  error:{code, name, message}}`) instead of plaintext on stderr, so
-  pipelines can parse failures. Covers both command errors and CLI
-  parse errors, with the exit code preserved (DEF-4).
-- global `--format` and `--color` reject unknown values with
-  `InvalidInput` (exit 8) instead of silently falling back to
-  pretty/auto; `--format` stays case-sensitive (DEF-6).
-- `gadget --type` and `template <strategy>` reject unknown values with
-  `UsageError` (exit 2) -- matching shellcode/heap/iofile -- instead of
-  silently using `ret` / echoing the bogus strategy (DEF-8).
-- `cyclic` no longer exhausts memory on a large `--subseq-length`
-  (DEF-7). Generation is lazy -- only the requested length is produced,
-  so `cyclic 10 -n 7` returns instantly instead of allocating ~8 GB and
-  being OOM-killed. The `--find` search space is bounded: an oversized
-  `alphabet^subseq-length` returns `SizeExceeded` (exit 9) with guidance
-  instead of OOM (fixing an off-by-one in the prior cap).
-- `phd` and `disasm --input-file` honor `ABCPWN_MAX_FILE_SIZE`, refusing
-  oversized files with `SizeExceeded` (exit 9) like the other
-  file-reading commands; they previously read any size (DEF-13).
-- `info` returns `Corrupted` (exit 11) for a file whose architecture
-  cannot be determined (e.g. random bytes after the ELF magic) instead
-  of a confident, alarming NX/PIE/Canary report at exit 0; pass `--arch`
-  to force analysis of an unrecognized binary (DEF-15).
-
-### Added
 
 - file-path subcommands accept `-` to read the target from standard
   input (`cat ./vuln | abcpwn info -`, `... | abcpwn gadget -`,
@@ -176,6 +115,104 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   v0.1.1), and auto-filing refilled the issue tracker on every run.
   Auto-filing and gating return in v0.2 once that backlog clears
   (IMP-1 follow-up).
+- the public docs are rewritten for the first release: the README leads
+  with an honest scope (offline primitives; live process I/O, heap
+  templates, one-gadget constraint solving, automated
+  SROP/ret2dlresolve/BROP, and a pwntools-compatible scripting surface
+  are v0.2), with a process-driver pairing example; COMMANDS marks `pwn`
+  as the `NotImplemented` placeholder it is and uses its real flags; and
+  the ROADMAP enumerates every deferred v0.2 feature with a rationale.
+
+### Fixed
+
+- the pretty-format command header reports the build-time SemVer instead
+  of a hardcoded `v0.1.0`, so it matches `--version`, the JSON
+  `abcpwn_version` field, and the compact header on every release.
+
+- man page EXAMPLES no longer references the removed `rop --execve`
+  flag; the ROP example uses `--syscall` (matches the README Quick
+  Start).
+- README platforms badge dropped `macos`; macOS is build-from-source,
+  not a tier-1 pre-built platform.
+- zsh completion description for `syms` shortened to "list dynamic
+  imports" to match `--help` (the `--type` variant was removed).
+- `gadget` no longer silently truncates: the default `--max-results`
+  cap was raised from 200000 to 1000000 (fits a typical libc), and
+  hitting the cap now warns on stderr so the truncation is visible
+  when stdout is redirected to a file.
+- `disasm` no longer silently caps output: the default instruction cap
+  was raised to 1000000, and both the 1 MiB input-file cap and the
+  instruction cap now print a warning on stderr when they truncate.
+- `gadget` no longer reports `NotFound` (exit 7) for a binary that
+  parses but has no executable sections; that case is now `Unsupported`
+  (exit 10), reserving `NotFound` for a genuinely missing path
+  (verification #41).
+- `--log-file PATH` works again: it was documented in the man page and
+  completions but the CLI flag had been removed, so the binary rejected
+  it (exit 2). It now writes a JSON record of the run (command,
+  command_line, exit_code, ok, duration_ms, and error on failure) to
+  PATH for both successful and failed runs (verification #20).
+- `rop --syscall` now combines multi-pop gadgets: a single
+  `pop rdi ; pop rsi ; pop rdx ; ret` can populate several argument
+  registers at once (greedy set cover over the needed registers),
+  instead of requiring a dedicated `pop <reg> ; ret` per register. It
+  also covers all six syscall argument registers (rdi, rsi, rdx, r10,
+  r8, r9) and finds a bare `syscall` gadget, not only `syscall ; ret`
+  (verification #31).
+- the version string is consistent across surfaces: the compact CLI
+  header, `--version`, and the JSON `abcpwn_version` field all report
+  the build-time SemVer (previously the header and JSON showed the
+  short `0.1.0` while `--version` showed `0.1.0-alpha.4`). The
+  decorative ASCII banner keeps its static brand mark (verification N3).
+- error messages carry a single `[-] <cmd>: ` prefix; a command that
+  self-prefixed its own message no longer produces a doubled command
+  name such as `[-] pack: pack: ...` (DEF-1).
+- `rop --syscall` reports `Unsupported` (exit 10), not `NotFound` (7),
+  when the target lacks the gadgets to build the requested chain;
+  `NotFound` is reserved for a genuinely missing path (DEF-1 / DEF-19,
+  consistent with the gadget no-executable-sections fix).
+- under `--format json`, a failing command emits a JSON error envelope
+  on stdout (`{abcpwn_version, schema_version, command, args,
+  error:{code, name, message}}`) instead of plaintext on stderr, so
+  pipelines can parse failures. Covers both command errors and CLI
+  parse errors, with the exit code preserved (DEF-4).
+- global `--format` and `--color` reject unknown values with
+  `InvalidInput` (exit 8) instead of silently falling back to
+  pretty/auto; `--format` stays case-sensitive (DEF-6).
+- `gadget --type` and `template <strategy>` reject unknown values with
+  `UsageError` (exit 2) -- matching shellcode/heap/iofile -- instead of
+  silently using `ret` / echoing the bogus strategy (DEF-8).
+- `cyclic` no longer exhausts memory on a large `--subseq-length`
+  (DEF-7). Generation is lazy -- only the requested length is produced,
+  so `cyclic 10 -n 7` returns instantly instead of allocating ~8 GB and
+  being OOM-killed. The `--find` search space is bounded: an oversized
+  `alphabet^subseq-length` returns `SizeExceeded` (exit 9) with guidance
+  instead of OOM (fixing an off-by-one in the prior cap).
+- `phd` and `disasm --input-file` honor `ABCPWN_MAX_FILE_SIZE`, refusing
+  oversized files with `SizeExceeded` (exit 9) like the other
+  file-reading commands; they previously read any size (DEF-13).
+- `info` returns `Corrupted` (exit 11) for a file whose architecture
+  cannot be determined (e.g. random bytes after the ELF magic) instead
+  of a confident, alarming NX/PIE/Canary report at exit 0; pass `--arch`
+  to force analysis of an unrecognized binary (DEF-15).
+
+### Security
+
+- The full test suite runs clean under AddressSanitizer,
+  UndefinedBehaviorSanitizer, and ThreadSanitizer; the `sanitizers`
+  workflow gates every push to `main` and every pull request, and CI
+  fails on any sanitizer error.
+- The release binary is built with PIE, full RELRO (`BIND_NOW`), a
+  non-executable stack, stack-smashing protection
+  (`-fstack-protector-strong`), and `_FORTIFY_SOURCE`. SECURITY.md lists
+  the commands to verify each on the shipped artifact.
+- CodeQL static analysis runs on every push and pull request.
+- All four parser-facing surfaces (binary loader, seccomp decoder,
+  format-string parser, gadget filter) have libFuzzer harnesses run on a
+  nightly schedule.
+- Release artifacts are signed with cosign (keyless, Fulcio + Rekor via
+  GitHub OIDC) and ship a CycloneDX SBOM and an SLSA build-provenance
+  attestation; SECURITY.md documents verification.
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
