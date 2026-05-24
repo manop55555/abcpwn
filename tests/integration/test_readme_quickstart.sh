@@ -31,13 +31,12 @@ fi
 # bogus we accept exit 5/6/7 (IoError/PermissionDenied/NotFound).
 # Exit 2 (UsageError) means a real CLI defect.
 quickstart=(
-    "info ./challenge"
-    "syms ./challenge --dangerous"
-    "gadget ./libc.so.6 --depth 8"
-    "rop ./challenge --syscall 59 --syscall-arg 0x404020 --syscall-arg 0 --syscall-arg 0"
-    "shellcode --preset sh --arch x86_64"
-    "pwn 1.2.3.4:1337"
     "info /bin/ls"
+    "cyclic 200"
+    "cyclic --find laaa"
+    "pack 0xdeadbeef"
+    "gadget /bin/ls --depth 3 --max-results 5"
+    "fmt --write 0x404018=0xdeadbeef --arg-position 6"
 )
 
 bad=0
