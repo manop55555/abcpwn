@@ -6,6 +6,7 @@
 #include <chrono>
 #include <cstdint>
 #include <cstdio>
+#include <cstdlib>
 #include <filesystem>
 #include <span>
 #include <string>
@@ -113,12 +114,23 @@ core::Result<core::CommandResult> DisasmCommand::run(const core::Context& ctx) {
     // shell wrapper has likely already given up; surface Timeout (exit
     // 15) so automation sees a documented code instead of "process
     // hung but did eventually complete".
-    constexpr auto kTimeBudget = std::chrono::seconds{30};
+    // Default 30s budget, overridable via ABCPWN_DISASM_TIMEOUT_MS (in
+    // milliseconds) for tuning on slow hosts and to exercise the Timeout
+    // (rc=15) path in tests (DEF-17). Capstone is synchronous, so the
+    // check is post-decode; the byte cap above bounds the worst case.
+    std::chrono::milliseconds time_budget{30000};
+    if (const char* tb = std::getenv("ABCPWN_DISASM_TIMEOUT_MS"); tb != nullptr && *tb != '\0') {
+        char* endp = nullptr;
+        const auto ms = std::strtoull(tb, &endp, 10);
+        if (tb[0] != '-' && endp != tb && *endp == '\0') {
+            time_budget = std::chrono::milliseconds{ms};
+        }
+    }
     const auto elapsed = std::chrono::steady_clock::now() - deadline_start;
-    if (elapsed > kTimeBudget) {
+    if (elapsed > time_budget) {
         return core::err(core::ErrorCode::Timeout,
-                         "disasm: decode exceeded the internal "
-                             + std::to_string(kTimeBudget.count()) + "s budget");
+                         "disasm: decode exceeded the " + std::to_string(time_budget.count())
+                             + " ms time budget");
     }
 
     // Surface default-cap truncation on stderr (verification N1): the byte

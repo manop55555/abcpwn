@@ -122,6 +122,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `rop` (no executable sections) and `libc offsets` (no in-binary DB
   entry) return `Unsupported` (exit 10) rather than `NotFound` (exit 7),
   reserving `NotFound` for a genuinely missing path (DEF-19).
+- the man page documents option-value syntax: short options take `-d 8`
+  or `-d8` (not `-d=8`), long options take `--depth 8` or `--depth=8`,
+  and global options must precede the subcommand (DEF-11).
+- the `disasm` time budget is configurable via `ABCPWN_DISASM_TIMEOUT_MS`
+  (milliseconds), so the `Timeout` exit code (15) is reachable and
+  testable; the default stays 30s (DEF-17).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

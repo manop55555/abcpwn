@@ -69,6 +69,12 @@ target.
 **--version**
 :   Print version, build metadata, and enabled features.
 
+Long options accept their value with a space or `=` (**--depth 8** or
+**--depth=8**). Short options accept a space or an attached value
+(**-d 8** or **-d8**); `=` after a short option is not accepted
+(**-d=8** is an error). Global options must appear before the
+subcommand.
+
 # COMMANDS
 
 The 39 subcommands are organized into 13 groups. **abcpwn**

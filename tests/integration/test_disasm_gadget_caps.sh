@@ -67,4 +67,17 @@ if ! printf '%s' "$derr" | grep -qi "truncat"; then
     exit 1
 fi
 
-echo "[+] caps OK: raised defaults documented; gadget + disasm truncation warns on stderr"
+# DEF-17: the disasm time budget is reachable and surfaces Timeout (15).
+# ABCPWN_DISASM_TIMEOUT_MS=0 forces the post-decode deadline check to fire
+# (the default 30s budget is otherwise unreachable under the byte cap).
+set +e
+ABCPWN_DISASM_TIMEOUT_MS=0 "$ABCPWN_BIN" --no-banner disasm 9090c3 --arch x86_64 \
+    >/dev/null 2>/dev/null
+to_rc=$?
+set -e
+if [ "$to_rc" -ne 15 ]; then
+    echo "[-] ABCPWN_DISASM_TIMEOUT_MS=0 did not yield Timeout (15); got $to_rc"
+    exit 1
+fi
+
+echo "[+] caps OK: raised defaults, truncation warns on stderr, Timeout reachable"
