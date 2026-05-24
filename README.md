@@ -52,15 +52,17 @@ are still possible in MINOR bumps until 1.0.
 
 ## Supported platforms
 
-| OS    | Arch     | Status |
-|-------|----------|--------|
-| Linux | x86_64   | tier 1 |
-| Linux | aarch64  | tier 1 |
-| macOS | arm64    | tier 1 |
-| macOS | x86_64   | tier 2 |
+| OS    | Arch    | Status                          |
+|-------|---------|---------------------------------|
+| Linux | x86_64  | tier 1 (pre-built binary)       |
+| WSL2  | x86_64  | tier 1 (use Linux binary)       |
 
-Windows is not supported as a host. Inspection of Windows PE binaries from
-Linux or macOS is supported.
+Other platforms (Linux aarch64, macOS arm64/x86_64) can be built
+from source — see [BUILDING.md](BUILDING.md). Pre-built binaries for
+additional platforms are planned for v0.2.
+
+Native Windows is not supported; use WSL2. Inspection of Windows PE
+binaries from Linux is supported (LIEF handles PE).
 
 ## Install
 

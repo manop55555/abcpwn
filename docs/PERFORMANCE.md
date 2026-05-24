@@ -30,10 +30,15 @@ operations users hit most often.
 
 ## Baseline hardware
 
-The numbers above target these reference machines (the ones the
-GitHub Actions release pipeline uses):
+The v0.1 numbers above are measured on Linux x86_64, the only
+platform with a pre-built release binary today:
 
 - **Linux x86_64**: AMD EPYC 7763 (`ubuntu-24.04`), 4 vCPU, 16 GB RAM.
+
+When the multi-platform release pipeline lands in v0.2 (see
+[ROADMAP.md](ROADMAP.md)), these reference machines join the
+measured set:
+
 - **Linux aarch64**: Ampere Altra (`ubuntu-24.04-arm`), 4 vCPU,
   16 GB RAM.
 - **macOS arm64**: Apple M1 (`macos-14`), 3 vCPU, 7 GB RAM.

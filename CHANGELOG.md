@@ -215,8 +215,9 @@ README inside the tarball.
   - file/c++: `iofile`, `vtable`
   - sandbox: `seccomp`, `libc`
   - workflow: `pwninit`, `pwn`, `template`, `diff`, `patch`
-- Tier 1 platform support: Linux x86_64, Linux aarch64, macOS arm64.
-- Tier 2 platform support: macOS x86_64.
+- Pre-built release binary for Linux x86_64 (also runs on WSL2).
+  Other platforms (Linux aarch64, macOS arm64/x86_64) build from
+  source; pre-built binaries for them are planned for v0.2.
 - Apache-2.0 default release build; opt-in GPL-2 Keystone-enabled
   build via the `release-with-keystone` CMake preset (source-only,
   no v0.1 release artifact).

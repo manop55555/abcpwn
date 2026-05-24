@@ -4,7 +4,7 @@
 
 | Version | Status | Latest patch | Notes |
 |---------|--------|--------------|-------|
-| 0.1.x   | active | 0.1.0        | initial public line; tier 1 platforms covered |
+| 0.1.x   | active | 0.1.0        | initial public line; pre-built Linux x86_64 |
 
 A version is `active` if it receives bug fixes and security
 backports. Once a newer MAJOR is released, the previous MAJOR enters
@@ -26,32 +26,34 @@ unless a security issue is reported there.
 
 ## Platform support tiers
 
-### Tier 1
+### Tier 1 (pre-built, release-gating)
 
-Tier 1 platforms are tested on every commit and gate the release:
+Tier 1 ships a pre-built release binary, is tested on every commit,
+and gates the release. A regression on a tier 1 platform blocks the
+release.
 
-- Linux x86_64 (Ubuntu 24.04, glibc-based; static binary should run
-  on most distributions).
-- Linux aarch64 (Ubuntu 24.04 on the GitHub Actions arm runner).
+- Linux x86_64 (Ubuntu 24.04, glibc-based; the static binary should
+  run on most distributions).
+- WSL2 on x86_64 runs the Linux x86_64 binary unchanged.
+
+### Build from source (best-effort)
+
+These platforms have no pre-built binary at v0.1 and are not
+release-gating yet. They build from source per
+[../BUILDING.md](../BUILDING.md); pre-built binaries for them are a
+v0.2 item (see [ROADMAP.md](ROADMAP.md)).
+
+- Linux aarch64.
 - macOS arm64 (macOS 13+, M1 and newer).
-
-A regression on a tier 1 platform blocks the release.
-
-### Tier 2
-
-Tier 2 platforms are tested on a best-effort basis and may lag:
-
 - macOS x86_64 (macOS 13+, Intel).
 - FreeBSD 14+.
 
-Tier 2 regressions are tracked but do not block the release. PRs that
-fix tier 2 regressions are welcome.
-
 ### Not supported
 
-- Windows host. PE inspection from Linux or macOS works (LIEF parses
-  PE); running `abcpwn` natively on Windows is not in the v0.1 scope.
-- Cygwin / WSL1. WSL2 is undocumented but should work as Linux x86_64.
+- Native Windows host. PE inspection from Linux works (LIEF parses
+  PE); running `abcpwn` natively on Windows is not in scope; use
+  WSL2.
+- Cygwin / WSL1.
 - musl-based distributions (Alpine). Building from source is likely
   to work; not gated in CI.
 

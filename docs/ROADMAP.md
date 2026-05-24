@@ -3,8 +3,10 @@
 ## v0.1.x (current line)
 
 - 38 subcommands across 13 groups.
-- Tier 1 platforms: Linux x86_64, Linux aarch64, macOS arm64.
-- Tier 2 platforms: macOS x86_64.
+- Pre-built binary ships for Linux x86_64 (and runs on WSL2). Other
+  platforms (Linux aarch64, macOS arm64/x86_64) build from source
+  per [../BUILDING.md](../BUILDING.md); pre-built binaries for them
+  are a v0.2 item (below).
 - Apache-2.0 and GPL-2 (`-full`) build variants.
 - GitHub Releases distribution, `install.sh` one-liner.
 - Pretty and JSON output formats.

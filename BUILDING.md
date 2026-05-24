@@ -186,12 +186,16 @@ The install layout:
 
 Download from `https://github.com/manop55555/abcpwn/releases/latest`:
 
-- `abcpwn-linux-x86_64.tar.gz`
+- `abcpwn-linux-x86_64.tar.gz` (the v0.1 pre-built artifact)
+
+Pre-built archives for additional platforms are planned for v0.2:
+
 - `abcpwn-linux-aarch64.tar.gz`
 - `abcpwn-macos-arm64.tar.gz`
 - `abcpwn-macos-x86_64.tar.gz`
 
-Each archive contains the binary, man page, shell completions, `LICENSE`,
+Until those ship, build the other platforms from source (above). Each
+archive contains the binary, man page, shell completions, `LICENSE`,
 `LICENSE-THIRD-PARTY.md`, and `README.md`.
 
 ### Verify the release
