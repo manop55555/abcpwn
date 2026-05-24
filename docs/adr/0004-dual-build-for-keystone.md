@@ -3,7 +3,7 @@
 
 # ADR 0004 - Dual build variant for the Keystone assembler
 
-- Status: accepted
+- Status: accepted with v0.1 scope narrowed (see Status update)
 - Date: 2026-05-22
 
 ## Context
@@ -77,3 +77,19 @@ Harder:
   upstream does not commit to a stable shared-library ABI, and
   GPL-2's combined-work clause applies regardless of how the
   linking happens.
+
+## Status update (2026-05)
+
+The dual-build plan is preserved at the source level (the
+`ABCPWN_WITH_KEYSTONE` flag and the `release-with-keystone` CMake
+preset both still work). However, the v0.1 release pipeline emits
+only the Apache-2.0 artifact -- doubling the per-platform CI matrix
+to ship a pre-built GPL-2 archive proved a poor tradeoff for v0.1
+given the limited demand. Users who need the Keystone-enabled build
+produce it from source. The "two archives" goal returns when there
+is concrete demand signal (a release-track issue, a downstream
+distribution request); until then, every reference to a
+hypothetical `abcpwn-full` release artifact has been removed from
+README, COMMANDS, ERROR_CODES, the man page, CHANGELOG, and
+LICENSE-THIRD-PARTY to keep the docs honest about what the
+pipeline actually publishes.

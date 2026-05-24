@@ -33,9 +33,13 @@ trap 'rm -rf "$work_dir"' EXIT
 # STEP/17_DISTRIBUTION.md.
 release_root="$work_dir/abcpwn-linux-x86_64"
 mkdir -p "$release_root"
-cp "$ABCPWN_BIN"           "$release_root/abcpwn"
-cp "$SOURCE_ROOT/LICENSE"  "$release_root/LICENSE"
-cp "$SOURCE_ROOT/README.md" "$release_root/README.md"
+cp "$ABCPWN_BIN"                          "$release_root/abcpwn"
+cp "$SOURCE_ROOT/LICENSE"                 "$release_root/LICENSE"
+cp "$SOURCE_ROOT/LICENSE-THIRD-PARTY.md"  "$release_root/LICENSE-THIRD-PARTY.md"
+cp "$SOURCE_ROOT/README.md"               "$release_root/README.md"
+cp "$SOURCE_ROOT/CHANGELOG.md"            "$release_root/CHANGELOG.md"
+cp "$SOURCE_ROOT/BUILDING.md"             "$release_root/BUILDING.md"
+cp "$SOURCE_ROOT/SECURITY.md"             "$release_root/SECURITY.md"
 if [ -d "$SOURCE_ROOT/completions" ]; then
     cp -r "$SOURCE_ROOT/completions" "$release_root/completions"
 fi
@@ -50,7 +54,19 @@ mkdir -p "$extract_dir"
 tar -C "$extract_dir" -xzf "$work_dir/abcpwn.tar.gz"
 
 # Step 3: verify the layout contains the documented top-level files.
-for expected in abcpwn LICENSE README.md; do
+# The release.yml staging step ships the same set; this asserts the
+# user can read CHANGELOG, BUILDING, SECURITY, third-party licenses,
+# and completions without bouncing back to GitHub after extraction.
+for expected in \
+    abcpwn \
+    LICENSE \
+    LICENSE-THIRD-PARTY.md \
+    README.md \
+    CHANGELOG.md \
+    BUILDING.md \
+    SECURITY.md \
+    completions
+do
     if [ ! -e "$extract_dir/abcpwn-linux-x86_64/$expected" ]; then
         echo "[-] release layout missing $expected" >&2
         exit 1

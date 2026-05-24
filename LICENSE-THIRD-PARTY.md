@@ -44,7 +44,7 @@ Adds libcurl for `libc download` and `pwninit`.
 
 The curl license is MIT-derivative and Apache-2.0 compatible.
 
-### `ABCPWN_WITH_KEYSTONE=ON` (the `abcpwn-full` build)
+### `ABCPWN_WITH_KEYSTONE=ON` (the `release-with-keystone` preset)
 
 Adds the Keystone assembler engine.
 
@@ -53,10 +53,12 @@ Adds the Keystone assembler engine.
 | Keystone | GPL-2.0-only | https://github.com/keystone-engine/keystone    |
 
 Because Keystone is GPL-2 *only* (not "or later"), a binary that links
-Keystone is a combined work under GPL-2 terms. The `abcpwn-full` build
-variant is therefore distributed under GPL-2.
+Keystone is a combined work under GPL-2 terms. The Keystone-enabled
+build is therefore distributed under GPL-2. v0.1 does not ship a
+pre-built Keystone-enabled release artifact; the GPL build is
+produced from source via the `release-with-keystone` CMake preset.
 
-If you redistribute `abcpwn-full`, you must comply with GPL-2:
+If you redistribute a Keystone-enabled build, you must comply with GPL-2:
 - Provide source code, or a written offer to provide it
 - Include the GPL-2 license text
 - Preserve copyright notices

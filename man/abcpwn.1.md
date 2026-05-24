@@ -217,7 +217,8 @@ Security vulnerabilities: https://github.com/manop55555/abcpwn/security/advisori
 Copyright (c) 2026 manop55555. Licensed under the Apache License,
 Version 2.0. See **abcpwn**'s `LICENSE` file for the full text.
 
-The optional **abcpwn-full** build variant links the Keystone
-assembler engine, which is licensed GPL-2.0-only. The resulting
-combined work is distributed under GPL-2.0. See
+The optional **release-with-keystone** build links the Keystone
+assembler engine, which is licensed GPL-2.0-only; the resulting
+combined work is GPL-2.0 and is built from source rather than
+distributed as a release artifact in v0.1. See
 `LICENSE-THIRD-PARTY.md` in the project tree for details.

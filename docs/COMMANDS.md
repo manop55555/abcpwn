@@ -209,9 +209,11 @@ abcpwn constgrep AT_RANDOM
 abcpwn asm <source> [--arch ...] [--syntax intel|att]
 ```
 
-Requires the build to be configured with `ABCPWN_WITH_KEYSTONE=ON` or
-to use the `abcpwn-full` release archive. The default Apache build
-exits with `FeatureDisabled` (exit 4).
+Requires a source build configured with `ABCPWN_WITH_KEYSTONE=ON`
+(preset: `release-with-keystone`). The default Apache release build
+ships without Keystone and exits `FeatureDisabled` (exit 4) for this
+subcommand; v0.1 does not distribute a pre-built Keystone-enabled
+artifact.
 
 ```bash
 abcpwn asm 'xor rdi, rdi; mov rax, 60; syscall' --arch x86_64

@@ -56,6 +56,9 @@ jobs:
           cp LICENSE                     "$stage/"
           cp LICENSE-THIRD-PARTY.md      "$stage/"
           cp README.md                   "$stage/"
+          cp CHANGELOG.md                "$stage/"
+          cp BUILDING.md                 "$stage/"
+          cp SECURITY.md                 "$stage/"
           if [ -f build/release/man/abcpwn.1 ]; then
             cp build/release/man/abcpwn.1 "$stage/"
           fi

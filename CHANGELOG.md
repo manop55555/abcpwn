@@ -25,8 +25,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - workflow: `pwninit`, `pwn`, `template`, `diff`, `patch`
 - Tier 1 platform support: Linux x86_64, Linux aarch64, macOS arm64.
 - Tier 2 platform support: macOS x86_64.
-- Apache-2.0 default build and GPL-2 (`abcpwn-full`) build variant
-  with Keystone.
+- Apache-2.0 default release build; opt-in GPL-2 Keystone-enabled
+  build via the `release-with-keystone` CMake preset (source-only,
+  no v0.1 release artifact).
 - Optional features behind CMake flags: `ABCPWN_WITH_KEYSTONE`,
   `ABCPWN_WITH_NETWORK`, `ABCPWN_WITH_UNICORN`.
 - Pretty and JSON output formats (`--format pretty|json`).

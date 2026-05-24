@@ -49,13 +49,16 @@ https://github.com/manop55555/abcpwn/security/advisories/new instead.
 ### 4 (FeatureDisabled)
 
 The default Apache-2.0 build omits Keystone, libcurl, and Unicorn.
-Either:
+Rebuild from source with the appropriate CMake flag to enable the
+feature in question:
 
-- Use the `abcpwn-full` release archive (GPL-2 combined work, ships
-  with Keystone enabled).
-- Rebuild from source with the appropriate CMake flag:
-  `-DABCPWN_WITH_KEYSTONE=ON`, `-DABCPWN_WITH_NETWORK=ON`, or
-  `-DABCPWN_WITH_UNICORN=ON`.
+- `-DABCPWN_WITH_KEYSTONE=ON` (preset: `release-with-keystone`) for
+  assembly via the `asm` subcommand. The Keystone-linked build is a
+  GPL-2 combined work; v0.1 does not distribute it as a release
+  artifact.
+- `-DABCPWN_WITH_NETWORK=ON` for `libc download` and `pwninit` fetch.
+- `-DABCPWN_WITH_UNICORN=ON` (no current subcommand consumes this
+  flag; reserved for future emulation work).
 
 See [../BUILDING.md](../BUILDING.md) for the build prerequisites.
 

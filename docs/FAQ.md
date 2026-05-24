@@ -37,10 +37,10 @@ later". A binary that links Keystone is a combined work under GPL-2.
 To keep the default `abcpwn` binary permissively licensed
 (Apache-2.0), Keystone is opt-in.
 
-Two ways to get assembly support:
-
-- Use the `abcpwn-full` release archive (GPL-2 combined work).
-- Rebuild from source with `-DABCPWN_WITH_KEYSTONE=ON`.
+To get assembly support, rebuild from source with the
+`release-with-keystone` CMake preset (equivalent to
+`-DABCPWN_WITH_KEYSTONE=ON`). The resulting binary is a GPL-2
+combined work and is not distributed as a release artifact in v0.1.
 
 See [../LICENSE-THIRD-PARTY.md](../LICENSE-THIRD-PARTY.md).
 
@@ -54,9 +54,10 @@ seccomp BPF analysis, libc fingerprinting.
 For complex exploits with custom logic, pwntools as a Python library
 still does things `abcpwn` cannot (custom I/O state machines,
 arbitrary Python wrappers around tubes). The two complement each
-other: use `abcpwn gadget` to find gadgets quickly, then
-`abcpwn rop --format pwntools` to emit a pwntools-compatible chain
-that slots into a Python solve script.
+other: use `abcpwn gadget` to find gadgets quickly, then either
+copy the rendered chain into a Python solve script by hand or feed
+the parsed addresses into pwntools `ROP()`. A native pwntools-format
+emitter is not in v0.1.
 
 ## How do I report a bug?
 
@@ -82,9 +83,10 @@ binaries from Linux or macOS is supported (LIEF handles PE).
 The default Apache-2.0 build (`abcpwn`) is fine for commercial use
 under Apache-2.0 terms.
 
-The `abcpwn-full` build (with Keystone) is GPL-2. If you redistribute
-it, you must comply with GPL-2 (source on request or accompanying,
-preserve copyright, include the GPL-2 license text).
+A Keystone-enabled source build (`release-with-keystone` preset)
+is GPL-2. If you redistribute it, you must comply with GPL-2
+(source on request or accompanying, preserve copyright, include the
+GPL-2 license text).
 
 ## I get "killed: 9" on macOS
 

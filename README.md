@@ -149,9 +149,10 @@ Full command reference: [docs/COMMANDS.md](docs/COMMANDS.md).
 
 ## License
 
-Apache-2.0 by default. The opt-in `abcpwn-full` build that statically links
-the Keystone assembler engine is distributed under GPL-2 to satisfy the
-combined-work clause. See [LICENSE](LICENSE) and
+Apache-2.0 by default. The opt-in `release-with-keystone` build that
+statically links the Keystone assembler engine is a combined work under
+GPL-2; it is not distributed as a release artifact in v0.1 and must be
+built from source. See [LICENSE](LICENSE) and
 [LICENSE-THIRD-PARTY.md](LICENSE-THIRD-PARTY.md).
 
 ## Authorship
