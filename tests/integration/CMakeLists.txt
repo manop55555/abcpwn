@@ -48,3 +48,6 @@ add_test(NAME test_version_output
 add_test(NAME test_max_file_size
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_max_file_size.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_cli_exit_codes
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_cli_exit_codes.sh"
+            "$<TARGET_FILE:abcpwn>")

@@ -32,14 +32,18 @@ CLI contract.
 
 Run `abcpwn <subcommand> --help` for the canonical option list. Help
 text is the authoritative source for accepted flags; the docs may
-lag.
+lag. Internal CLI11 parse errors (the underlying library's own exit
+codes -- RequiredError, ExtrasError, RequiresError, ...) are funneled
+through exit 2 as well, so any parse-time failure surfaces as
+UsageError rather than an undocumented number.
 
 ### 3 (InternalError)
 
-This indicates a bug. Reproduce with:
+This indicates a bug. Reproduce with the offending command line
+and capture both stdout and stderr:
 
 ```bash
-abcpwn --log-file /tmp/abcpwn.log <args>
+abcpwn <args> > out.txt 2> err.txt
 ```
 
 then open an issue at https://github.com/manop55555/abcpwn/issues

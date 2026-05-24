@@ -265,7 +265,19 @@ int main(int argc, char** argv) {
     try {
         app.parse(argc, argv);
     } catch (const CLI::ParseError& e) {
-        return app.exit(e);
+        // CLI11's own exit codes (104 RequiredError, 106 ExtrasError,
+        // 109 RequiresError, 102/103/105/108 family) are leaked
+        // straight through if we hand the exception to app.exit().
+        // Operators see "exit 109" with no entry in docs/ERROR_CODES.md
+        // and assume the binary has crashed. Funnel every parse-time
+        // error through exit 2 (UsageError) so the documented exit
+        // table is the single source of truth; CLI11 still writes
+        // its own diagnostic to stderr before we return.
+        const int cli_rc = app.exit(e);
+        if (cli_rc == 0) {
+            return 0; // --help / --version / -- caught as ParseError
+        }
+        return static_cast<int>(core::ErrorCode::UsageError);
     }
 
     // Build the Context from parsed globals.
