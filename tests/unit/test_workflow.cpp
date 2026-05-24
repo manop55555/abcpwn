@@ -83,29 +83,21 @@ TEST_CASE("pwn DSL rejects unknown ops and missing args", "[pwn]") {
     REQUIRE_FALSE(parse_dsl("recvn abc\n")); // non-numeric
 }
 
-TEST_CASE("PwnCommand process mode is Unsupported", "[pwn][command]") {
+TEST_CASE("PwnCommand reports NotImplemented for every mode (DEF-9)", "[pwn][command]") {
     abcpwn::core::Context ctx;
-    abcpwn::commands::pwn::PwnCommand cmd;
-    cmd.target = "./somebin";
-    auto r = cmd.run(ctx);
-    REQUIRE_FALSE(r);
-    REQUIRE(r.error().code == abcpwn::core::ErrorCode::Unsupported);
-}
-
-TEST_CASE("PwnCommand TCP mode reports plan", "[pwn][command]") {
-    abcpwn::core::Context ctx;
-    abcpwn::commands::pwn::PwnCommand cmd;
-    cmd.target = "127.0.0.1:31337";
-    auto r = cmd.run(ctx);
-    REQUIRE(r);
-    bool saw_tcp = false;
-    for (const auto& s : r->sections) {
-        for (const auto& f : s.findings) {
-            if (f.title == "tube" && f.detail.find("TCP") != std::string::npos)
-                saw_tcp = true;
-        }
+    // DEF-9: until the live tube driver lands (Tier F), every mode returns
+    // NotImplemented -- not a false-success "plan" at rc=0 (tcp/unix) and
+    // not an Unsupported error that leaks internal source-policy text
+    // (local). The target is still validated, so a malformed one errors.
+    for (const char* target : {"./somebin", "127.0.0.1:31337", "unix:/tmp/sock"}) {
+        abcpwn::commands::pwn::PwnCommand cmd;
+        cmd.target = target;
+        auto r = cmd.run(ctx);
+        REQUIRE_FALSE(r);
+        REQUIRE(r.error().code == abcpwn::core::ErrorCode::NotImplemented);
+        REQUIRE(r.error().message.find("src/") == std::string::npos);
+        REQUIRE(r.error().message.find("posix_spawn") == std::string::npos);
     }
-    REQUIRE(saw_tcp);
 }
 
 // --- pwninit -----------------------------------------------------------------

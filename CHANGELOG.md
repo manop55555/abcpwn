@@ -96,6 +96,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   (info, syms, strings, search, gadget, hash, disasm `--input-file`,
   phd, ...) gains it (DEF-16).
 
+### Changed
+
+- `pwn` no longer fakes success: `host:port` and `unix:` targets
+  previously returned a "plan" at exit 0 without opening any socket, and
+  a local-binary target returned an `Unsupported` error that leaked
+  internal source-policy text. All modes now return `NotImplemented`
+  (exit 16) with a clear message; the target argument is still
+  validated. The live process/socket tube driver lands in a later
+  release (DEF-9).
+
 ## [0.1.0-alpha.3] - 2026-05-24
 
 Bulk QA pass: 41 findings from three independent rounds of

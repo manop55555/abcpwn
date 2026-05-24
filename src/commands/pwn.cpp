@@ -186,91 +186,20 @@ core::Result<core::CommandResult> PwnCommand::run(const core::Context& /*ctx*/) 
     if (!spec) {
         return core::err(spec.error());
     }
-    if (spec->kind == TubeKind::Process) {
-        return core::err(core::ErrorCode::Unsupported,
-                         "pwn: process-mode I/O tubes require fork+exec which is "
-                         "disallowed in src/ by the project's source-code rules. "
-                         "Run the local binary in a separate terminal and use "
-                         "`abcpwn pwn host:port` against its open socket, or wait "
-                         "for a later milestone that wires posix_spawn through a "
-                         "narrow shim.");
-    }
-
-    // v0.1: parse the DSL (when provided) and report a planned step
-    // list rather than executing socket I/O. The actual TCP / Unix
-    // socket execution path is straightforward but adds runtime
-    // testing surface that does not fit this session's budget;
-    // landing the parser surface now lets later sessions plug in
-    // the socket driver without re-touching the DSL.
-    std::vector<DslStep> steps;
-    if (!script_path.empty()) {
-        auto src = core::safe_io::read_text_file(script_path);
-        if (!src) {
-            return core::err(src.error());
-        }
-        auto parsed = parse_dsl(*src);
-        if (!parsed) {
-            return core::err(parsed.error());
-        }
-        steps = std::move(*parsed);
-    }
-
-    core::CommandResult res;
-    auto& sec = res.sections.emplace_back();
-    sec.title = "pwn plan";
-    sec.findings.emplace_back(core::Severity::Info, "target", target);
-    sec.findings.emplace_back(core::Severity::Info,
-                              "tube",
-                              spec->kind == TubeKind::Tcp ? std::string("TCP ") + spec->host_or_path
-                                                                + ":" + std::to_string(spec->port)
-                              : spec->kind == TubeKind::UnixSocket
-                                  ? std::string("Unix ") + spec->host_or_path
-                                  : std::string("Process ") + spec->host_or_path);
-    sec.findings.emplace_back(
-        core::Severity::Info, "timeout", std::to_string(timeout_seconds) + "s");
-    if (!steps.empty()) {
-        auto& script = res.sections.emplace_back();
-        script.title = "script steps";
-        for (std::size_t i = 0; i < steps.size(); ++i) {
-            const auto& s = steps[i];
-            std::string label;
-            switch (s.op) {
-            case DslOp::RecvUntil:
-                label = "recvuntil";
-                break;
-            case DslOp::RecvLine:
-                label = "recvline";
-                break;
-            case DslOp::RecvN:
-                label = "recvn " + std::to_string(s.numeric);
-                break;
-            case DslOp::Send:
-                label = "send";
-                break;
-            case DslOp::SendLine:
-                label = "sendline";
-                break;
-            case DslOp::Sleep:
-                label = "sleep " + std::to_string(s.numeric) + "ms";
-                break;
-            case DslOp::Expect:
-                label = "expect (regex)";
-                break;
-            case DslOp::Set:
-                label = "set " + s.arg1 + "=" + s.arg2;
-                break;
-            }
-            script.findings.emplace_back(core::Severity::Info,
-                                         std::to_string(i) + ": " + label,
-                                         s.op == DslOp::Set ? std::string{} : s.arg1);
-        }
-    }
-    sec.findings.emplace_back(core::Severity::Info,
-                              "note",
-                              "v0.1 parses the target + DSL and reports the plan; socket "
-                              "execution lands alongside the dispatcher in a later "
-                              "milestone");
-    return res;
+    // DEF-9: live process and socket I/O are not implemented in this
+    // build. tcp/unix previously returned a "plan" at rc=0 -- a false
+    // success, since no socket was ever opened -- and the local-binary
+    // case leaked internal source-policy text ("disallowed in src/ ...
+    // posix_spawn through a narrow shim"). Report NotImplemented
+    // honestly for every mode until the live tube driver lands (Tier F).
+    // parse_target above still validates the target, and the public
+    // parse_target/parse_dsl helpers remain for that driver to reuse.
+    (void) spec;
+    return core::err(core::ErrorCode::NotImplemented,
+                     "pwn: live process and socket I/O are not implemented in this build "
+                     "yet; this command will drive local, tcp, and unix tubes in a future "
+                     "release. For now drive the target with another tool (nc, socat, a "
+                     "pwntools script) and use abcpwn for the offline primitives.");
 }
 
 } // namespace abcpwn::commands::pwn
