@@ -173,6 +173,48 @@ TEST_CASE("GadgetCommand finds gadgets in hello-hardened fixture", "[rop][comman
     REQUIRE(any_ret);
 }
 
+TEST_CASE("GadgetCommand surfaces a truncation warning when --max-results is hit",
+          "[rop][command][gadget][truncation]") {
+    if (!std::filesystem::exists(fixture("hello-hardened"))) {
+        SKIP("hello-hardened fixture not present");
+    }
+    abcpwn::core::Context ctx;
+    ctx.color = abcpwn::core::ColorMode::Never;
+    abcpwn::commands::GadgetCommand cmd;
+    cmd.target = fixture("hello-hardened").string();
+    cmd.depth = 4;
+    cmd.terminator = "all"; // widen so even a tiny binary produces > 1 gadget
+    cmd.max_results = 1;    // force truncation on the first unique gadget
+    cmd.no_progress = true;
+    auto r = cmd.run(ctx);
+    REQUIRE(r);
+    REQUIRE(r->summary.has_value());
+    REQUIRE(r->summary->find("truncated") != std::string::npos);
+    bool saw_warning = false;
+    for (const auto& s : r->sections) {
+        for (const auto& f : s.findings) {
+            if (f.severity == abcpwn::core::Severity::Medium
+                && f.title.find("truncated") != std::string::npos) {
+                saw_warning = true;
+            }
+        }
+    }
+    REQUIRE(saw_warning);
+}
+
+TEST_CASE("GadgetCommand rejects --max-results=0", "[rop][command][gadget]") {
+    if (!std::filesystem::exists(fixture("hello-hardened"))) {
+        SKIP("hello-hardened fixture not present");
+    }
+    abcpwn::core::Context ctx;
+    abcpwn::commands::GadgetCommand cmd;
+    cmd.target = fixture("hello-hardened").string();
+    cmd.max_results = 0;
+    auto r = cmd.run(ctx);
+    REQUIRE_FALSE(r);
+    REQUIRE(r.error().code == abcpwn::core::ErrorCode::UsageError);
+}
+
 TEST_CASE("RopCommand without strategy is a usage error", "[rop][command]") {
     if (!std::filesystem::exists(fixture("hello-hardened"))) {
         SKIP("hello-hardened fixture not present");

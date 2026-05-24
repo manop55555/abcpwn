@@ -267,16 +267,20 @@ abcpwn cyclic --search 61616168
 ```
 abcpwn gadget <target> [--depth N] [--type ret|jmp|call|syscall|all]
                        [--filter <regex>] [--bad-chars <hex>]
+                       [--max-results N]
 ```
 
 Forward-decode-at-every-byte gadget finder. Default `--depth` is 10
 instructions, default `--type` is `ret`. `--filter` accepts a regex
 against the gadget text; `--bad-chars` is a hex blob of bytes to
-exclude (e.g. `0a00`).
+exclude (e.g. `0a00`). The default cap on unique returned gadgets is
+200000; when the cap is hit the command surfaces a `gadget set
+truncated` warning and the summary line names the cap so the user
+knows the listing is partial. Raise the cap with `--max-results N`.
 
 ```bash
 abcpwn gadget ./libc.so.6 --filter 'pop rdi'
-abcpwn gadget ./libc.so.6 --depth 4 --type all
+abcpwn gadget ./libc.so.6 --depth 4 --type all --max-results 1000000
 ```
 
 ### `rop` - synthesize a ROP chain

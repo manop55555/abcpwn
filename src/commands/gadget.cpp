@@ -90,6 +90,7 @@ void GadgetCommand::setup(CLI::App& app) {
     app.add_option("-t,--type", terminator, "ret|jmp|call|syscall|all (default ret)");
     app.add_option("--filter", filter, "Regex applied to gadget text");
     app.add_option("--bad-chars", bad_chars_hex, "Hex bytes to exclude (e.g., 0a00)");
+    app.add_option("--max-results", max_results, "Cap on unique gadgets returned (default 200000)");
     app.add_option("--format", format, "Output format: pretty (others land later)");
     app.add_flag("--no-progress", no_progress, "Suppress stderr progress indicator");
 }
@@ -110,10 +111,15 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
                          "gadget: unknown arch '" + loaded->info().arch + "'");
     }
 
+    if (max_results == 0) {
+        return core::err(core::ErrorCode::UsageError, "gadget: --max-results must be > 0");
+    }
+
     rop::GadgetSearchOptions opts;
     opts.arch = *a;
     opts.terminator = parse_terminator(terminator);
     opts.max_depth = depth;
+    opts.max_results = max_results;
     opts.text_filter = filter;
     if (!bad_chars_hex.empty()) {
         auto bc = encoding::hex_decode(bad_chars_hex);
@@ -159,8 +165,31 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
     if (gadgets->empty()) {
         res.raw_lines.emplace_back("(no gadgets matched)");
     }
-    char summary[64];
-    std::snprintf(summary, sizeof summary, "%zu gadgets", gadgets->size());
+    char summary[128];
+    // The unique-result store stops growing once it hits max_results, so
+    // a size exactly equal to the cap is the truncation signal. Surface
+    // it on stderr (via a Warning finding) so the user knows raw_lines
+    // is an incomplete view of the gadget set and can rerun with a
+    // larger --max-results.
+    const bool truncated = gadgets->size() >= max_results;
+    if (truncated) {
+        std::snprintf(summary,
+                      sizeof summary,
+                      "%zu gadgets (truncated at --max-results=%zu; rerun with a larger cap)",
+                      gadgets->size(),
+                      max_results);
+        auto& warn_sec = res.sections.emplace_back();
+        warn_sec.title = "warning";
+        warn_sec.findings.emplace_back(
+            core::Severity::Medium,
+            "gadget set truncated",
+            "the unique gadget cap was reached; the listed gadgets are the first "
+                + std::to_string(max_results)
+                + " encountered, not necessarily the best set. Rerun with "
+                  "--max-results <N> to raise the cap.");
+    } else {
+        std::snprintf(summary, sizeof summary, "%zu gadgets", gadgets->size());
+    }
     res.summary = summary;
     return res;
 }
