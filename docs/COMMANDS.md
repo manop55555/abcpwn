@@ -265,41 +265,53 @@ abcpwn cyclic --search 61616168
 ### `gadget` - find ROP gadgets
 
 ```
-abcpwn gadget <target> [--max-len N] [--filter <regex>] [--unique]
+abcpwn gadget <target> [--depth N] [--type ret|jmp|call|syscall|all]
+                       [--filter <regex>] [--bad-chars <hex>]
 ```
 
-Forward-decode-at-every-byte gadget finder. Default `--max-len` is 8
-instructions. `--filter` accepts a regex against the gadget text.
+Forward-decode-at-every-byte gadget finder. Default `--depth` is 10
+instructions, default `--type` is `ret`. `--filter` accepts a regex
+against the gadget text; `--bad-chars` is a hex blob of bytes to
+exclude (e.g. `0a00`).
 
 ```bash
 abcpwn gadget ./libc.so.6 --filter 'pop rdi'
-abcpwn gadget ./libc.so.6 --max-len 4 --unique
+abcpwn gadget ./libc.so.6 --depth 4 --type all
 ```
 
 ### `rop` - synthesize a ROP chain
 
 ```
-abcpwn rop <target> [--execve | --mprotect <addr>:<size>:<prot>]
-                    [--format raw|pwntools|c]
+abcpwn rop <target> --syscall N --syscall-arg ARG [--syscall-arg ARG ...]
 ```
 
-Builds a chain for the requested strategy. `--format pwntools` emits
-a Python snippet that drops into a pwntools solve script.
+Builds an x86_64 syscall chain. Supply the syscall number with
+`--syscall` and zero or more arguments with repeated `--syscall-arg`
+flags. The command resolves `pop rax/rdi/rsi/rdx ; ret` and a
+`syscall` gadget from the target's executable sections and emits the
+chain layout. Non-syscall strategies (ret2win, leak, srop-via-rop,
+pwntools snippet emission) are not in v0.1; the dedicated `srop`
+subcommand covers SROP, and `syms` plus manual staging covers
+ret2win.
 
 ```bash
-abcpwn rop ./challenge --execve
-abcpwn rop ./challenge --mprotect 0x404000:0x1000:rwx --format pwntools
+# execve("/bin/sh", 0, 0)  ->  syscall 59
+abcpwn rop ./challenge --syscall 59 \
+    --syscall-arg 0x404020 --syscall-arg 0 --syscall-arg 0
 ```
 
-### `one-gadget` - find execve one-gadgets in libc
+### `one-gadget` - locate `/bin/sh` string offsets in libc
 
 ```
-abcpwn one-gadget <libc> [--all] [--require <regex>]
+abcpwn one-gadget <libc> [--all]
 ```
 
-Lists execve constraint sets that lead to `execve("/bin/sh", 0, 0)`,
-in the same shape as `one_gadget`. Default output is the minimal-
-constraint candidate.
+Locates every `/bin/sh\0` occurrence in the libc image and reports
+file offsets. This is the string-locator half of the upstream Ruby
+`one_gadget` tool; constraint extraction (the register / stack
+preconditions that make an `execve("/bin/sh", 0, 0)` site
+reachable) is not implemented. For full constraint analysis, run
+the upstream `one_gadget` against the same libc.
 
 ```bash
 abcpwn one-gadget ./libc.so.6

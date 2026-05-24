@@ -33,14 +33,20 @@ discovery, shellcode generation, format string primitives, glibc heap
 exploitation helpers, seccomp BPF analysis, libc fingerprint resolution,
 GOT/PLT inspection, sigreturn-oriented programming, and ret2dlresolve.
 
-The intent is to replace a typical assortment of Python and Ruby wrappers
-(`pwntools`, `ROPgadget`, `one_gadget`, `seccomp-tools`, `libc-database`,
-`checksec`, `pwninit`) with one fast, deterministic, offline tool.
+The intent is to consolidate a typical assortment of Python and Ruby
+wrappers (`pwntools`, `ROPgadget`, `seccomp-tools`, `libc-database`,
+`checksec`, `pwninit`, and the string-locating slice of `one_gadget`)
+behind one fast, deterministic, offline tool. Full feature parity is
+not claimed; see [docs/COMMANDS.md](docs/COMMANDS.md) for the precise
+scope of each subcommand and [docs/ROADMAP.md](docs/ROADMAP.md) for
+deferred work.
 
 ## Status
 
-Pre-release. The 0.1.x line targets feature parity with the listed tools
-across all 13 command groups. See [CHANGELOG.md](CHANGELOG.md) for the
+Pre-release. The 0.1.x line covers the day-to-day subset of the listed
+tools across all 13 command groups; symbolic constraint extraction
+(one_gadget) and a pwntools-compatible scripting surface are deferred
+past v0.1. See [CHANGELOG.md](CHANGELOG.md) for the
 release history. The CLI surface is approaching stable; breaking changes
 are still possible in MINOR bumps until 1.0.
 
