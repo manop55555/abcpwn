@@ -28,7 +28,7 @@ public:
     std::string filter{};
     std::string bad_chars_hex{};
     std::string format{"pretty"};
-    std::size_t max_results{200'000};
+    std::size_t max_results{1'000'000};
     bool no_progress{false};
 };
 

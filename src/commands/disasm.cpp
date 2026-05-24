@@ -24,7 +24,7 @@ void DisasmCommand::setup(CLI::App& app) {
     app.add_option("input", input, "Hex bytes (default) or file path")->required();
     app.add_option("-a,--arch", arch_name, "Target arch");
     app.add_option("--base-address", base_address, "Base address (hex)");
-    app.add_option("--count", max_instructions, "Stop after N instructions");
+    app.add_option("--count", max_instructions, "Stop after N instructions (default 1000000)");
     app.add_flag("--input-file{false},--input-hex{true}",
                  input_hex,
                  "Treat input as a hex string (default) or as a file path");
@@ -32,7 +32,7 @@ void DisasmCommand::setup(CLI::App& app) {
     app.add_flag("--thumb", thumb, "ARM thumb encoding");
 }
 
-core::Result<core::CommandResult> DisasmCommand::run(const core::Context& /*ctx*/) {
+core::Result<core::CommandResult> DisasmCommand::run(const core::Context& ctx) {
     using namespace abcpwn::arch;
 
     std::vector<std::uint8_t> bytes;
@@ -84,11 +84,15 @@ core::Result<core::CommandResult> DisasmCommand::run(const core::Context& /*ctx*
     // 1 MiB / 200000 instructions covers typical CTF binaries while
     // keeping the worst case to ~5 seconds on a modest laptop.
     constexpr std::size_t kDefaultByteCap = 1ULL * 1024 * 1024;
-    constexpr std::size_t kDefaultInsnCap = 200'000;
+    constexpr std::size_t kDefaultInsnCap = 1'000'000;
+    const std::size_t original_bytes = bytes.size();
+    bool byte_capped = false;
     if (!input_hex && bytes.size() > kDefaultByteCap) {
         bytes.resize(kDefaultByteCap);
+        byte_capped = true;
     }
-    if (opts.max_instructions == 0) {
+    const bool insn_cap_defaulted = (opts.max_instructions == 0);
+    if (insn_cap_defaulted) {
         opts.max_instructions = kDefaultInsnCap;
     }
     const auto deadline_start = std::chrono::steady_clock::now();
@@ -111,6 +115,26 @@ core::Result<core::CommandResult> DisasmCommand::run(const core::Context& /*ctx*
         return core::err(core::ErrorCode::Timeout,
                          "disasm: decode exceeded the internal "
                              + std::to_string(kTimeBudget.count()) + "s budget");
+    }
+
+    // Surface default-cap truncation on stderr (verification N1): the byte
+    // cap and the implicit instruction cap previously dropped output with
+    // no notice, so users silently got a partial disassembly.
+    if (!ctx.quiet()) {
+        if (byte_capped) {
+            std::fprintf(stderr,
+                         "[!] disasm: input truncated to the default %zu-byte cap "
+                         "(file is %zu bytes); decoded only the first %zu\n",
+                         kDefaultByteCap,
+                         original_bytes,
+                         kDefaultByteCap);
+        }
+        if (insn_cap_defaulted && insns->size() >= opts.max_instructions) {
+            std::fprintf(stderr,
+                         "[!] disasm: output capped at %zu instructions (default); "
+                         "pass --count <N> to raise it\n",
+                         opts.max_instructions);
+        }
     }
 
     core::CommandResult res;

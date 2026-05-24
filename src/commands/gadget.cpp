@@ -90,7 +90,8 @@ void GadgetCommand::setup(CLI::App& app) {
     app.add_option("-t,--type", terminator, "ret|jmp|call|syscall|all (default ret)");
     app.add_option("--filter", filter, "Regex applied to gadget text");
     app.add_option("--bad-chars", bad_chars_hex, "Hex bytes to exclude (e.g., 0a00)");
-    app.add_option("--max-results", max_results, "Cap on unique gadgets returned (default 200000)");
+    app.add_option(
+        "--max-results", max_results, "Cap on unique gadgets returned (default 1000000)");
     app.add_option("--format", format, "Output format: pretty (others land later)");
     app.add_flag("--no-progress", no_progress, "Suppress stderr progress indicator");
 }
@@ -173,6 +174,15 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
     // larger --max-results.
     const bool truncated = gadgets->size() >= max_results;
     if (truncated) {
+        if (!ctx.quiet()) {
+            // The structured finding below lands on stdout in pretty mode;
+            // also surface the truncation on stderr so it stays visible when
+            // stdout is redirected to a file (verification #17).
+            std::fprintf(stderr,
+                         "[!] gadget: results truncated at --max-results=%zu; "
+                         "rerun with a larger --max-results to see the full set\n",
+                         max_results);
+        }
         std::snprintf(summary,
                       sizeof summary,
                       "%zu gadgets (truncated at --max-results=%zu; rerun with a larger cap)",

@@ -16,6 +16,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   not a tier-1 pre-built platform.
 - zsh completion description for `syms` shortened to "list dynamic
   imports" to match `--help` (the `--type` variant was removed).
+- `gadget` no longer silently truncates: the default `--max-results`
+  cap was raised from 200000 to 1000000 (fits a typical libc), and
+  hitting the cap now warns on stderr so the truncation is visible
+  when stdout is redirected to a file.
+- `disasm` no longer silently caps output: the default instruction cap
+  was raised to 1000000, and both the 1 MiB input-file cap and the
+  instruction cap now print a warning on stderr when they truncate.
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
