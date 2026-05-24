@@ -1,287 +1,192 @@
 # Tutorials
 
-End-to-end walkthroughs using `abcpwn` against real CTF-style
-challenges. Each tutorial uses a fixture from `tests/fixtures/` so
-you can run the commands verbatim. Fixtures and their construction
-scripts live in the source tree; see `tests/fixtures/binaries/`.
+End-to-end walkthroughs of the `abcpwn` workflow for common CTF
+binary-exploitation tasks. So the commands run verbatim on any Linux
+box, every shell block here uses `/bin/ls` (a binary you already have)
+or pure `abcpwn` operations that need no target file. Substitute your
+own challenge binary where you see `/bin/ls`.
 
-The commands assume `abcpwn` is on your `PATH` and your shell is in
-the repository root.
+Blocks marked as plain output (not `bash`) are illustrative -- sample
+leaks, addresses, and program output you would see during a real
+engagement.
 
-## 1. Solving a ret2win challenge
+The commands assume `abcpwn` is on your `PATH`.
 
-A "ret2win" is the canonical first stack-overflow challenge: the
-binary contains a function (often called `win` or `flag`) that
-prints the flag, but no normal control flow reaches it. The exploit
-overflows a stack buffer to redirect execution to `win`.
+## 1. Recon and offset discovery for a ret2win
+
+A "ret2win" is the canonical first stack-overflow challenge: the binary
+contains a function (often `win`) that prints the flag, but no normal
+control flow reaches it. The exploit overflows a stack buffer to
+redirect the saved return address to `win`.
 
 ### Inspect the binary
 
 ```bash
-abcpwn info tests/fixtures/binaries/ret2win
+abcpwn info /bin/ls
 ```
 
-Confirm:
+The mitigation report tells you what you are up against -- NX (can you
+execute the stack?), PIE (are addresses absolute or relative?), and the
+stack canary (do you need a leak first?).
 
-- NX is enabled (we cannot execute the stack).
-- PIE is off (return addresses are absolute).
-- No stack canary (so overflow does not need a leak).
-
-### Find the win symbol
+### Look for interesting imports
 
 ```bash
-abcpwn syms tests/fixtures/binaries/ret2win --type funcs | grep -i win
+abcpwn syms /bin/ls --dangerous
 ```
 
-Note the address (call it `0x401200`).
+`--dangerous` flags risky imports (`gets`, `system`, `scanf`, ...). In a
+real ret2win you would instead look for the `win`/`flag` symbol and note
+its address, say `0x401200`.
 
 ### Find the buffer offset
+
+Generate a cyclic pattern, feed it to the crashing input, and recover
+the offset of the four bytes that landed in the saved return address:
 
 ```bash
 abcpwn cyclic 200
 ```
 
-Run the binary, feed the output, observe the crash address, then:
+After the crash you read the faulting value out of the debugger (say
+`0x6161616a`) and look up its offset:
 
 ```bash
-abcpwn cyclic --search <four bytes from crash>
+abcpwn cyclic --find 0x6161616a
 ```
 
-The number it prints is the byte offset from buffer start to saved
-RIP.
+The integer form is interpreted little-endian, matching
+`pwntools.cyclic_find`.
 
-### Build the payload
+### Scaffold the payload and a solve script
 
 ```bash
-python3 -c "import sys; sys.stdout.buffer.write(b'A'*72 + (0x401200).to_bytes(8, 'little'))" > payload.bin
+abcpwn pack 0x401200
 ```
 
-Or generate the same with `abcpwn pack` and `cyclic`:
+`pack` emits the little-endian bytes of the target address. To get a
+full pwntools-shaped starting point:
 
 ```bash
-OFFSET=$(abcpwn cyclic --search 0x6161616a)
-abcpwn cyclic $OFFSET > /tmp/pad
-abcpwn pack 0x401200 | abcpwn unhex > /tmp/ret
-cat /tmp/pad /tmp/ret > payload.bin
+abcpwn template ret2win /bin/ls -o /tmp/solve.py
 ```
 
-### Emit a pwntools solve
+Edit the `OFFSET` and target tube in the generated `/tmp/solve.py`.
 
-```bash
-abcpwn template ret2win tests/fixtures/binaries/ret2win -o solve.py
-```
+## 2. Identifying a libc with `abcpwn libc id`
 
-The generated `solve.py` is a starting point; edit `OFFSET` and the
-target tube and run it.
-
-## 2. Finding the right libc with `abcpwn libc id`
-
-You have leaks from a remote process and need to know which libc the
-remote is running so you can compute correct offsets.
-
-### Capture leaks
-
-Run the challenge to a point where it leaks one or two libc
-function addresses, e.g. via a GOT leak:
+You have leaks from a remote process and need to know which libc it
+runs so you can compute correct offsets. Only the low 12 bits of each
+leak matter (the page-aligned offset within libc):
 
 ```
-puts   @ 0x7f0011aabbb0
-printf @ 0x7f0011aaca50
+puts   @ 0x7f0011aabbb0   ->  0xbb0
+printf @ 0x7f0011aaca50   ->  0xa50
 ```
 
-Only the low 12 bits matter (the page-aligned offset within libc).
-
-### Identify the libc
+Feed the low bits to `libc id`:
 
 ```bash
 abcpwn libc id --offset puts:0xbb0 --offset printf:0xa50
 ```
 
-Output is the unique matching libc id (or a list of candidates if
-two libcs share these low bits).
+It prints the matching libc id, or a short candidate list when two
+libcs share those low bits. With an id in hand you would fetch the rest
+of the offsets (`abcpwn libc offsets <id>`) or, with `--allow-network`,
+download the matching `libc.so.6` (`abcpwn libc download <id>`); both
+are illustrated rather than run here since they need a populated
+database or network access.
 
-### Get the rest of the offsets
-
-```bash
-abcpwn libc offsets <libc-id> | grep -E '(system|binsh|environ)'
-```
-
-The output is enough to finish a ret2libc.
-
-### Download the libc image (optional)
-
-If you want to test against the actual `libc.so.6`:
-
-```bash
-abcpwn --allow-network libc download <libc-id>
-```
-
-The archive lands in `~/.cache/abcpwn/libc/<id>/`. Run `abcpwn info`
-on it to confirm.
-
-## 3. Building a SROP chain from scratch
+## 3. Building a SROP frame
 
 Sigreturn-Oriented Programming uses the kernel's `rt_sigreturn`
-machinery to set every register from a stack-resident frame in a
-single gadget.
+machinery to set every register from a stack-resident frame in a single
+gadget -- handy when you have one write and a `syscall` gadget.
 
-### Find the syscall gadget
-
-```bash
-abcpwn gadget tests/fixtures/binaries/srop --filter 'syscall; ret$'
-```
-
-Pick the first hit; that is your single-syscall gadget. Note the
-address.
-
-### Find the rt_sigreturn constant
+### Find a syscall gadget
 
 ```bash
-abcpwn constgrep RT_SIGRETURN_X86_64
+abcpwn gadget /bin/ls --type all --filter 'syscall' --no-progress
 ```
 
-On x86_64 the syscall number is `15`.
+Pick a `syscall` (or `syscall ; ret`) hit; that address is where your
+frame's `rip` will point.
+
+### Look up syscall constants
+
+```bash
+abcpwn constgrep sig --category signal
+```
+
+On x86_64 `rt_sigreturn` is syscall 15; the frame below instead targets
+`execve` (59).
 
 ### Build the frame
 
 ```bash
-abcpwn srop --arch x86_64 \
-    rip=0x401234 rsp=0x404300 \
-    rdi=0x404308 rsi=0 rdx=0 rax=59
+abcpwn srop --arch x86_64 --rip 0x401234 --rsp 0x404300 \
+    --syscall 59 --syscall-arg 0x404308 --syscall-arg 0 --syscall-arg 0
 ```
 
-`0x401234` is your `execve` syscall target (gadget). `0x404308` is
-where the string `/bin/sh\0` lives on the stack you control. The
-output is the raw frame; concatenate behind the gadget address and
-you have a chain.
-
-### Emit a solve skeleton
+`0x401234` is your `syscall` gadget, `0x404308` is where `/bin/sh\0`
+lives on the stack you control. Concatenate the emitted frame behind the
+gadget address. A solve skeleton:
 
 ```bash
-abcpwn template srop tests/fixtures/binaries/srop -o solve.py
+abcpwn template srop /bin/ls -o /tmp/solve_srop.py
 ```
 
-## 4. Format string: offset to leak to write
+## 4. Format string: offset, then write
 
-A format string vulnerability gives you both a primitive read (via
-`%s`, `%n`) and a primitive write (via `%n`, `%hn`, `%hhn`). You
-need three things in order:
-
-1. The positional offset where your input lands.
-2. A leak (canary, libc address, code address) to defeat ASLR or
-   stack canary.
-3. A targeted write to GOT or a return address.
-
-### Find the offset
-
-Send a probe like `AAAA%X.%X.%X.%X.%X.%X.%X.%X` and capture the
-output. Then:
+A format-string bug gives both a read (`%s`, `%n`) and a write (`%n`,
+`%hn`, `%hhn`). First find where your input lands. Send a probe like
+`AAAA%x.%x.%x.%x` and capture the output; the marker `AAAA` is
+`0x41414141`:
 
 ```bash
-abcpwn fmt --find-offset 'AAAA%X.%X.%X.%X.%X.%X.41414141'
+abcpwn fmt --find-offset '11.41414141.22'
 ```
 
-(Replace `41414141` with the actual hex of where `AAAA` shows up.)
-
-The output gives you the positional index (e.g. `7`) where your
-input starts.
-
-### Leak the canary
-
-If you found the offset is `7`, and the stack canary is two slots
-above your input:
-
-```
-%9$lx
-```
-
-reads the canary. (`abcpwn fmt --help` includes a payload formatter
-for common leak shapes.)
-
-### Build a GOT-overwrite payload
-
-You want to overwrite `puts@got.plt` (at `0x404020`) with
-`0x4011aa` (a `win` function), using offset `7`:
+The printed index is the positional argument where your input starts.
+With that index, build a GOT overwrite -- here `puts@got` (`0x404020`)
+redirected to a `win` at `0x4011aa` from arg position 7:
 
 ```bash
-abcpwn fmt --write 0x404020=0x4011aa --offset 7
+abcpwn fmt --write 0x404020=0x4011aa --arg-position 7
 ```
 
-The output is a ready-to-send payload that uses `%hn` for two-byte
-writes to avoid the giant counter inflation of a four-byte `%n`.
-
-### Putting it together
+The payload uses `%hn` two-byte writes to avoid the counter inflation of
+a four-byte `%n`. A solve skeleton:
 
 ```bash
-abcpwn template fmt-leak tests/fixtures/binaries/fmt -o solve.py
+abcpwn template fmt-leak /bin/ls -o /tmp/solve_fmt.py
 ```
 
-Edit the offsets and addresses in the generated script.
+## 5. Reading and reasoning about a seccomp filter
 
-## 5. Dumping and emulating a seccomp filter
-
-CTF challenges often install a seccomp filter that restricts which
-syscalls the process can make. The first job is to read the filter;
-the second is to know which syscall numbers it permits.
-
-### Dump the filter
+CTF challenges often install a seccomp filter restricting syscalls. The
+filter is a classic-BPF program; once you have its bytes (from
+`strace -f -e trace=prctl,seccomp`, a debugger, or `abcpwn seccomp dump`
+on a binary that embeds a static filter) you can decode it:
 
 ```bash
-abcpwn seccomp dump tests/fixtures/binaries/seccomp
+abcpwn seccomp disasm 2000000004000000150001003e0000c006000000000000002000000000000000150000013b0000000600000000000000060000000000ff7f
 ```
 
-`abcpwn` finds the embedded BPF program (the binary calls
-`prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, ...)`) and extracts the
-instruction array.
-
-### Decode the BPF program
+The output is human-readable cBPF: load arch, load the syscall number,
+compare against the allowed list, then `ALLOW` or `KILL`. A filter that
+permits only `read`/`write`/`exit` means no `execve` -- you need
+open/read/write shellcode instead. The shipped `sh` preset:
 
 ```bash
-abcpwn seccomp disasm < dumped.bpf
+abcpwn shellcode --preset sh --arch x86_64
 ```
 
-Output is human-readable cBPF: load syscall number, compare against
-allowed list, allow or kill.
-
-### Find which syscalls are permitted
-
-The decoded output explicitly tags `ALLOW`, `KILL_PROCESS`, and
-`ERRNO`. A common challenge filter:
-
-```
-ALLOW read, write, exit, exit_group
-KILL anything else
-```
-
-means you cannot call `execve` directly; you need a `read` then
-`write` shellcode (open / read / write the flag file).
-
-### Build a compatible shellcode
+Confirm what a payload actually does by disassembling its bytes:
 
 ```bash
-abcpwn shellcode --preset read-flag --arch x86_64
+abcpwn disasm 9090c3 --arch x86_64
 ```
 
-The `read-flag` preset opens `/flag`, reads it, and writes the
-contents to stdout. It only uses `open`, `read`, `write`, and `exit`
-syscalls. Confirm against the filter:
-
-```bash
-abcpwn shellcode --preset read-flag --arch x86_64 \
-  | abcpwn disasm --arch x86_64
-```
-
-The disassembly should show only the four permitted syscalls.
-
-### Emulate (optional)
-
-If your build includes Unicorn:
-
-```bash
-abcpwn seccomp emu --filter dumped.bpf --syscall execve
-abcpwn seccomp emu --filter dumped.bpf --syscall read
-```
-
-`emu` runs the filter against a synthetic syscall and reports the
-verdict, which is more reliable than reading the disassembled output
-for complex filters with bit manipulation.
+(Here `90 90 c3` is just `nop; nop; ret`; pipe real shellcode bytes
+through `disasm` to audit the syscalls it makes.)

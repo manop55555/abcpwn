@@ -81,3 +81,7 @@ add_test(NAME test_stdin
 add_test(NAME test_verbosity
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_verbosity.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_tutorial_walkthrough
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_tutorial_walkthrough.sh"
+            "$<TARGET_FILE:abcpwn>"
+            "${CMAKE_SOURCE_DIR}")

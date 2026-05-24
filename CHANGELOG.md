@@ -137,6 +137,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   documents; `check-no-spec-leak.sh` now also rejects any tracked file
   that references the local-only spec set, preventing regressions
   (IMP-2).
+- `docs/TUTORIALS.md` rewritten to be copy-pasteable: every shell block
+  runs against system binaries (`/bin/ls`) or pure operations and uses
+  only shipped flags. It previously referenced fixtures that never
+  shipped, removed flags (`syms --type`, `cyclic --search`,
+  `fmt --offset`), and unimplemented features (`shellcode --preset
+  read-flag`, `seccomp emu`). `test_tutorial_walkthrough.sh` runs every
+  bash block and asserts exit 0 (IMP-5).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
