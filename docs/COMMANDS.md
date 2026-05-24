@@ -186,6 +186,23 @@ abcpwn errno EAGAIN
 abcpwn errno | grep -i no
 ```
 
+### `signal` - Linux signal lookup
+
+```
+abcpwn signal [<query>]
+```
+
+`query` is a number (`11`), a full name (`SIGSEGV`), the short form
+(`SEGV` -- automatically prefixed with `SIG`), or omitted (lists all
+named signals 1..25). Surface mirrors `errno`.
+
+```bash
+abcpwn signal 11
+abcpwn signal SIGSEGV
+abcpwn signal SEGV
+abcpwn signal | grep -i kill
+```
+
 ### `constgrep` - search compiled-in constants
 
 ```

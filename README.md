@@ -118,7 +118,7 @@ Full command reference: [docs/COMMANDS.md](docs/COMMANDS.md).
 | Group       | Commands                                                       |
 |-------------|----------------------------------------------------------------|
 | recon       | `info`, `syms`, `strings`, `search`, `hash`                    |
-| encoding    | `pack`, `unpack`, `hex`, `unhex`, `b64`, `xor`, `errno`, `constgrep` |
+| encoding    | `pack`, `unpack`, `hex`, `unhex`, `b64`, `xor`, `errno`, `signal`, `constgrep` |
 | asm         | `asm`, `disasm`, `phd`                                         |
 | pattern     | `cyclic`                                                       |
 | rop         | `gadget`, `rop`, `one-gadget`                                  |

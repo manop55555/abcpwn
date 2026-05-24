@@ -23,6 +23,7 @@ complete -c abcpwn -n '__fish_use_subcommand' -a 'unhex'       -d 'decode hex by
 complete -c abcpwn -n '__fish_use_subcommand' -a 'b64'         -d 'encode or decode base64'
 complete -c abcpwn -n '__fish_use_subcommand' -a 'xor'         -d 'xor bytes against a repeating key'
 complete -c abcpwn -n '__fish_use_subcommand' -a 'errno'       -d 'look up POSIX errno by number or name'
+complete -c abcpwn -n '__fish_use_subcommand' -a 'signal'      -d 'look up Linux signal by number or name'
 complete -c abcpwn -n '__fish_use_subcommand' -a 'constgrep'   -d 'search compiled-in constants'
 
 # asm

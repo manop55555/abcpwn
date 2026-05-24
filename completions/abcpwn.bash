@@ -16,7 +16,7 @@ _abcpwn_complete() {
 
     local subcommands="
         info syms strings search hash
-        pack unpack hex unhex b64 xor errno constgrep
+        pack unpack hex unhex b64 xor errno signal constgrep
         asm disasm phd
         cyclic
         gadget rop one-gadget

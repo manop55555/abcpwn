@@ -14,6 +14,7 @@
 #include "abcpwn/commands/errno_cmd.hpp"
 #include "abcpwn/commands/hex.hpp"
 #include "abcpwn/commands/pack.hpp"
+#include "abcpwn/commands/signal_cmd.hpp"
 #include "abcpwn/commands/xor_cmd.hpp"
 #include "abcpwn/core/context.hpp"
 
@@ -172,4 +173,40 @@ TEST_CASE("ConstgrepCommand finds entries", "[encoding][command]") {
     REQUIRE(r);
     REQUIRE_FALSE(r->sections.empty());
     REQUIRE(r->sections[0].findings.size() == 1);
+}
+
+TEST_CASE("signal table covers the common Linux numbers", "[encoding][signal]") {
+    REQUIRE(signal_by_name("SIGSEGV")->number == 11);
+    REQUIRE(signal_by_name("SIGKILL")->number == 9);
+    REQUIRE(signal_by_name("SIGTERM")->number == 15);
+    REQUIRE(signal_by_number(2)->name == "SIGINT");
+    REQUIRE(signal_by_number(99) == nullptr);
+}
+
+TEST_CASE("SignalCommand by number", "[encoding][command][signal]") {
+    abcpwn::core::Context ctx;
+    SignalCommand s;
+    s.query = "11";
+    auto r = s.run(ctx);
+    REQUIRE(r);
+    REQUIRE_FALSE(r->sections.empty());
+    REQUIRE(r->sections[0].findings.size() == 1);
+    REQUIRE(r->sections[0].findings[0].title == "SIGSEGV");
+}
+
+TEST_CASE("SignalCommand accepts both SIGSEGV and SEGV", "[encoding][command][signal]") {
+    abcpwn::core::Context ctx;
+    SignalCommand s;
+    s.query = "SEGV"; // missing SIG prefix
+    auto r = s.run(ctx);
+    REQUIRE(r);
+    REQUIRE(r->sections[0].findings[0].title == "SIGSEGV");
+}
+
+TEST_CASE("SignalCommand empty query lists all", "[encoding][command][signal]") {
+    abcpwn::core::Context ctx;
+    SignalCommand s;
+    auto r = s.run(ctx);
+    REQUIRE(r);
+    REQUIRE(r->sections[0].findings.size() >= 20);
 }

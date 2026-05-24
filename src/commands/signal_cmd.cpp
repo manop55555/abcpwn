@@ -1,0 +1,69 @@
+// SPDX-License-Identifier: Apache-2.0
+// Copyright (c) 2026 manop55555
+
+#include "abcpwn/commands/signal_cmd.hpp"
+
+#include <cctype>
+#include <charconv>
+#include <string>
+#include <string_view>
+
+#include <CLI/CLI.hpp>
+
+namespace abcpwn::commands {
+
+void SignalCommand::setup(CLI::App& app) {
+    app.add_option(
+        "query", query, "signal number (e.g., 11) or name (e.g., SIGSEGV). Omit to list all.");
+}
+
+core::Result<core::CommandResult> SignalCommand::run(const core::Context& /*ctx*/) {
+    core::CommandResult res;
+    auto& sec = res.sections.emplace_back();
+    sec.title = "signal";
+
+    if (query.empty()) {
+        for (const auto& s : encoding::signal_table()) {
+            core::Finding f;
+            f.title = std::string(s.name);
+            f.detail = std::to_string(s.number) + "  " + std::string(s.description);
+            sec.findings.push_back(std::move(f));
+        }
+        return res;
+    }
+
+    const encoding::SignalEntry* hit = nullptr;
+    const bool numeric =
+        !query.empty()
+        && (query[0] == '-' || std::isdigit(static_cast<unsigned char>(query[0])) != 0);
+    if (numeric) {
+        int n = 0;
+        const auto* begin = query.data();
+        const auto* end = query.data() + query.size();
+        const auto conv = std::from_chars(begin, end, n);
+        if (conv.ec == std::errc{} && conv.ptr == end) {
+            hit = encoding::signal_by_number(n);
+        }
+    } else {
+        // Accept both "SIGSEGV" and the abbreviated "SEGV" form
+        // since CTF write-ups commonly use either.
+        hit = encoding::signal_by_name(query);
+        if (hit == nullptr && !query.starts_with("SIG")) {
+            const std::string with_prefix = std::string{"SIG"} + query;
+            hit = encoding::signal_by_name(with_prefix);
+        }
+    }
+
+    if (hit == nullptr) {
+        return core::err(core::ErrorCode::NotFound,
+                         "signal: '" + query + "' not in the project table");
+    }
+
+    core::Finding f;
+    f.title = std::string(hit->name);
+    f.detail = std::to_string(hit->number) + "  " + std::string(hit->description);
+    sec.findings.push_back(std::move(f));
+    return res;
+}
+
+} // namespace abcpwn::commands

@@ -23,6 +23,7 @@ _abcpwn() {
         'b64:encode or decode base64'
         'xor:xor bytes against a repeating key'
         'errno:look up POSIX errno by number or name'
+        'signal:look up Linux signal by number or name (symmetric with errno)'
         'constgrep:search compiled-in constants'
         # asm
         'asm:assemble source text into raw bytes (requires Keystone)'

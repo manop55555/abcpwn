@@ -50,6 +50,20 @@ struct ErrnoEntry {
 [[nodiscard]] const ErrnoEntry* errno_by_name(std::string_view name) noexcept;
 [[nodiscard]] std::span<const ErrnoEntry> errno_table() noexcept;
 
+// Linux signal table. Mirrors the errno surface so users can look
+// up signals by name (SIGSEGV) or number (11) symmetrically; the
+// description field carries the kernel's canonical short text
+// ("Segmentation fault", "Aborted", ...).
+struct SignalEntry {
+    int number;
+    std::string_view name;
+    std::string_view description;
+};
+
+[[nodiscard]] const SignalEntry* signal_by_number(int number) noexcept;
+[[nodiscard]] const SignalEntry* signal_by_name(std::string_view name) noexcept;
+[[nodiscard]] std::span<const SignalEntry> signal_table() noexcept;
+
 // constgrep table: compiled-in known constants frequently seen in
 // pwn challenges (mmap protection flags, common signal numbers,
 // ELF auxv types, etc.). Search is substring on name.

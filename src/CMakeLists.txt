@@ -42,6 +42,7 @@ target_sources(abcpwn_core PRIVATE
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/seccomp.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/shellcode.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/shellcode_db.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/commands/signal_cmd.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/srop.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/strings.cpp"
     "${CMAKE_CURRENT_SOURCE_DIR}/commands/syms.cpp"

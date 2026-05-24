@@ -63,6 +63,7 @@
 #include "abcpwn/commands/search.hpp"
 #include "abcpwn/commands/seccomp.hpp"
 #include "abcpwn/commands/shellcode.hpp"
+#include "abcpwn/commands/signal_cmd.hpp"
 #include "abcpwn/commands/srop.hpp"
 #include "abcpwn/commands/strings.hpp"
 #include "abcpwn/commands/syms.hpp"
@@ -167,6 +168,7 @@ void register_all(CLI::App& root, std::vector<DispatchEntry>& entries) {
     register_command<B64Command>(root, entries);
     register_command<XorCommand>(root, entries);
     register_command<ErrnoCommand>(root, entries);
+    register_command<SignalCommand>(root, entries);
     register_command<ConstgrepCommand>(root, entries);
 
     // Group 3 + 4: assembly + pattern

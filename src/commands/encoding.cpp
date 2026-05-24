@@ -268,6 +268,62 @@ std::span<const ErrnoEntry> errno_table() noexcept {
 
 namespace {
 
+// Linux signals 1..31 plus the realtime range markers. Numbers match
+// the kernel's UAPI on the architectures abcpwn targets (x86_64,
+// aarch64, i386, mips, ppc, ppc64, riscv -- they all use the same
+// numbering for the named signals below; only SIGCHLD/SIGSTOP/SIGTSTP
+// differ on MIPS/Alpha, which abcpwn does not support natively).
+constexpr std::array<SignalEntry, 24> kSignalTable{{
+    {1, "SIGHUP", "Hangup"},
+    {2, "SIGINT", "Interrupt"},
+    {3, "SIGQUIT", "Quit"},
+    {4, "SIGILL", "Illegal instruction"},
+    {5, "SIGTRAP", "Trace/breakpoint trap"},
+    {6, "SIGABRT", "Aborted"},
+    {7, "SIGBUS", "Bus error"},
+    {8, "SIGFPE", "Floating point exception"},
+    {9, "SIGKILL", "Killed (uncatchable)"},
+    {10, "SIGUSR1", "User signal 1"},
+    {11, "SIGSEGV", "Segmentation fault"},
+    {12, "SIGUSR2", "User signal 2"},
+    {13, "SIGPIPE", "Broken pipe"},
+    {14, "SIGALRM", "Alarm clock"},
+    {15, "SIGTERM", "Terminated"},
+    {17, "SIGCHLD", "Child stopped or exited"},
+    {18, "SIGCONT", "Continue execution if stopped"},
+    {19, "SIGSTOP", "Stopped (uncatchable)"},
+    {20, "SIGTSTP", "Stopped from terminal"},
+    {21, "SIGTTIN", "Background read attempted from terminal"},
+    {22, "SIGTTOU", "Background write attempted to terminal"},
+    {23, "SIGURG", "Urgent condition on socket"},
+    {24, "SIGXCPU", "CPU time limit exceeded"},
+    {25, "SIGXFSZ", "File size limit exceeded"},
+}};
+
+} // namespace
+
+const SignalEntry* signal_by_number(int number) noexcept {
+    for (const auto& s : kSignalTable) {
+        if (s.number == number)
+            return &s;
+    }
+    return nullptr;
+}
+
+const SignalEntry* signal_by_name(std::string_view name) noexcept {
+    for (const auto& s : kSignalTable) {
+        if (s.name == name)
+            return &s;
+    }
+    return nullptr;
+}
+
+std::span<const SignalEntry> signal_table() noexcept {
+    return kSignalTable;
+}
+
+namespace {
+
 constexpr std::array<Constant, 38> kConstants = {{
     // mmap PROT_*
     {"mmap", "PROT_NONE", 0},
