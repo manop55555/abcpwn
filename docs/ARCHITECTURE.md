@@ -49,7 +49,7 @@ per (arch, mode) tuple.
 
 ### `commands/`
 
-The 38 subcommand implementations. Each inherits from `ICommand`
+The 39 subcommand implementations. Each inherits from `ICommand`
 and returns a `Result<CommandResult, Error>`.
 
 ### `output/`
@@ -142,7 +142,7 @@ src/
   core/                     Result, Error, Context, SafeIO
   formats/                  LIEF wrapper
   arch/                     Capstone wrapper + arch tables
-  commands/                 38 subcommand implementations
+  commands/                 39 subcommand implementations
   output/                   PrettyPrinter, JsonWriter, banner
 include/abcpwn/             public headers (internal to this binary)
 tests/

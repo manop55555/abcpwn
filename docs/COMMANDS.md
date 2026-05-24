@@ -1,6 +1,6 @@
 # Commands
 
-`abcpwn` exposes 38 subcommands across 13 groups. This document is the
+`abcpwn` exposes 39 subcommands across 13 groups. This document is the
 public reference. Every section gives synopsis, description, the key
 options, one example, and the exit codes specific to the subcommand
 beyond the generic [error codes](ERROR_CODES.md).

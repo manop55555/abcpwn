@@ -8,7 +8,7 @@
 
 ## Context
 
-`abcpwn` has 38 subcommands at v0.1, each with its own flag set,
+`abcpwn` has 39 subcommands at v0.1, each with its own flag set,
 positional arguments, and validation rules. Hand-rolling argument
 parsing for each subcommand would be redundant and error-prone.
 The CLI parser needs to:

@@ -24,7 +24,8 @@
 
 Native C++20 CLI toolkit for binary exploitation. Dynamically linked
 against system libc/libm; every third-party library (LIEF, Capstone,
-CLI11, nlohmann/json, spdlog) is statically bundled into the binary.
+CLI11, nlohmann/json, spdlog, PicoSHA2) is statically bundled into the
+binary.
 No telemetry. No auto-update. No network calls by default.
 
 `abcpwn` is a single binary that consolidates the day-to-day toolkit of a
@@ -119,6 +120,10 @@ installing.
 curl -sSL https://raw.githubusercontent.com/manop55555/abcpwn/main/scripts/install.sh | bash
 ```
 
+The installer verifies SHA-256 checksums by default (`--no-verify` opts
+out, with a warning). If you would rather not pipe to a shell, use the
+tarball method above and check `SHA256SUMS` yourself.
+
 From source: see [BUILDING.md](BUILDING.md).
 
 ## Quick start
@@ -145,7 +150,7 @@ Full command reference: [docs/COMMANDS.md](docs/COMMANDS.md).
 |-------------|----------------------------------------------------------------|
 | recon       | `info`, `syms`, `strings`, `search`, `hash`                    |
 | encoding    | `pack`, `unpack`, `hex`, `unhex`, `b64`, `xor`, `errno`, `signal`, `constgrep` |
-| asm         | `asm`, `disasm`, `phd`                                         |
+| asm         | `asm`&dagger;, `disasm`, `phd`                                 |
 | pattern     | `cyclic`                                                       |
 | rop         | `gadget`, `rop`, `one-gadget`                                  |
 | specialized | `srop`, `ret2dl`, `dynelf`, `aslr-bypass`                      |
@@ -156,6 +161,10 @@ Full command reference: [docs/COMMANDS.md](docs/COMMANDS.md).
 | file/c++    | `iofile`, `vtable`                                             |
 | sandbox     | `seccomp`, `libc`                                              |
 | workflow    | `pwninit`, `pwn`, `template`, `diff`, `patch`                  |
+
+&dagger; `asm` requires the optional Keystone build (GPL-2); the default
+Apache-2.0 binary exits `FeatureDisabled` (exit 4). See
+[BUILDING.md](BUILDING.md) and [docs/FAQ.md](docs/FAQ.md).
 
 ## Documentation
 
