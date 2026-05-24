@@ -103,7 +103,7 @@ void JsonWriter::write(
     (void) ctx_;
 
     json envelope;
-    envelope["abcpwn_version"] = std::string(core::version_string);
+    envelope["abcpwn_version"] = std::string(core::semver_string);
     envelope["schema_version"] = kJsonSchemaVersion;
     envelope["command"] = std::string(command);
 

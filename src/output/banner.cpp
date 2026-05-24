@@ -4,6 +4,9 @@
 #include "abcpwn/output/banner.hpp"
 
 #include <ostream>
+#include <string>
+
+#include "abcpwn/core/version.hpp"
 
 namespace abcpwn::output {
 
@@ -26,9 +29,6 @@ constexpr std::string_view kBanner = R"BANNER(        P
         '           native C++ binary. no telemetry. no auto-update.
 )BANNER";
 
-constexpr std::string_view kCompactHeader =
-    " ===[ abcpwn v0.1.0 ]=== binary exploitation toolkit ===";
-
 } // namespace
 
 std::string_view banner_text() noexcept {
@@ -36,7 +36,14 @@ std::string_view banner_text() noexcept {
 }
 
 std::string_view compact_header() noexcept {
-    return kCompactHeader;
+    // Built once from the build-time SemVer so the compact CLI header,
+    // --version, and JSON abcpwn_version all report the same string
+    // (verification N3). The decorative ASCII banner above keeps the
+    // static brand mark.
+    static const std::string header = std::string(" ===[ abcpwn v")
+                                      + std::string(core::semver_string)
+                                      + " ]=== binary exploitation toolkit ===";
+    return header;
 }
 
 void print_banner(std::ostream& os, bool color) {

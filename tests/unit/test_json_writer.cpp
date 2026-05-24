@@ -9,6 +9,7 @@
 
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/core/result.hpp"
+#include "abcpwn/core/version.hpp"
 #include "abcpwn/output/json_writer.hpp"
 
 using nlohmann::json;
@@ -36,7 +37,10 @@ TEST_CASE("json envelope carries required envelope fields", "[json]") {
     w.write(oss, "info", sample_result(), {{"binary", std::string("/bin/ls")}});
 
     const auto j = json::parse(oss.str());
-    REQUIRE(j["abcpwn_version"].get<std::string>() == "0.1.0");
+    // N3: the JSON envelope reports the build-time SemVer (the single
+    // source shared with the banner and --version), not a hardcoded
+    // MAJOR.MINOR.PATCH.
+    REQUIRE(j["abcpwn_version"].get<std::string>() == std::string(abcpwn::core::semver_string));
     REQUIRE(j["schema_version"].get<int>() == 1);
     REQUIRE(j["command"].get<std::string>() == "info");
     REQUIRE(j["args"]["binary"].get<std::string>() == "/bin/ls");

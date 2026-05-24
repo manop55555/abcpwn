@@ -49,6 +49,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   also covers all six syscall argument registers (rdi, rsi, rdx, r10,
   r8, r9) and finds a bare `syscall` gadget, not only `syscall ; ret`
   (verification #31).
+- the version string is consistent across surfaces: the compact CLI
+  header, `--version`, and the JSON `abcpwn_version` field all report
+  the build-time SemVer (previously the header and JSON showed the
+  short `0.1.0` while `--version` showed `0.1.0-alpha.4`). The
+  decorative ASCII banner keeps its static brand mark (verification N3).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

@@ -49,4 +49,27 @@ if ! echo "$got" | grep -qE 'abcpwn v[0-9]+'; then
     exit 1
 fi
 
-echo "[+] --version OK: semver visible + --no-banner suppresses header"
+# 3. N3: the compact header, the --version detail line, and the JSON
+#    abcpwn_version field must all report the SAME version string. They
+#    previously disagreed (banner v0.1.0 vs detail v0.1.0-alpha.4 vs JSON
+#    0.1.0); all three now derive from the build-time SemVer.
+detail_ver=$("$ABCPWN_BIN" --no-banner --version 2>&1 \
+    | sed -n 's/^abcpwn v\([0-9][^ ]*\).*/\1/p' | head -1)
+if [ -z "$detail_ver" ]; then
+    echo "[-] could not parse the version from --version"
+    exit 1
+fi
+header_line=$("$ABCPWN_BIN" --version 2>&1 | head -1)
+if ! echo "$header_line" | grep -qF "v${detail_ver} "; then
+    echo "[-] compact header disagrees with --version detail ($detail_ver)"
+    echo "    header: $header_line"
+    exit 1
+fi
+json_ver=$("$ABCPWN_BIN" --format json cyclic 8 2>/dev/null \
+    | tr ',' '\n' | sed -n 's/.*"abcpwn_version"[ :]*"\([^"]*\)".*/\1/p' | head -1)
+if [ "$json_ver" != "$detail_ver" ]; then
+    echo "[-] JSON abcpwn_version ($json_ver) disagrees with --version ($detail_ver)"
+    exit 1
+fi
+
+echo "[+] --version OK: semver visible, --no-banner suppresses header, surfaces agree"
