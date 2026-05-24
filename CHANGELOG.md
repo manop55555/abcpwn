@@ -152,6 +152,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - ROADMAP gains a v0.1.1 entry to harden the binary loader against the
   upstream LIEF note-size OOM (the recurring `fuzz_binary_loader`
   crash); the auto-filed fuzz-crash issues are triaged to it (IMP-1).
+- GitHub Discussions enabled for the repository, so the "open a
+  discussion" links in the README, FAQ, SUPPORT, and CONTRIBUTING docs
+  now resolve (IMP-6).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
