@@ -51,14 +51,31 @@ if [ "$rc" -ne 0 ]; then
     exit 1
 fi
 
-# -f short alias for --format works identically.
+# -f short alias for --format works identically apart from the
+# command_line echo in the JSON envelope (which captures argv
+# verbatim and therefore differs between --format and -f).
 out_long=$("$ABCPWN_BIN" --no-banner --format json errno 13 2>&1)
 out_short=$("$ABCPWN_BIN" --no-banner -f json errno 13 2>&1)
-if [ "$out_long" != "$out_short" ]; then
+# Strip the args.command_line line before comparing structural output.
+strip=$(printf '%s\n' "$out_long" | grep -v 'command_line')
+strip2=$(printf '%s\n' "$out_short" | grep -v 'command_line')
+if [ "$strip" != "$strip2" ]; then
     echo "[-] -f and --format produced different output:" >&2
     printf '  --format:\n%s\n' "$out_long" >&2
     printf '  -f:\n%s\n' "$out_short" >&2
     exit 1
 fi
+
+# JSON args.command_line echoes the full invocation (TIER 4 #37).
+echo "$out_long" | grep -q '"command_line"' || {
+    echo "[-] --format json args block missing command_line key" >&2
+    echo "$out_long" >&2
+    exit 1
+}
+echo "$out_long" | grep -q 'errno 13' || {
+    echo "[-] command_line did not echo the actual argv" >&2
+    echo "$out_long" >&2
+    exit 1
+}
 
 echo "[+] test_cli_exit_codes ok"

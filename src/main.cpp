@@ -23,10 +23,12 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <string_view>
+#include <variant>
 #include <vector>
 
 #include <CLI/CLI.hpp>
@@ -388,8 +390,22 @@ int main(int argc, char** argv) {
     }
 
     if (ctx.format == core::OutputFormat::Json) {
+        // Echo the parsed argv under args.command_line so downstream
+        // tooling (jq pipelines, log aggregators) can correlate a
+        // JSON output blob back to the exact invocation that produced
+        // it. Previously every "args" object came back empty, which
+        // defeated the round-trip story.
+        std::string joined;
+        for (int i = 0; i < argc; ++i) {
+            if (i != 0) {
+                joined.push_back(' ');
+            }
+            joined.append(argv[i]);
+        }
+        std::map<std::string, std::variant<std::string, std::int64_t, bool>> json_args;
+        json_args.emplace("command_line", joined);
         output::JsonWriter writer(ctx);
-        writer.write(std::cout, selected->cmd->name(), *result);
+        writer.write(std::cout, selected->cmd->name(), *result, json_args);
     } else {
         output::PrettyPrinter pp(ctx);
         // Compact header and timing footer are decoration -- they
