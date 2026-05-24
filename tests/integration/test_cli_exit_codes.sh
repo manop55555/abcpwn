@@ -51,4 +51,14 @@ if [ "$rc" -ne 0 ]; then
     exit 1
 fi
 
+# -f short alias for --format works identically.
+out_long=$("$ABCPWN_BIN" --no-banner --format json errno 13 2>&1)
+out_short=$("$ABCPWN_BIN" --no-banner -f json errno 13 2>&1)
+if [ "$out_long" != "$out_short" ]; then
+    echo "[-] -f and --format produced different output:" >&2
+    printf '  --format:\n%s\n' "$out_long" >&2
+    printf '  -f:\n%s\n' "$out_short" >&2
+    exit 1
+fi
+
 echo "[+] test_cli_exit_codes ok"

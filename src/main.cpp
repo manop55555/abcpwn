@@ -245,7 +245,7 @@ int main(int argc, char** argv) {
     bool allow_network{false};
     std::string config_path{};
 
-    app.add_option("--format", format_str, "pretty (default) | json");
+    app.add_option("-f,--format", format_str, "pretty (default) | json");
     app.add_option("--color", color_str, "auto (default) | always | never");
     app.add_flag("--no-color", no_color, "Disable color output (alias for --color never)");
     app.add_flag("-v,--verbose", verbose_count, "Increase verbosity (-vv = trace)");
