@@ -65,11 +65,66 @@ jobs:
           if [ -d completions ]; then
             cp -r completions             "$stage/"
           fi
+          # Bundle the public docs/ reference set. Excludes the
+          # gitignored DECISIONS.md (local design log) which would
+          # only be present in a polluted working tree anyway; the
+          # explicit --exclude makes the intent obvious for anyone
+          # auditing release.yml.
+          if [ -d docs ]; then
+            rsync -a \
+              --exclude='DECISIONS.md' \
+              --exclude='.*' \
+              docs/ "$stage/docs/"
+          fi
           tar -C staging -czf abcpwn-${{ matrix.artifact }}.tar.gz \
               abcpwn-${{ matrix.artifact }}
 
       - name: Compute SHA-256
         run: sha256sum abcpwn-${{ matrix.artifact }}.tar.gz > SHA256SUMS-${{ matrix.artifact }}
+
+      - name: Generate CycloneDX SBOM
+        # Scan the built artifact (tarball + binary) and emit a
+        # CycloneDX 1.5 JSON SBOM. anchore/sbom-action wraps syft,
+        # which picks up ELF imports, libc version markers, and the
+        # statically-linked LIEF/Capstone/CLI11/spdlog/nlohmann
+        # version strings embedded in the binary. The output lands
+        # alongside the archive for release upload.
+        uses: anchore/sbom-action@v0
+        with:
+          file: abcpwn-${{ matrix.artifact }}.tar.gz
+          format: cyclonedx-json
+          output-file: abcpwn-${{ matrix.artifact }}-sbom.cdx.json
+          upload-artifact: false
+          upload-release-assets: false
+
+      - name: Install cosign
+        uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: 'v2.4.1'
+
+      - name: Sign archive and SBOM (keyless via GitHub OIDC)
+        # cosign keyless signing uses the workflow's OIDC token to
+        # bind the signature to this repo + workflow + commit SHA via
+        # the Fulcio CA, with the signature transparency-logged to
+        # Rekor. Verifiers can confirm provenance later with:
+        #   cosign verify-blob \
+        #     --certificate abcpwn-<arch>.tar.gz.pem \
+        #     --signature   abcpwn-<arch>.tar.gz.sig \
+        #     --certificate-identity-regexp '^https://github.com/manop55555/abcpwn/' \
+        #     --certificate-oidc-issuer 'https://token.actions.githubusercontent.com' \
+        #     abcpwn-<arch>.tar.gz
+        env:
+          COSIGN_EXPERIMENTAL: '1'
+        run: |
+          set -euo pipefail
+          for blob in \
+              abcpwn-${{ matrix.artifact }}.tar.gz \
+              abcpwn-${{ matrix.artifact }}-sbom.cdx.json
+          do
+              cosign sign-blob --yes "$blob" \
+                  --output-signature   "${blob}.sig" \
+                  --output-certificate "${blob}.pem"
+          done
 
       - name: Attest provenance
         # Repo is now public (since commit 620fb41) so the
@@ -90,6 +145,11 @@ jobs:
           name: artifacts-${{ matrix.artifact }}
           path: |
             abcpwn-${{ matrix.artifact }}.tar.gz
+            abcpwn-${{ matrix.artifact }}.tar.gz.sig
+            abcpwn-${{ matrix.artifact }}.tar.gz.pem
+            abcpwn-${{ matrix.artifact }}-sbom.cdx.json
+            abcpwn-${{ matrix.artifact }}-sbom.cdx.json.sig
+            abcpwn-${{ matrix.artifact }}-sbom.cdx.json.pem
             SHA256SUMS-${{ matrix.artifact }}
           retention-days: 14
 
@@ -112,13 +172,22 @@ jobs:
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
         with:
+          # Order matters for readability on the release page; the
+          # archive comes first, then verification artifacts, then
+          # the SBOM family.
           files: |
             artifacts/abcpwn-*.tar.gz
+            artifacts/abcpwn-*.tar.gz.sig
+            artifacts/abcpwn-*.tar.gz.pem
+            artifacts/abcpwn-*-sbom.cdx.json
+            artifacts/abcpwn-*-sbom.cdx.json.sig
+            artifacts/abcpwn-*-sbom.cdx.json.pem
             artifacts/SHA256SUMS
           generate_release_notes: true
           # Draft mode for v0.1 so the maintainer can inspect the
-          # archive shape (man page, completions, LICENSE-THIRD-PARTY
-          # presence) before publishing. Promote to draft: false in a
-          # v0.2 release-process commit once the pipeline is trusted.
+          # archive shape (man page, completions, docs/ tree,
+          # LICENSE-THIRD-PARTY, SBOM coverage, cosign sig + cert)
+          # before publishing. Promote to draft: false in a v0.2
+          # release-process commit once the pipeline is trusted.
           draft: true
           prerelease: ${{ contains(github.ref, '-alpha') || contains(github.ref, '-beta') || contains(github.ref, '-rc') }}
