@@ -254,13 +254,21 @@ if command -v pandoc >/dev/null 2>&1; then
         echo "[-] pandoc rendered the man page to an empty document"
         exit 1
     fi
-    if printf '%s\n' "$rendered" | grep -q '\\(en'; then
-        echo "[-] rendered man page contains \\(en (en-dash); pandoc smartypants is munging --flags"
+    # The smartypants rewrites we care about: \(en (en-dash escape) and
+    # \(em (em-dash escape) on any line that documents a CLI flag.
+    # Either escape means "--" was collapsed and the rendered page no
+    # longer matches the documented surface.
+    if printf '%s\n' "$rendered" | grep -qE '\\\(en|\\\(em'; then
+        echo "[-] rendered man page contains \\(en or \\(em escape; pandoc smartypants is munging --flags"
         exit 1
     fi
-    # Spot-check: at least one well-known flag survives literally.
-    if ! printf '%s\n' "$rendered" | grep -q '\\-\\-format'; then
-        echo "[-] rendered man page does not contain literal --format"
+    # Spot-check: at least one well-known flag survives. Pandoc 3.x
+    # emits each hyphen as the Roff escape "\-" giving "\-\-format";
+    # older 2.x writers emit a bare "--format". Both are correct
+    # groff for a literal double hyphen; the failure mode we are
+    # guarding against is the en-dash collapse caught above.
+    if ! printf '%s\n' "$rendered" | grep -qE '(\\-\\-format|--format)'; then
+        echo "[-] rendered man page does not contain --format in either escaped or bare form"
         exit 1
     fi
 fi
