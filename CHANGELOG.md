@@ -72,6 +72,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `gadget --type` and `template <strategy>` reject unknown values with
   `UsageError` (exit 2) -- matching shellcode/heap/iofile -- instead of
   silently using `ret` / echoing the bogus strategy (DEF-8).
+- `cyclic` no longer exhausts memory on a large `--subseq-length`
+  (DEF-7). Generation is lazy -- only the requested length is produced,
+  so `cyclic 10 -n 7` returns instantly instead of allocating ~8 GB and
+  being OOM-killed. The `--find` search space is bounded: an oversized
+  `alphabet^subseq-length` returns `SizeExceeded` (exit 9) with guidance
+  instead of OOM (fixing an off-by-one in the prior cap).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

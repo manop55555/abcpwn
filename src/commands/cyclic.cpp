@@ -19,16 +19,29 @@ namespace abcpwn::commands {
 
 namespace {
 
+// Largest k^subseq space cyclic_find will materialize to locate an
+// offset (256 MiB). Past this we cannot search without risking OOM
+// (DEF-7); the command reports SizeExceeded with guidance instead.
+constexpr std::uint64_t kCyclicMaxFindSpace = 1ULL << 28;
+
 // Standard de Bruijn generator: produces B(k, n) over alphabet of size
 // k and subsequence length n. The recursion mirrors pwntools' approach
 // to preserve byte-for-byte compatibility with `pwntools.cyclic`.
-std::string de_bruijn(const std::string& alphabet, std::size_t n) {
+// `max_len` stops generation early: the de Bruijn bytes are produced in
+// order, so the first `max_len` of them are all a caller asking for a
+// short pattern needs. Without this, B(k,n) materializes k^n bytes
+// regardless of the requested length -- e.g. `cyclic 10 -n 7` allocated
+// ~8 GB and was OOM-killed (DEF-7).
+std::string de_bruijn(const std::string& alphabet, std::size_t n, std::size_t max_len) {
     const std::size_t k = alphabet.size();
     std::vector<std::size_t> a(k * n, 0);
     std::string sequence;
-    sequence.reserve(1ULL << 16);
+    sequence.reserve(std::min<std::size_t>(max_len, 1ULL << 20));
 
     std::function<void(std::size_t, std::size_t)> db = [&](std::size_t t, std::size_t p) {
+        if (sequence.size() >= max_len) {
+            return; // produced enough; stop the recursion
+        }
         if (t > n) {
             if (n % p == 0) {
                 for (std::size_t j = 1; j <= p; ++j) {
@@ -56,7 +69,12 @@ cyclic_generate(std::size_t length, std::string_view alphabet, std::size_t subse
         return {};
     }
     std::string alpha(alphabet);
-    std::string seq = de_bruijn(alpha, subseq_length);
+    // Only generate as many bytes as the caller will use; length==0 means
+    // the whole sequence, so it is unbounded (DEF-7). The CLI rejects
+    // length==0, and cyclic_find passes a bounded total, so the unbounded
+    // path is not reachable with a dangerous subseq length.
+    const std::size_t max_len = (length == 0) ? std::numeric_limits<std::size_t>::max() : length;
+    std::string seq = de_bruijn(alpha, subseq_length, max_len);
     // The de Bruijn sequence is cyclic; pwntools' cyclic returns the
     // first `length` characters of the unrolled sequence (with the
     // last (n-1) chars wrapped).
@@ -97,10 +115,13 @@ cyclic_find(std::string_view needle, std::string_view alphabet, std::size_t subs
     const std::size_t k = alphabet.size();
     std::uint64_t total = 1;
     for (std::size_t i = 0; i < subseq_length; ++i) {
-        if (total > (1ULL << 32)) {
+        total *= k;
+        if (total > kCyclicMaxFindSpace) {
+            // Space too large to materialize and search. Check AFTER the
+            // multiply: the old pre-multiply check let the final product
+            // (e.g. 26^7) escape and then OOM-killed the process (DEF-7).
             return std::nullopt;
         }
-        total *= k;
     }
     auto seq = cyclic_generate(static_cast<std::size_t>(total), alphabet, subseq_length);
     auto pos = seq.find(probe);
@@ -174,6 +195,20 @@ core::Result<core::CommandResult> CyclicCommand::run(const core::Context& /*ctx*
         std::string needle = find;
         if (auto fi = needle_from_integer(find, subseq_length)) {
             needle = *fi;
+        }
+        // Guard the search space (DEF-7): cyclic_find materializes the
+        // k^subseq sequence to locate the offset, so a large subseq would
+        // exhaust memory. Report SizeExceeded rather than OOM or a
+        // misleading "not found".
+        const std::uint64_t k = std::max<std::uint64_t>(1, alphabet.size());
+        std::uint64_t space = 1;
+        for (std::size_t i = 0; i < subseq_length; ++i) {
+            space *= k;
+            if (space > kCyclicMaxFindSpace) {
+                return core::err(core::ErrorCode::SizeExceeded,
+                                 "cyclic: --find search space (alphabet^subseq-length) is too "
+                                 "large to materialize; reduce --subseq-length or the alphabet");
+            }
         }
         auto off = cyclic_find(needle, alphabet, subseq_length);
         if (!off) {
