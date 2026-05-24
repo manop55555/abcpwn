@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Reserved for changes accumulating against the next published tag.
 
-## [0.1.0-alpha.3] - 2026-05-23
+## [0.1.0-alpha.3] - 2026-05-24
 
 Bulk QA pass: 41 findings from three independent rounds of
 manual + scripted review resolved before the next tag. Most user-
