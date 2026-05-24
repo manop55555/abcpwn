@@ -8,8 +8,10 @@ STEP.*
 # Local design log
 docs/DECISIONS.md
 
-# Per-round session reports (local working notes; not for remote)
+# Per-round session reports + resolution roll-ups (local working
+# notes; not for remote)
 REPORT-round*.md
+REPORT-resolution.md
 
 # Build directories
 build/

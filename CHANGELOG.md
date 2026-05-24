@@ -5,6 +5,198 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+Reserved for changes accumulating against the next published tag.
+
+## [0.1.0-alpha.3] - 2026-05-23
+
+Bulk QA pass: 41 findings from three independent rounds of
+manual + scripted review resolved before the next tag. Most user-
+facing changes are bug fixes and surface trims; the only new
+features are conveniences (a `signal` subcommand symmetric with
+`errno`, a `-f` short alias, an integer form for `cyclic --find`).
+Release-pipeline output now includes a CycloneDX SBOM, cosign
+keyless signatures over the archive and SBOM, the public docs/
+reference tree, and CHANGELOG / BUILDING / SECURITY alongside
+README inside the tarball.
+
+### Added
+
+- `signal` subcommand mirrors the `errno` lookup surface:
+  `abcpwn signal 11`, `abcpwn signal SIGSEGV`, or `abcpwn signal
+  SEGV` (the SIG prefix is added when absent). `abcpwn signal`
+  with no argument lists all 25 named entries.
+- `-f` short alias for the global `--format` flag.
+- `cyclic --find` now accepts pwntools-style integer needles in
+  hex (`0x61616168`) or decimal (`1633771880`), converted to
+  little-endian bytes of the configured subsequence width. The
+  ASCII subsequence form (`haaa`) still works unchanged.
+- `gadget --max-results N` flag (default 200000) that lets users
+  raise the unique-result cap; when the cap is hit, the command
+  surfaces a Medium-severity `gadget set truncated` finding and
+  names the cap in the summary so the listing is no longer
+  silently partial.
+- `ABCPWN_MAX_FILE_SIZE=<bytes>` environment override now applies
+  to every binary-loading subcommand (`info`, `syms`, `gadget`,
+  `rop`, `vtable`, `got`, `one-gadget`, `ret2dl`), not only the
+  raw-bytes commands (`search`, `hash`, `strings`, `diff`,
+  `patch`) that already honored it.
+- `--allow-network` on a build produced without `ABCPWN_WITH_NETWORK`
+  now emits a parse-time `[!]` warning on stderr explaining the
+  flag has no effect; the command still runs (non-network
+  subcommands are unaffected).
+- JSON output now echoes the full invocation under
+  `args.command_line`, restoring the round-trip story for jq /
+  log-aggregator pipelines.
+- `disasm` defaults to a 1 MiB input cap and a 200000 instruction
+  cap for `--input-file`, with a 30-second internal time budget
+  that surfaces `ErrorCode::Timeout` (exit 15) if `cs_disasm`
+  somehow exceeded it. Users who need full-buffer decode can
+  override with `--count <N>`.
+- Truncated ELF inputs (file shorter than the documented
+  e_ident-class header size) are rejected upfront with
+  `ErrorCode::Corrupted` (exit 11) and a descriptive message,
+  rather than continuing through LIEF's lenient parser to
+  produce empty findings.
+- `abcpwn --version` now reports the full SemVer string
+  (`0.1.0-alpha.3`) sourced from `git describe --tags --abbrev=0`
+  at build time, with a `PROJECT_VERSION` fallback for tarball
+  builds that have no `.git`.
+- `--no-color` global flag accepted as an alias for
+  `--color=never` (the previous form remains).
+- Release tarballs now ship `CHANGELOG.md`, `BUILDING.md`,
+  `SECURITY.md`, and a copy of the public `docs/` tree alongside
+  the existing `LICENSE`, `LICENSE-THIRD-PARTY.md`, `README.md`,
+  man page, and completions.
+- Release pipeline produces a CycloneDX 1.5 SBOM (anchore/sbom-action)
+  and signs both the archive and the SBOM with cosign keyless
+  (Fulcio + Rekor via GitHub OIDC); SLSA build-provenance
+  attestation continues to land alongside.
+
+### Changed
+
+- Banner and timing footer always go to stderr; stdout carries
+  only command data. The previous behavior leaked banner bytes
+  into pipelines like `abcpwn unhex deadbeef | xxd`.
+- `--no-banner` now suppresses the banner on `--version` and
+  every other path; the bare-invocation help block still reaches
+  stdout while the banner reaches stderr.
+- JSON output base64-encodes raw bytes (`bytes_b64`, `bytes_hex`,
+  `bytes_len`) instead of stuffing them into a UTF-8 string and
+  triggering `nlohmann::json::type_error::316`.
+- Banner text no longer claims "statically linked"; the binary
+  dynamically links libc/libm and statically bundles third-party
+  C++ libraries. Wording corrected across the ASCII banner,
+  README intro, and man page DESCRIPTION.
+- CLI11 parse errors (104 RequiredError, 106 ExtrasError, 109
+  RequiresError, ...) are funneled through exit 2 (UsageError) at
+  the top-level catch so the documented exit-code table is the
+  single source of truth.
+- shellcode encoding selector renamed from `--format` to
+  `--output-format` to stop colliding with the global
+  `--format pretty|json` value space; both flags can now be
+  combined.
+- `rop --syscall` falls back to multi-pop `pop <target> ; pop
+  <safe> ; ret` gadgets when an exact `pop <target> ; ret` is
+  absent (the common libc case), with `(padding slot N)` entries
+  appended to the chain so the operator sees where to splice
+  junk bytes.
+- `pack` returns `ErrorCode::InvalidInput` when the value exceeds
+  the requested width instead of silently truncating to the
+  low-order bytes.
+- `syms --dangerous` strips the `__isocNN_` ABI-versioning prefix
+  before matching, so glibc 2.7+ wrappers (`__isoc99_scanf`,
+  `__isoc23_scanf`) are now flagged.
+- `disasm --arch ppc` / `--arch ppc64` default to big-endian (the
+  dominant ABI convention); users on LE ports can opt out with
+  `--be=false`.
+- `cyclic` rejects requested lengths past the alphabet^subseq
+  unique-window limit with `ErrorCode::SizeExceeded`.
+- x86_64 `sh` shellcode preset now NUL-terminates `/bin//sh` (24
+  bytes; was 23 and crashed in execve).
+- `fmt --write` lays out directives first, padded to ptr-width,
+  with target addresses at the end -- matches pwntools
+  `fmtstr_payload` and avoids NUL bytes in the leading directive
+  region.
+- LIEF's own logger is silenced on first call into the loader; we
+  surface our own `ErrorCode::Corrupted` diagnostics instead of
+  leaking LIEF `[WARNING]` / `[ERROR]` lines to stderr.
+- Man-page pandoc invocation now passes `--from=markdown-smart` so
+  double-hyphen flags survive as literal `--` instead of the
+  smartypants en-dash (`\(en`) collapse; `--format json` etc. can
+  be copy-pasted out of `man abcpwn` without silent mis-parse.
+- one-gadget output language matches what the command actually
+  does (locates `/bin/sh` string offsets); the trailing note now
+  recommends running the upstream Ruby `one_gadget` tool for
+  full constraint extraction.
+- LICENSE-THIRD-PARTY clarifies which libraries are present in
+  the default release versus opt-in builds; the Keystone (GPL-2)
+  and Unicorn (GPL-2) entries are now explicitly gated behind
+  `ABCPWN_WITH_KEYSTONE` / `ABCPWN_WITH_UNICORN` so no reader
+  mistakenly concludes the released artifact carries GPL-2
+  obligations.
+- README, COMMANDS, and the man page no longer mention an
+  `abcpwn-full` release artifact; the GPL combined-work build
+  is source-only via the `release-with-keystone` CMake preset
+  in v0.1.
+- `gadget` on a structurally-broken ELF now exits 11
+  (`Corrupted`) instead of 7 (`NotFound`).
+
+### Fixed
+
+- Banner + timing on stdout broke every pipeline that consumed
+  abcpwn output; both now reliably hit stderr.
+- `--format json` triggered an uncaught `nlohmann::json::type_error::316`
+  on any subcommand that emitted non-UTF-8 bytes; bytes are now
+  base64-encoded.
+- `cyclic <huge>` past the alphabet^subseq limit produced
+  non-de-Bruijn output where `cyclic --find` would return wrong
+  offsets; the command now refuses with `SizeExceeded`.
+- `shellcode --preset sh --arch x86_64` produced a payload that
+  could not actually spawn a shell because `/bin//sh` was not
+  NUL-terminated; the 24-byte fix is now exercised by an
+  integration test that mmaps RWX and forks the shellcode.
+- `fmt --write` payload never performed the write because
+  null-containing addresses were placed before the format
+  directives; the layout now matches pwntools.
+- `gadget --type all` silently truncated at 200000 results with
+  no signal; the new `--max-results` flag and warning surface
+  the cap and make it adjustable.
+- README Quick Start examples now parse and run end-to-end (four
+  of the seven were broken in alpha.2).
+- Man-page `cyclic --search` example fixed to `--find` (the flag
+  name has always been `--find`).
+- `signal handlers install idempotently` and other infrastructure
+  tests now pass in CI against the rebuilt-on-each-push artifact.
+
+### Removed
+
+- Unimplemented stub flags trimmed from the CLI surface:
+  `rop --ret2win`, `rop --leak`, `rop --srop`, `rop --format`,
+  `pwn --interactive`, `shellcode --reverse-addr`,
+  `shellcode --bind-port`, `shellcode --preset` choices that
+  weren't in the database (`bind`, `reverse`, `read-flag`,
+  `cat-flag`), global `--log-file`, `dynelf --libc-db`.
+- `seccomp` action choices `asm` and `emu` removed from `--help`
+  and the dispatch table; `disasm` remains the supported path
+  and `dump` returns Unsupported with a manual-extraction recipe.
+- Gadget-cache prose removed from the man page FILES section and
+  the `~/.cache/abcpwn/` `XDG_CACHE_HOME` entry; no on-disk cache
+  was ever implemented and the language was misleading.
+
+### Security
+
+- LIEF logger globally silenced; corruption diagnostics are
+  surfaced as `ErrorCode::Corrupted` findings instead of leaking
+  to stderr.
+- Truncated ELFs rejected upfront with a header-size sanity
+  check before LIEF's lenient parser sees them.
+- Release pipeline now produces CycloneDX SBOM + cosign keyless
+  signature (Fulcio CA, Rekor transparency log) alongside the
+  existing SLSA build-provenance attestation and SHA-256
+  checksums.
+
 ## [0.1.0-alpha] - 2026-05-23
 
 ### Added
