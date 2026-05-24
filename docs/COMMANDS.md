@@ -602,20 +602,20 @@ and emits a starter `solve.py`.
 abcpwn pwninit ./challenge-dir
 ```
 
-### `pwn` - I/O tubes
+### `pwn` - I/O tubes (placeholder; not implemented in v0.1.0)
 
 ```
-abcpwn pwn <target> [--dsl <file>] [--prompt N] [--allow-network]
+abcpwn pwn <target> [--script <file>] [--log <file>] [--timeout <s>]
 ```
 
-`target` is `host:port` for TCP, `unix:/path` for a unix socket, or
-`./local-binary` for a process. The DSL is a simple text format with
-`recvuntil`, `send`, `sendline`, `recvline`, `recvn`, `sleep`,
-`expect`, and `set` directives.
-
-```bash
-abcpwn pwn 1.2.3.4:1337 --dsl solve.tube
-```
+The live process / socket tube driver is **not implemented in v0.1.0**:
+every invocation validates the target and then exits `NotImplemented`
+(exit 16). It is the headline item of the [v0.2 roadmap](ROADMAP.md).
+Until it lands, pair abcpwn's offline output with a tube driver such as
+pwntools (see the README's "Pair with a process driver"). When
+implemented, `target` will be `host:port` (TCP), `unix:/path` (unix
+socket), or `./local-binary` (process), with the I/O script supplied
+via `--script`.
 
 ### `template` - emit a solve skeleton
 

@@ -33,6 +33,36 @@
 
 ## v0.2 (next)
 
+The headline of v0.2 is the exploitation work deferred from v0.1, which
+ships analysis and offline primitives only. Each item below is a
+deliberate v0.1 cut, not a regression:
+
+- Live process / socket I/O -- the `pwn` tube driver. v0.1's `pwn` is a
+  `NotImplemented` placeholder; v0.2 adds TCP, unix-socket, and
+  local-process tubes with an I/O script (`--script`) and TLS, so abcpwn
+  can drive a target end to end instead of only emitting offline
+  primitives.
+- Heap exploitation templates. v0.1's `heap` describes per-glibc
+  primitives; v0.2 adds turn-key tcache / fastbin / unsorted-bin and
+  House-of-* templates that emit a ready-to-adapt payload.
+- one-gadget constraint solving. v0.1's `one-gadget` locates `/bin/sh`
+  and candidate sites; v0.2 extracts the register / memory preconditions
+  so it reports only satisfiable gadgets, matching upstream `one_gadget`.
+- Automated SROP / ret2dlresolve / BROP chains. v0.1 ships the frame and
+  structure helpers (`srop`, `ret2dl`); v0.2 assembles complete chains
+  and adds blind-ROP (BROP) probing.
+- Alphanumeric / printable shellcode encoders and more presets. v0.1
+  ships the `sh` preset with `none` / `xor` / `null-free` encoders; v0.2
+  adds the `printable` / `alpha` encoders (with generated decoder stubs)
+  and a broader preset and architecture set.
+- A TOCTOU race-condition helper to locate and exploit time-of-check /
+  time-of-use windows.
+- A pwntools-compatible scripting surface, so a full exploit can be
+  expressed in one abcpwn invocation instead of shelling out per
+  primitive.
+
+Packaging, platforms, and tooling:
+
 - Re-enable SLSA provenance attestation in release.yml. v0.1
   ships with `actions/attest-build-provenance@v1` marked
   `continue-on-error: true` because the action requires either a
@@ -41,7 +71,6 @@
   unlocks GHAS (visibility flip, transfer to an org with GHAS,
   or paid plan), remove the `continue-on-error` and verify the
   provenance file appears in release artifacts.
-- Sigstore signing of release artifacts (cosign verify-blob workflow).
 - Per-file NOLINT review for the clang-tidy categories temporarily
   disabled at the v0.1 baseline.
 - Full include-what-you-use enforcement.
@@ -50,9 +79,6 @@
   `linux-x86_64` only).
 - Multi-platform CI matrix: add `linux-aarch64` gcc-13, macOS x86_64
   (macos-13), macOS arm64 (macos-14, macos-15) jobs to ci.yml.
-- TLS support in `pwn` I/O tubes for direct CTF infrastructure
-  interaction.
-- Additional shellcode presets (broader arch and syscall coverage).
 - Improved libc database fetching with mirror selection.
 - Homebrew tap publication.
 - AUR package for Arch Linux users.

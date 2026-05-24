@@ -117,8 +117,9 @@ today:
   `one_gadget` for that.
 - **Automated SROP / ret2dlresolve / BROP chains.** `srop` and `ret2dl`
   are frame/structure helpers, not end-to-end chain builders.
-- **Custom shellcode encoders.** Built-in presets only; the encoder is
-  deferred.
+- **More shellcode.** Only the `sh` preset ships; the `printable` and
+  `alpha` encoders are deferred (the `none`, `xor`, and `null-free`
+  encoders and bad-character avoidance already work).
 - **A pwntools-compatible scripting API**, and **pre-built binaries for
   non-Linux-x86_64 platforms**.
 

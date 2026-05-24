@@ -59,6 +59,16 @@ copy the rendered chain into a Python solve script by hand or feed
 the parsed addresses into pwntools `ROP()`. A native pwntools-format
 emitter is not in v0.1.
 
+## Why doesn't `pwn` connect to a target yet?
+
+The `pwn` subcommand is a placeholder in v0.1.0: it validates its target
+argument and then exits `NotImplemented` (exit 16). A live process /
+socket tube driver (TCP, unix socket, local process, with an I/O script
+and TLS) is the headline item of the [v0.2 roadmap](ROADMAP.md). Until it
+lands, run abcpwn for the offline primitives (offsets, gadgets, packing,
+format-string payloads) and pipe them into a process driver such as
+pwntools -- the README's "Pair with a process driver" shows the pattern.
+
 ## How do I report a bug?
 
 Open an issue at https://github.com/manop55555/abcpwn/issues.

