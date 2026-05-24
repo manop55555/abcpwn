@@ -78,3 +78,6 @@ add_test(NAME test_cyclic_limits
 add_test(NAME test_stdin
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_stdin.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_verbosity
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_verbosity.sh"
+            "$<TARGET_FILE:abcpwn>")

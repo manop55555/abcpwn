@@ -79,6 +79,10 @@ std::shared_ptr<spdlog::logger> get_logger() {
     return g_logger;
 }
 
+void log_debug(std::string_view message) {
+    get_logger()->debug("{}", message);
+}
+
 const std::string& last_log_path_for_testing() {
     std::scoped_lock lk(g_mu);
     return g_log_path;

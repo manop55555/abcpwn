@@ -490,7 +490,7 @@ int main(int argc, char** argv) {
         // No subcommand chosen: banner + help. Banner emits on
         // stderr (decoration, never on the data channel). Help
         // text stays on stdout per Unix convention for --help.
-        if (!ctx.no_banner && ctx.format != core::OutputFormat::Json) {
+        if (!ctx.no_banner && !ctx.quiet() && ctx.format != core::OutputFormat::Json) {
             const bool color = output::PrettyPrinter::should_color(ctx, std::cerr);
             output::print_banner(std::cerr, color);
             std::cerr << '\n';
@@ -544,6 +544,18 @@ int main(int argc, char** argv) {
                   "",
                   result->duration.value_or(elapsed));
 
+    // -v/-vv: setup_logging raised the logger level from ctx.verbosity,
+    // but nothing was emitted at debug/trace, so increased verbosity had
+    // no observable effect (DEF-18). Log a dispatch line at debug; hidden
+    // at the default info level and in JSON mode (no console sink).
+    {
+        std::ostringstream dbg;
+        dbg << "command '" << cmd_name << "' completed in "
+            << std::chrono::duration<double, std::milli>(result->duration.value_or(elapsed)).count()
+            << " ms (exit " << result->exit_code << ")";
+        output::log_debug(dbg.str());
+    }
+
     if (ctx.format == core::OutputFormat::Json) {
         std::map<std::string, std::variant<std::string, std::int64_t, bool>> json_args;
         json_args.emplace("command_line", command_line);
@@ -551,16 +563,17 @@ int main(int argc, char** argv) {
         writer.write(std::cout, cmd_name, *result, json_args);
     } else {
         output::PrettyPrinter pp(ctx);
-        // Compact header and timing footer are decoration -- they
-        // go to stderr so a caller can redirect stdout (e.g. for
-        // raw-byte output, JSON consumed by jq, hex dumps fed to
-        // od) without seeing them. Suppress the header entirely
-        // for raw_payload results so binary output is pristine.
-        if (!ctx.no_banner && !result->raw_payload) {
+        // Compact header and timing footer are decoration -- they go to
+        // stderr so a caller can redirect stdout (raw bytes, JSON for jq,
+        // hex dumps) without seeing them. Suppressed for raw_payload
+        // results (pristine binary output) and under -q (DEF-18).
+        if (!ctx.no_banner && !ctx.quiet() && !result->raw_payload) {
             pp.print_command_header(std::cerr);
         }
         pp.print_command_result(std::cout, *result);
-        pp.print_timing(std::cerr, *result);
+        if (!ctx.quiet()) {
+            pp.print_timing(std::cerr, *result);
+        }
     }
 
     return result->exit_code;

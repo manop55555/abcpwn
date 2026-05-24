@@ -5,6 +5,7 @@
 
 #include <memory>
 #include <string>
+#include <string_view>
 
 #include "abcpwn/core/context.hpp"
 
@@ -28,6 +29,11 @@ void setup_logging(const core::Context& ctx);
 // Return the project-wide logger. Creates a no-op fallback if
 // setup_logging() has not yet been called, so callers never get nullptr.
 [[nodiscard]] std::shared_ptr<spdlog::logger> get_logger();
+
+// Emit a debug-level message through the project logger. Visible only at
+// -v / -vv (debug/trace) and never in JSON mode. Wraps spdlog so callers
+// (e.g. the dispatcher) need not pull in spdlog headers.
+void log_debug(std::string_view message);
 
 // Convenience accessor for tests; returns the last log file path
 // configured (empty if logging only goes to stderr).

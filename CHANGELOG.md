@@ -109,6 +109,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   actual registered count); both previously said 38, and the man page
   omitted `signal` from the encoding group. `test_docs.sh` asserts the
   count prose stays in sync with the registered commands (DEF-2).
+- `-q`/`--quiet` suppresses the banner and the timing footer (the
+  info-level chrome), and `-v`/`-vv` raise the logger level and emit a
+  debug dispatch line, so verbosity has an observable effect; both were
+  previously accepted but inert (DEF-18).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
