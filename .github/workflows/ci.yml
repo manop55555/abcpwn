@@ -25,7 +25,7 @@ jobs:
     name: lint
     runs-on: ubuntu-24.04
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Install lint tooling
         run: |
           # Add the official LLVM apt repo so we can install
@@ -59,7 +59,7 @@ jobs:
           - { os: ubuntu-24.04, cc: clang-18, cxx: clang++-18, apt_pkgs: "clang-18",      name: "linux-x64-clang" }
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Add LLVM apt repo (clang-18)
         if: matrix.cc == 'clang-18'
