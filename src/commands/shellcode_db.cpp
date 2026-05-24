@@ -157,16 +157,14 @@ const std::vector<ShellcodePayload>& materialized_db() {
 } // namespace
 
 std::optional<Preset> preset_from_string(std::string_view s) noexcept {
+    // Only return presets that actually have entries in database().
+    // Accepting names like "bind" / "reverse" at parse time and then
+    // failing inside lookup() produced confusing "unknown preset" /
+    // "no payload" mismatches; --help, --list, and preset_from_string
+    // must agree on the same set. Add new entries here at the same
+    // time as new database() rows.
     if (s == "sh")
         return Preset::Sh;
-    if (s == "read-flag")
-        return Preset::ReadFlag;
-    if (s == "cat-flag")
-        return Preset::CatFlag;
-    if (s == "bind")
-        return Preset::Bind;
-    if (s == "reverse")
-        return Preset::Reverse;
     return std::nullopt;
 }
 

@@ -15,12 +15,17 @@
 
 using namespace abcpwn::commands::shellcode;
 
-TEST_CASE("preset_from_string covers all v0.1 names", "[shellcode]") {
+TEST_CASE("preset_from_string accepts only DB-backed names", "[shellcode]") {
     REQUIRE(*preset_from_string("sh") == Preset::Sh);
-    REQUIRE(*preset_from_string("read-flag") == Preset::ReadFlag);
-    REQUIRE(*preset_from_string("cat-flag") == Preset::CatFlag);
-    REQUIRE(*preset_from_string("bind") == Preset::Bind);
-    REQUIRE(*preset_from_string("reverse") == Preset::Reverse);
+    // Names enumerated in the Preset enum but absent from the v0.1
+    // database (read-flag, cat-flag, bind, reverse) must NOT parse;
+    // accepting them at parse time and failing later in lookup()
+    // produced confusing error messages and inconsistent --help /
+    // --list output.
+    REQUIRE_FALSE(preset_from_string("read-flag").has_value());
+    REQUIRE_FALSE(preset_from_string("cat-flag").has_value());
+    REQUIRE_FALSE(preset_from_string("bind").has_value());
+    REQUIRE_FALSE(preset_from_string("reverse").has_value());
     REQUIRE_FALSE(preset_from_string("nope").has_value());
 }
 

@@ -392,19 +392,23 @@ abcpwn aslr-bypass <strategy> [...]
 ### `shellcode` - emit shellcode payloads
 
 ```
-abcpwn shellcode --preset <name> --arch <arch>
-                 [--format raw|hex|c|elf]
+abcpwn shellcode --preset sh --arch <arch>
+                 [--output-format raw|hex|c|escaped]
                  [--bad-chars <hex>]
-                 [--encoder xor|alpha|null-free]
+                 [--encoder none|null-free|xor [--xor-key <hex>]]
                  [--list]
 ```
 
-Presets: `sh`, `read-flag`, `cat-flag`, `bind`, `reverse`. Use
-`--list` to see the compiled-in table including arch coverage.
+Presets: `sh` only in v0.1. `--list` enumerates the compiled-in
+database; the parser only accepts preset names present there. The
+encoding selector is named `--output-format` so it does not collide
+with the global `--format pretty|json`; combining them is allowed
+(`--format json --output-format hex` emits JSON whose payload bytes
+appear hex-encoded in `raw_lines[0]`).
 
 ```bash
 abcpwn shellcode --preset sh --arch x86_64
-abcpwn shellcode --preset sh --arch x86_64 --bad-chars 00 0a
+abcpwn shellcode --preset sh --arch x86_64 --bad-chars 000a
 ```
 
 ## Group: format string

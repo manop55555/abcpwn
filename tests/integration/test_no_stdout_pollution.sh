@@ -43,9 +43,11 @@ if [ "$got_hex" != "$expected_hex" ]; then
     exit 1
 fi
 
-# 2. shellcode --preset sh --arch x86_64 --format raw -> stdout
-#    must be exactly the documented number of payload bytes.
-"$ABCPWN_BIN" shellcode --preset sh --arch x86_64 --format raw \
+# 2. shellcode --preset sh --arch x86_64 --output-format raw -> stdout
+#    must be exactly the documented number of payload bytes. The
+#    encoding selector is named --output-format to avoid colliding
+#    with the global --format pretty|json.
+"$ABCPWN_BIN" shellcode --preset sh --arch x86_64 --output-format raw \
     > "$work/sc.bin" 2>/dev/null
 sc_size=$(stat -c '%s' "$work/sc.bin")
 # The x86_64 sh preset is in the 20-40 byte range. The TIER-1

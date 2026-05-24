@@ -119,7 +119,12 @@ void ShellcodeCommand::setup(CLI::App& app) {
     // also not in the v0.1 database; only `sh` ships across the
     // three supported arches. Network shellcode presets return
     // in v0.2.
-    app.add_option("--format", format, "hex (default) | raw | c | escaped");
+    // The per-subcommand encoding selector is named --output-format
+    // to avoid colliding with the global --format (which selects
+    // pretty/json output of the *whole* command result). Both flags
+    // can be combined: `--format json --output-format hex` emits
+    // JSON whose `raw_lines[0]` is the hex string.
+    app.add_option("--output-format", format, "hex (default) | raw | c | escaped");
     app.add_flag("--list", list, "List the built-in database and exit");
 }
 
