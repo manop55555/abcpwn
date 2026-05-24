@@ -165,6 +165,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   lint failure used to skip the whole build+test matrix and hide whether
   the test suite passed. Lint and build now run independently and both
   must be green for CI to pass (CI integrity).
+- the `sanitizers` and `coverage` workflows now also run on push to
+  `main` (previously pull-request and manual-dispatch only), so a direct
+  push to `main` is gated by ASan/UBSan/TSan and coverage, not just `ci`
+  and `codeql`. New `docs/CI.md` documents every workflow's trigger
+  matrix and what it gates (CI integrity).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

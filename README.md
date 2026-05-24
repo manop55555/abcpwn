@@ -163,6 +163,7 @@ Full command reference: [docs/COMMANDS.md](docs/COMMANDS.md).
 - [SECURITY.md](SECURITY.md) - vulnerability disclosure
 - [docs/COMMANDS.md](docs/COMMANDS.md) - every subcommand in detail
 - [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) - internal design
+- [docs/CI.md](docs/CI.md) - continuous integration: workflow triggers and gates
 - [docs/SECURITY-MODEL.md](docs/SECURITY-MODEL.md) - threat model, mitigations, fuzzing
 - [docs/PERFORMANCE.md](docs/PERFORMANCE.md) - performance methodology and numbers
 - [docs/TUTORIALS.md](docs/TUTORIALS.md) - end-to-end walkthroughs
