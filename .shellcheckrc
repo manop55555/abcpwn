@@ -1,0 +1,11 @@
+# abcpwn shellcheck configuration.
+#
+# Checked into the repo so local and CI runs enforce an identical set of
+# checks regardless of which shellcheck build happens to be installed.
+#
+# useless-use-of-cat (SC2002) ships enabled by default in shellcheck
+# 0.9.0 (the version on Ubuntu and in CI) but became opt-in from 0.11.0
+# onward. Pin it on so `cat file | cmd` is flagged the same way
+# everywhere -- a version drift on exactly this check once let a finding
+# pass local lint while failing CI. See scripts/check-shellcheck.sh.
+enable=useless-use-of-cat

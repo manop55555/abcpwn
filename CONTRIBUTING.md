@@ -48,6 +48,17 @@ setup.
 - ASCII markers only (`[+]`, `[-]`, `[!]`, `[*]`, `[?]`). No emoji
   anywhere in source, output, comments, or commit messages.
 - Project name is always lowercase: `abcpwn`.
+- Shell scripts are linted with **shellcheck**, pinned to **v0.11.0** so
+  local and CI behave identically (apt ships different versions per
+  distro, and they disagree on some checks). `scripts/check-all.sh` runs
+  it through `scripts/check-shellcheck.sh`, governed by the repo-root
+  `.shellcheckrc`. Install the pinned build to match CI exactly:
+
+  ```bash
+  ver=0.11.0
+  curl -sSL "https://github.com/koalaman/shellcheck/releases/download/v${ver}/shellcheck-v${ver}.linux.x86_64.tar.xz" | tar -xJ
+  sudo install -m 755 "shellcheck-v${ver}/shellcheck" /usr/local/bin/shellcheck
+  ```
 
 ## Conventional Commits
 

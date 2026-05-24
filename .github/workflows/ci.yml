@@ -37,8 +37,22 @@ jobs:
           echo "deb [signed-by=/usr/share/keyrings/llvm.gpg] https://apt.llvm.org/${codename}/ llvm-toolchain-${codename}-21 main" \
             | sudo tee /etc/apt/sources.list.d/llvm21.list
           sudo apt update
-          sudo apt install -y clang-format-21 clang-tidy-18 cppcheck shellcheck
-      - name: Run orchestrator (no-emoji / no-system / no-attribution / no-spec-leak / spdx)
+          sudo apt install -y clang-format-21 clang-tidy-18 cppcheck
+      - name: Install shellcheck (pinned, SHA-verified)
+        run: |
+          # apt's shellcheck drifts by distro (0.9.0 on Ubuntu vs 0.11.0
+          # on Kali); pin the official static binary so local and CI run
+          # the identical version. A version gap on one check (SC2002)
+          # once let a finding pass local lint while failing CI.
+          ver=0.11.0
+          sha=8c3be12b05d5c177a04c29e3c78ce89ac86f1595681cab149b65b97c4e227198
+          url="https://github.com/koalaman/shellcheck/releases/download/v${ver}/shellcheck-v${ver}.linux.x86_64.tar.xz"
+          curl -sSL -o /tmp/shellcheck.tar.xz "$url"
+          echo "${sha}  /tmp/shellcheck.tar.xz" | sha256sum -c -
+          tar -xJf /tmp/shellcheck.tar.xz -C /tmp
+          sudo install -m 755 "/tmp/shellcheck-v${ver}/shellcheck" /usr/local/bin/shellcheck
+          shellcheck --version
+      - name: Run orchestrator (check-all.sh runs all check-* gates incl shellcheck)
         run: scripts/check-all.sh
       - name: Run no-telemetry / urls / format
         run: |
@@ -46,11 +60,15 @@ jobs:
           scripts/check-urls.sh
           scripts/check-format.sh
       - name: shellcheck
-        run: shellcheck scripts/*.sh tests/fixtures/*.sh tests/integration/*.sh
+        run: scripts/check-shellcheck.sh
 
   build:
+    # Decoupled from lint (no needs:) so the build+test matrix always
+    # runs and reports its own pass/fail. Previously `needs: lint` meant
+    # a lint failure SKIPPED build+test entirely, which silently hid
+    # whether the test suite passed. Both jobs are independent now and
+    # both must be green for the run to pass.
     name: ${{ matrix.name }}
-    needs: lint
     strategy:
       fail-fast: false
       matrix:

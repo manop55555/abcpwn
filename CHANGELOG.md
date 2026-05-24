@@ -155,6 +155,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - GitHub Discussions enabled for the repository, so the "open a
   discussion" links in the README, FAQ, SUPPORT, and CONTRIBUTING docs
   now resolve (IMP-6).
+- shellcheck is pinned to v0.11.0 (the official static binary, checksum
+  verified in CI) and wired into `scripts/check-all.sh` through
+  `scripts/check-shellcheck.sh`, with a repo-root `.shellcheckrc` fixing
+  the active check set. Local and CI previously ran different distro apt
+  versions that disagreed on a style check, letting a finding pass local
+  lint while failing CI (CI integrity).
+- the CI `build` job no longer depends on `lint` (`needs:` removed): a
+  lint failure used to skip the whole build+test matrix and hide whether
+  the test suite passed. Lint and build now run independently and both
+  must be green for CI to pass (CI integrity).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
