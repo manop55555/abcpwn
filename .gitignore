@@ -1,22 +1,22 @@
-# Spec / memory (local only)
+# Internal planning artifacts (local only -- never tracked or shipped).
+# The build workflow's spec, memory, design log, per-session reports, and
+# scratch files. The spec set is double-protected by .git/info/exclude.
 CLAUDE.md
 STEP/
 STEP.*
 .claude/
 .claude*
-
-# Local design log
 docs/DECISIONS.md
-
-# Per-round session reports + resolution roll-ups (local working
-# notes; not for remote)
-REPORT-round*.md
-REPORT-resolution.md
-# QA verification reports (local-only)
-REPORT-verification.md
-REPORT-workflow.md
-REPORT-limits-and-features.md
-REPORT-pre-public.md
+# Catch-all for every working report, including the final-resolution
+# roll-up generated at release time (REPORT-final-resolution.md).
+REPORT-*.md
+# Prompt scaffolding and scratch / WIP / backup working files.
+prompt-*.md
+scratch*
+notes_*
+todo_*
+*.wip
+*.bak
 
 # Build directories
 build/
