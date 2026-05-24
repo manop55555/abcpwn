@@ -12,6 +12,11 @@ docs/DECISIONS.md
 # notes; not for remote)
 REPORT-round*.md
 REPORT-resolution.md
+# QA verification reports (local-only)
+REPORT-verification.md
+REPORT-workflow.md
+REPORT-limits-and-features.md
+REPORT-pre-public.md
 
 # Build directories
 build/
