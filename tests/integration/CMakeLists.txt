@@ -60,3 +60,6 @@ add_test(NAME test_disasm_gadget_caps
 add_test(NAME test_log_file
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_log_file.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_seccomp_dump
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_seccomp_dump.sh"
+            "$<TARGET_FILE:abcpwn>")

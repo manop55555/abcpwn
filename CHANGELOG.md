@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+- `seccomp dump <binary>` is implemented (verification #7). It
+  statically locates a `sock_filter[]` BPF program embedded in a data
+  section -- anchored on the conventional arch/nr load and validated by
+  control-flow reachability -- and disassembles it with syscall-name
+  annotations. abcpwn never executes the target, so runtime-built
+  (libseccomp) filters report a clear message pointing at strace /
+  seccomp-tools instead.
+
 ### Fixed
 
 - man page EXAMPLES no longer references the removed `rop --execve`
