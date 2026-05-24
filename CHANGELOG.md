@@ -42,6 +42,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   it (exit 2). It now writes a JSON record of the run (command,
   command_line, exit_code, ok, duration_ms, and error on failure) to
   PATH for both successful and failed runs (verification #20).
+- `rop --syscall` now combines multi-pop gadgets: a single
+  `pop rdi ; pop rsi ; pop rdx ; ret` can populate several argument
+  registers at once (greedy set cover over the needed registers),
+  instead of requiring a dedicated `pop <reg> ; ret` per register. It
+  also covers all six syscall argument registers (rdi, rsi, rdx, r10,
+  r8, r9) and finds a bare `syscall` gadget, not only `syscall ; ret`
+  (verification #31).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

@@ -63,3 +63,6 @@ add_test(NAME test_log_file
 add_test(NAME test_seccomp_dump
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_seccomp_dump.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_rop_multipop
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_rop_multipop.sh"
+            "$<TARGET_FILE:abcpwn>")

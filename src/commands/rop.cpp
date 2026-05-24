@@ -4,12 +4,15 @@
 #include "abcpwn/commands/rop.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstdint>
 #include <cstdio>
+#include <map>
 #include <optional>
 #include <span>
 #include <string>
 #include <string_view>
+#include <utility>
 #include <vector>
 
 #include <CLI/CLI.hpp>
@@ -56,97 +59,39 @@ std::vector<rop::ExecutableSection> collect_executable_sections(const formats::L
     return std::nullopt;
 }
 
-// Result of fuzzy-matching a "pop <reg> ; ... ; ret" gadget. `padding`
-// is the number of EXTRA stack slots the chain must fill (one per
-// intermediate pop) between this gadget's value slot and the next
-// gadget address. Zero means "exact match, no extra slots".
-struct FuzzyPop {
-    rop::Gadget gadget;
-    std::size_t padding{0};
-};
-
-// Conservative fuzzy match for syscall-chain construction.
-//
-// Accepts gadgets of the form:
-//     pop <target_reg> ; (pop <safe_reg> ; )* ret
-//
-// where every intermediate pop targets a register OUTSIDE
-// `forbidden`. forbidden is the set of registers the caller plans
-// to populate via other gadgets in the chain; clobbering them
-// here would break the chain. Returns the SHORTEST acceptable
-// gadget (fewest intermediate pops). Exact match wins.
-[[nodiscard]] std::optional<FuzzyPop>
-find_pop_gadget(std::span<const rop::Gadget> gadgets,
-                std::string_view target_reg,
-                std::span<const std::string_view> forbidden) noexcept {
-    std::optional<FuzzyPop> best;
-    const std::string exact = std::string{"pop "} + std::string{target_reg} + " ; ret";
-
-    for (const auto& g : gadgets) {
-        std::string_view t = g.text;
-        if (!t.ends_with(" ; ret") && t != "ret") {
-            continue;
-        }
-        std::string_view body = t;
-        if (body.ends_with(" ; ret")) {
-            body.remove_suffix(6); // strip " ; ret"
-        }
-
-        // Walk semicolon-separated instructions; require every one to
-        // be "pop <reg>", first one must be the target.
-        std::vector<std::string_view> parts;
-        std::size_t pos = 0;
-        while (pos < body.size()) {
-            const auto sep = body.find(" ; ", pos);
-            const auto end = (sep == std::string_view::npos) ? body.size() : sep;
-            parts.emplace_back(body.substr(pos, end - pos));
-            pos = (sep == std::string_view::npos) ? body.size() : sep + 3;
-        }
-        if (parts.empty()) {
-            continue;
-        }
-
-        auto pop_target = [](std::string_view ins) -> std::optional<std::string_view> {
-            constexpr std::string_view kPrefix = "pop ";
-            if (!ins.starts_with(kPrefix) || ins.size() == kPrefix.size()) {
-                return std::nullopt;
-            }
-            return ins.substr(kPrefix.size());
-        };
-
-        const auto first = pop_target(parts.front());
-        if (!first || *first != target_reg) {
-            continue;
-        }
-        bool ok = true;
-        for (std::size_t i = 1; i < parts.size(); ++i) {
-            const auto reg = pop_target(parts[i]);
-            if (!reg) {
-                ok = false;
-                break;
-            }
-            for (auto bad : forbidden) {
-                if (*reg == bad) {
-                    ok = false;
-                    break;
-                }
-            }
-            if (!ok) {
-                break;
-            }
-        }
-        if (!ok) {
-            continue;
-        }
-        const std::size_t padding = parts.size() - 1;
-        if (!best || padding < best->padding || (padding == best->padding && g.text == exact)) {
-            best = FuzzyPop{g, padding};
-            if (padding == 0 && g.text == exact) {
-                return best; // can't do better than exact
-            }
-        }
+// Parse a gadget whose body is purely `pop <reg>` instructions ending in
+// `ret` (e.g. "pop rdi ; pop rsi ; ret", or bare "ret"). Returns the
+// ordered list of popped registers, or nullopt if the gadget contains
+// anything else. These are the only gadgets safe to chain blindly: every
+// stack slot maps to exactly one register pop with no side effects, so a
+// single `pop rdi ; pop rsi ; pop rdx ; ret` can set three argument
+// registers at once.
+[[nodiscard]] std::optional<std::vector<std::string>> parse_pop_chain(std::string_view text) {
+    if (text != "ret" && !text.ends_with(" ; ret")) {
+        return std::nullopt;
     }
-    return best;
+    std::vector<std::string> regs;
+    if (text == "ret") {
+        return regs; // no pops
+    }
+    std::string_view body = text;
+    body.remove_suffix(6); // strip " ; ret"
+    std::size_t pos = 0;
+    while (true) {
+        const auto sep = body.find(" ; ", pos);
+        const auto end = (sep == std::string_view::npos) ? body.size() : sep;
+        const std::string_view part = body.substr(pos, end - pos);
+        constexpr std::string_view kPrefix = "pop ";
+        if (!part.starts_with(kPrefix) || part.size() == kPrefix.size()) {
+            return std::nullopt; // not a pure pop chain
+        }
+        regs.emplace_back(part.substr(kPrefix.size()));
+        if (sep == std::string_view::npos) {
+            break;
+        }
+        pos = sep + 3;
+    }
+    return regs;
 }
 
 } // namespace
@@ -190,54 +135,126 @@ core::Result<core::CommandResult> RopCommand::run(const core::Context& ctx) {
     rop::GadgetSearchOptions opts;
     opts.arch = arch::Arch::X86_64;
     opts.terminator = rop::Terminator::Ret;
-    opts.max_depth = 4;
+    opts.max_depth = 6; // up to 5 pops + ret, so one gadget can set many args
     auto gadgets = rop::find_gadgets(sections, opts);
     if (!gadgets) {
         return core::err(gadgets.error());
     }
 
-    // Build the forbidden-register set: any register we're about to
-    // populate with another pop gadget can't be clobbered by an
-    // intermediate pop in a fuzzy match for a different register.
-    std::vector<std::string_view> forbidden;
-    forbidden.emplace_back("rax");
-    if (!syscall_args.empty())
-        forbidden.emplace_back("rdi");
-    if (syscall_args.size() >= 2)
-        forbidden.emplace_back("rsi");
-    if (syscall_args.size() >= 3)
-        forbidden.emplace_back("rdx");
+    // x86_64 syscall ABI: number in rax; arguments in rdi, rsi, rdx,
+    // r10, r8, r9 (r10, not rcx -- the syscall instruction clobbers rcx).
+    static constexpr std::array<std::string_view, 6> kArgRegs = {
+        {"rdi", "rsi", "rdx", "r10", "r8", "r9"}};
+    if (syscall_args.size() > kArgRegs.size()) {
+        return core::err(core::ErrorCode::UsageError,
+                         "rop: x86_64 syscalls take at most 6 arguments");
+    }
 
-    auto find_for = [&](std::string_view reg) {
-        std::vector<std::string_view> local(forbidden.begin(), forbidden.end());
-        local.erase(std::remove(local.begin(), local.end(), reg), local.end());
-        return find_pop_gadget(*gadgets, reg, local);
+    // Registers to set, in priority order, each with its value.
+    std::vector<std::pair<std::string, std::uint64_t>> needed;
+    needed.emplace_back("rax", static_cast<std::uint64_t>(syscall_number));
+    for (std::size_t i = 0; i < syscall_args.size(); ++i) {
+        needed.emplace_back(std::string(kArgRegs[i]), syscall_args[i]);
+    }
+
+    // Catalogue every pure pop-chain gadget with its ordered pop list. A
+    // single gadget can populate several argument registers at once
+    // (e.g. pop rdi ; pop rsi ; pop rdx ; ret), so the chain is built by
+    // covering the needed set with a COMBINATION of these gadgets rather
+    // than demanding a dedicated `pop <reg> ; ret` per register.
+    struct PopGadget {
+        rop::Gadget gadget;
+        std::vector<std::string> regs;
     };
+    std::vector<PopGadget> catalog;
+    for (const auto& g : *gadgets) {
+        auto regs = parse_pop_chain(g.text);
+        if (regs && !regs->empty()) {
+            catalog.push_back({g, std::move(*regs)});
+        }
+    }
+    std::sort(catalog.begin(), catalog.end(), [](const PopGadget& x, const PopGadget& y) {
+        return x.gadget.address < y.gadget.address;
+    });
 
-    auto pop_rax = find_for("rax");
-    auto pop_rdi = find_for("rdi");
-    auto pop_rsi = find_for("rsi");
-    auto pop_rdx = find_for("rdx");
-    auto syscall_g = find_gadget_text_eq(*gadgets, "syscall");
-    if (!syscall_g)
-        syscall_g = find_gadget_text_eq(*gadgets, "syscall ; ret");
+    // A syscall gadget terminates the chain. The pop search above is
+    // ret-terminated, so it only sees `syscall ; ret`; run a second
+    // syscall-terminated search so a bare `syscall` (the common case for
+    // a final execve, where nothing needs to run afterwards) is found.
+    std::optional<rop::Gadget> syscall_g = find_gadget_text_eq(*gadgets, "syscall ; ret");
+    if (!syscall_g) {
+        rop::GadgetSearchOptions sysopts;
+        sysopts.arch = arch::Arch::X86_64;
+        sysopts.terminator = rop::Terminator::Syscall;
+        sysopts.max_depth = 2;
+        if (auto sg = rop::find_gadgets(sections, sysopts)) {
+            syscall_g = find_gadget_text_eq(*sg, "syscall");
+        }
+    }
+
+    // Greedy set cover over the needed registers.
+    std::vector<std::string> reg_names;
+    reg_names.reserve(needed.size());
+    for (const auto& nv : needed) {
+        reg_names.push_back(nv.first);
+    }
+    std::vector<bool> covered(reg_names.size(), false);
+    auto count_new = [&](const PopGadget& pg) {
+        std::size_t c = 0;
+        for (std::size_t i = 0; i < reg_names.size(); ++i) {
+            if (!covered[i]
+                && std::find(pg.regs.begin(), pg.regs.end(), reg_names[i]) != pg.regs.end()) {
+                ++c;
+            }
+        }
+        return c;
+    };
+    std::vector<const PopGadget*> chosen;
+    while (true) {
+        const PopGadget* best = nullptr;
+        std::size_t best_new = 0;
+        for (const auto& pg : catalog) {
+            const std::size_t nw = count_new(pg);
+            if (nw == 0) {
+                continue;
+            }
+            // Most newly-covered wins; tie-break to fewest pops (least
+            // padding), then lowest address (catalog is address-sorted,
+            // so the first equal candidate is kept).
+            if (best == nullptr || nw > best_new
+                || (nw == best_new && pg.regs.size() < best->regs.size())) {
+                best = &pg;
+                best_new = nw;
+            }
+        }
+        if (best == nullptr) {
+            break;
+        }
+        chosen.push_back(best);
+        for (std::size_t i = 0; i < reg_names.size(); ++i) {
+            if (!covered[i]
+                && std::find(best->regs.begin(), best->regs.end(), reg_names[i])
+                       != best->regs.end()) {
+                covered[i] = true;
+            }
+        }
+    }
 
     std::vector<std::string> missing;
-    if (!pop_rax)
-        missing.emplace_back("pop rax ; ... ; ret");
-    if (!syscall_g)
+    for (std::size_t i = 0; i < reg_names.size(); ++i) {
+        if (!covered[i]) {
+            missing.push_back("pop " + reg_names[i]);
+        }
+    }
+    if (!syscall_g) {
         missing.emplace_back("syscall");
-    if (!pop_rdi && !syscall_args.empty())
-        missing.emplace_back("pop rdi ; ... ; ret");
-    if (!pop_rsi && syscall_args.size() >= 2)
-        missing.emplace_back("pop rsi ; ... ; ret");
-    if (!pop_rdx && syscall_args.size() >= 3)
-        missing.emplace_back("pop rdx ; ... ; ret");
+    }
     if (!missing.empty()) {
         std::string m;
         for (std::size_t i = 0; i < missing.size(); ++i) {
-            if (i != 0)
+            if (i != 0) {
                 m += ", ";
+            }
             m += missing[i];
         }
         return core::err(core::ErrorCode::NotFound,
@@ -250,34 +267,36 @@ core::Result<core::CommandResult> RopCommand::run(const core::Context& ctx) {
         return std::string(b);
     };
 
+    std::map<std::string, std::uint64_t> value_of;
+    for (const auto& nv : needed) {
+        value_of[nv.first] = nv.second;
+    }
+
     core::CommandResult res;
     auto& sec = res.sections.emplace_back();
     sec.title = "ROP chain (x86_64 syscall " + std::to_string(syscall_number) + ")";
 
-    auto add_pop = [&](const FuzzyPop& fp, std::uint64_t value) {
-        core::Finding addr_f;
-        addr_f.title = fp.gadget.text;
-        addr_f.detail = fmt_hex(fp.gadget.address) + "   value=" + fmt_hex(value);
-        sec.findings.push_back(std::move(addr_f));
-        // Each intermediate pop consumes one stack slot. Surface those
-        // slots explicitly so the operator knows the chain needs
-        // padding bytes between this gadget's value and the next
-        // gadget address.
-        for (std::size_t i = 0; i < fp.padding; ++i) {
-            core::Finding pad_f;
-            pad_f.title = "  (padding slot " + std::to_string(i + 1) + ")";
-            pad_f.detail = "0x0000000000000000";
-            sec.findings.push_back(std::move(pad_f));
+    // Emit each chosen gadget followed by the stack slots its pops
+    // consume: a needed register gets its value (idempotent if popped by
+    // more than one chosen gadget), a don't-care pop gets a padding slot.
+    for (const auto* pg : chosen) {
+        core::Finding gf;
+        gf.title = pg->gadget.text;
+        gf.detail = fmt_hex(pg->gadget.address);
+        sec.findings.push_back(std::move(gf));
+        for (const auto& reg : pg->regs) {
+            core::Finding slot;
+            const auto it = value_of.find(reg);
+            if (it != value_of.end()) {
+                slot.title = "  -> " + reg;
+                slot.detail = fmt_hex(it->second);
+            } else {
+                slot.title = "  (padding: clobbers " + reg + ")";
+                slot.detail = "0x0000000000000000";
+            }
+            sec.findings.push_back(std::move(slot));
         }
-    };
-
-    add_pop(*pop_rax, static_cast<std::uint64_t>(syscall_number));
-    if (!syscall_args.empty())
-        add_pop(*pop_rdi, syscall_args[0]);
-    if (syscall_args.size() >= 2)
-        add_pop(*pop_rsi, syscall_args[1]);
-    if (syscall_args.size() >= 3)
-        add_pop(*pop_rdx, syscall_args[2]);
+    }
     {
         core::Finding syscall_f;
         syscall_f.title = syscall_g->text;
@@ -285,7 +304,8 @@ core::Result<core::CommandResult> RopCommand::run(const core::Context& ctx) {
         sec.findings.push_back(std::move(syscall_f));
     }
 
-    res.summary = "chain has " + std::to_string(sec.findings.size()) + " items";
+    res.summary = "chain: " + std::to_string(chosen.size()) + " gadget(s), "
+                  + std::to_string(sec.findings.size()) + " stack items";
     return res;
 }
 
