@@ -78,6 +78,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   being OOM-killed. The `--find` search space is bounded: an oversized
   `alphabet^subseq-length` returns `SizeExceeded` (exit 9) with guidance
   instead of OOM (fixing an off-by-one in the prior cap).
+- `phd` and `disasm --input-file` honor `ABCPWN_MAX_FILE_SIZE`, refusing
+  oversized files with `SizeExceeded` (exit 9) like the other
+  file-reading commands; they previously read any size (DEF-13).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

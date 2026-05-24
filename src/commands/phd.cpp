@@ -65,10 +65,14 @@ void PhdCommand::setup(CLI::App& app) {
     app.add_option("--width", width, "Bytes per row (default 16)");
 }
 
-core::Result<core::CommandResult> PhdCommand::run(const core::Context& /*ctx*/) {
+core::Result<core::CommandResult> PhdCommand::run(const core::Context& ctx) {
     std::vector<std::uint8_t> bytes;
     if (input_file) {
-        auto raw = core::safe_io::read_file(input);
+        // Honor ABCPWN_MAX_FILE_SIZE like the other file-reading commands
+        // (DEF-13): phd previously read any size with rc=0.
+        core::safe_io::ReadOptions ropts;
+        ropts.max_bytes = ctx.limits.max_file_bytes;
+        auto raw = core::safe_io::read_file(input, ropts);
         if (!raw) {
             return core::err(raw.error());
         }

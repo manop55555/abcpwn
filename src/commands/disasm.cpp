@@ -43,7 +43,11 @@ core::Result<core::CommandResult> DisasmCommand::run(const core::Context& ctx) {
         }
         bytes = std::move(*dec);
     } else {
-        auto raw = core::safe_io::read_file(input);
+        // Honor ABCPWN_MAX_FILE_SIZE like the other file-reading commands
+        // (DEF-13): disasm --input-file previously read any size with rc=0.
+        core::safe_io::ReadOptions ropts;
+        ropts.max_bytes = ctx.limits.max_file_bytes;
+        auto raw = core::safe_io::read_file(input, ropts);
         if (!raw) {
             return core::err(raw.error());
         }

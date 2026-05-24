@@ -63,4 +63,21 @@ if ! "$ABCPWN_BIN" --no-banner info /bin/ls >/dev/null 2>&1; then
     exit 1
 fi
 
+# DEF-13: phd and disasm --input-file must honor the cap too -- they
+# previously read files of any size with rc=0, bypassing the documented
+# safety cap. /bin/ls is well over 1024 bytes.
+export ABCPWN_MAX_FILE_SIZE=1024
+for spec in "phd /bin/ls" "disasm /bin/ls --input-file"; do
+    set +e
+    # shellcheck disable=SC2086
+    "$ABCPWN_BIN" --no-banner $spec >/dev/null 2>err
+    rc=$?
+    set -e
+    if [ "$rc" -ne 9 ]; then
+        echo "[-] '$spec' with cap 1024: expected SizeExceeded (9), got $rc" >&2
+        cat err >&2
+        exit 1
+    fi
+done
+
 echo "[+] test_max_file_size ok"
