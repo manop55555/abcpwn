@@ -66,6 +66,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   error:{code, name, message}}`) instead of plaintext on stderr, so
   pipelines can parse failures. Covers both command errors and CLI
   parse errors, with the exit code preserved (DEF-4).
+- global `--format` and `--color` reject unknown values with
+  `InvalidInput` (exit 8) instead of silently falling back to
+  pretty/auto; `--format` stays case-sensitive (DEF-6).
+- `gadget --type` and `template <strategy>` reject unknown values with
+  `UsageError` (exit 2) -- matching shellcode/heap/iofile -- instead of
+  silently using `ret` / echoing the bogus strategy (DEF-8).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 

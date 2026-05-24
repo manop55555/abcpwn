@@ -12,6 +12,7 @@
 #include "abcpwn/core/context.hpp"
 #include "abcpwn/core/result.hpp"
 #include "abcpwn/core/signal.hpp"
+#include "abcpwn/core/validate.hpp"
 #include "abcpwn/core/version.hpp"
 #include "abcpwn/output/banner.hpp"
 #include "abcpwn/output/json_writer.hpp"
@@ -368,6 +369,23 @@ int main(int argc, char** argv) {
         }
         app.exit(e); // CLI11 writes its own diagnostic to stderr
         return static_cast<int>(core::ErrorCode::UsageError);
+    }
+
+    // Validate the global enum flags (DEF-6): silently falling back to
+    // pretty/auto previously hid typos like `--format JSON` (case) or
+    // `--color bogus`. These are pre-dispatch config errors, so they go
+    // to stderr regardless of the (possibly invalid) format request.
+    if (auto e = core::validate_choice(
+            "invalid format", format_str, {"pretty", "json"}, core::ErrorCode::InvalidInput)) {
+        std::cerr << "[-] " << e->message << '\n';
+        return e->exit_code();
+    }
+    if (auto e = core::validate_choice("invalid color",
+                                       color_str,
+                                       {"auto", "always", "never"},
+                                       core::ErrorCode::InvalidInput)) {
+        std::cerr << "[-] " << e->message << '\n';
+        return e->exit_code();
     }
 
     // Build the Context from parsed globals.

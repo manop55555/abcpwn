@@ -10,6 +10,7 @@
 #include <CLI/CLI.hpp>
 
 #include "abcpwn/core/safe_io.hpp"
+#include "abcpwn/core/validate.hpp"
 
 namespace abcpwn::commands::tmpl {
 
@@ -117,6 +118,14 @@ void TemplateCommand::setup(CLI::App& app) {
 }
 
 core::Result<core::CommandResult> TemplateCommand::run(const core::Context& /*ctx*/) {
+    // Validate the strategy (DEF-8): an unknown strategy previously
+    // emitted a skeleton that echoed strategy=<bogus> instead of erroring.
+    if (auto e = core::validate_choice("template: unknown strategy",
+                                       strategy,
+                                       {"ret2win", "ret2libc", "rop", "srop", "fmt-leak", "heap"},
+                                       core::ErrorCode::UsageError)) {
+        return core::err(e->code, std::move(e->message));
+    }
     const auto rendered = render_template(strategy, binary_path);
     if (!output_path.empty()) {
         auto w = core::safe_io::write_text_file_atomic(output_path, rendered);

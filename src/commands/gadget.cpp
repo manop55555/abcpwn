@@ -15,6 +15,7 @@
 #include "abcpwn/arch/arch.hpp"
 #include "abcpwn/commands/encoding.hpp"
 #include "abcpwn/commands/rop_search.hpp"
+#include "abcpwn/core/validate.hpp"
 #include "abcpwn/formats/binary_loader.hpp"
 
 namespace abcpwn::commands {
@@ -97,6 +98,15 @@ void GadgetCommand::setup(CLI::App& app) {
 }
 
 core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
+    // Validate --type up front (DEF-8): an unknown terminator previously
+    // fell back to `ret` silently, so the user got ret gadgets thinking
+    // they had asked for jmp/call/etc.
+    if (auto e = core::validate_choice("gadget: unknown type",
+                                       terminator,
+                                       {"ret", "jmp", "call", "syscall", "all"},
+                                       core::ErrorCode::UsageError)) {
+        return core::err(e->code, std::move(e->message));
+    }
     auto loaded = formats::load(target, formats::LoadOptions{ctx.limits.max_file_bytes, true});
     if (!loaded) {
         return core::err(loaded.error());
