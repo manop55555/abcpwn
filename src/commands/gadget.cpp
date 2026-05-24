@@ -103,7 +103,14 @@ core::Result<core::CommandResult> GadgetCommand::run(const core::Context& ctx) {
     }
     auto sections = collect_executable_sections(*loaded);
     if (sections.empty()) {
-        return core::err(core::ErrorCode::NotFound, "gadget: no executable sections in target");
+        // The file exists and parsed as a binary; it simply has no
+        // executable section content to scan (e.g. a headers-only
+        // truncation). NotFound (7) means "path does not exist" per the
+        // EXIT STATUS contract, which is wrong here -- route to
+        // Unsupported (10) (verification #41).
+        return core::err(core::ErrorCode::Unsupported,
+                         "gadget: no executable sections in target (the binary parsed "
+                         "but has nothing to scan)");
     }
 
     const auto a = arch::arch_from_string(loaded->info().arch);

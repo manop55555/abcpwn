@@ -51,6 +51,37 @@ if [ "$rc" -ne 11 ]; then
     exit 1
 fi
 
+# #41: a binary LIEF can parse but that has no executable section
+# CONTENT (a headers-only truncation) plainly EXISTS, so NotFound (7)
+# -- "path does not exist" -- is the wrong code. gadget now routes it
+# to a non-NotFound honest code (Unsupported, 10). A genuinely missing
+# path must still be NotFound (7) from the loader.
+gtarget=""
+for c in /bin/ls /usr/bin/ls /bin/true /usr/bin/true; do
+    [ -x "$c" ] && gtarget="$c" && break
+done
+if [ -n "$gtarget" ]; then
+    head -c 100 "$gtarget" > "$tmp/headers-only"
+    set +e
+    "$ABCPWN_BIN" --no-banner gadget "$tmp/headers-only" >/dev/null 2>err
+    rc=$?
+    set -e
+    if [ "$rc" -eq 7 ]; then
+        echo "[-] gadget headers-only: returned NotFound (7); an existing, parseable file should not be NotFound" >&2
+        cat err >&2
+        exit 1
+    fi
+fi
+
+set +e
+"$ABCPWN_BIN" --no-banner gadget "$tmp/definitely-not-here.bin" >/dev/null 2>/dev/null
+rc=$?
+set -e
+if [ "$rc" -ne 7 ]; then
+    echo "[-] gadget on a missing path: expected NotFound (7), got $rc" >&2
+    exit 1
+fi
+
 # LIEF logger silenced -- a malformed binary that LIEF parses leniently
 # should produce no "LIEF" / "[WARNING]" / "[ERROR]" lines on stderr
 # from the library itself; we surface our own diagnostics instead.

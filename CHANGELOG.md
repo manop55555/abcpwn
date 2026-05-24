@@ -23,6 +23,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `disasm` no longer silently caps output: the default instruction cap
   was raised to 1000000, and both the 1 MiB input-file cap and the
   instruction cap now print a warning on stderr when they truncate.
+- `gadget` no longer reports `NotFound` (exit 7) for a binary that
+  parses but has no executable sections; that case is now `Unsupported`
+  (exit 10), reserving `NotFound` for a genuinely missing path
+  (verification #41).
 
 ## [0.1.0-alpha.3] - 2026-05-24
 
