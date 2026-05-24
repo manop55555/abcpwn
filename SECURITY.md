@@ -49,7 +49,7 @@ See [docs/SUPPORT.md](docs/SUPPORT.md) for the long-term support policy.
 
 ## Verifying Releases
 
-Each release archive ships with a `SHA256SUMS` file, a Sigstore (cosign)
+Each release archive ships with a `SHA256SUMS-linux-x86_64` file, a Sigstore (cosign)
 keyless signature, and a CycloneDX SBOM; the build also publishes an
 SLSA build-provenance attestation. Verify in increasing order of
 assurance:
@@ -57,7 +57,7 @@ assurance:
 1. Checksum:
 
 ```bash
-sha256sum -c SHA256SUMS --ignore-missing
+sha256sum -c SHA256SUMS-linux-x86_64 --ignore-missing
 ```
 
 2. Cosign keyless signature (binds the archive to this repository's
@@ -84,6 +84,38 @@ gh attestation verify abcpwn-linux-x86_64.tar.gz --repo manop55555/abcpwn
 
 The CycloneDX SBOM (`abcpwn-linux-x86_64-sbom.cdx.json`) inventories the
 statically bundled dependencies for supply-chain auditing.
+
+## Verifying binary hardening
+
+The release binary is built with the standard Linux exploit mitigations.
+Confirm them on the extracted `abcpwn`:
+
+```bash
+file abcpwn | grep -o 'pie executable'               # PIE
+readelf -d abcpwn | grep -E 'BIND_NOW|FLAGS_1.*NOW'  # full RELRO
+readelf -l abcpwn | grep GNU_STACK                   # RW (not RWE) = NX stack
+readelf -a abcpwn | grep -c __stack_chk_fail         # stack canary (> 0)
+strings abcpwn | grep -c '_chk'                      # _FORTIFY_SOURCE (> 0)
+```
+
+PIE, full RELRO, a non-executable stack, the stack canary, and FORTIFY
+are all present on the v0.1.0 binary. Intel CET marking is not yet
+emitted (the vendored static libraries are built without it); it is
+tracked for v0.2 in [docs/ROADMAP.md](docs/ROADMAP.md).
+
+## Dependencies
+
+abcpwn statically bundles its third-party C++ libraries, resolved
+through the vcpkg manifest (`vcpkg.json`). The two that parse
+attacker-controlled input -- and so dominate the attack surface -- are
+**LIEF 0.17.6** (binary loading) and **Capstone 5.0.7** (disassembly).
+CLI11, nlohmann/json, spdlog, and PicoSHA2 are also bundled; the exact
+pinned version of every component is recorded in the per-release
+CycloneDX SBOM.
+
+Consult the upstream projects for CVE status. When a security advisory
+affects a bundled component, the project will issue a patch release that
+bumps the pin.
 
 ## Threat Model
 
