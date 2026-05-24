@@ -21,7 +21,7 @@ for c in /bin/ls /usr/bin/ls /bin/true; do [ -x "$c" ] && gtarget="$c" && break;
 # hash via stdin must byte-for-byte equal the hash of the file (proves a
 # binary-safe stdin read).
 h_file=$("$ABCPWN_BIN" --no-banner hash "$gtarget" 2>/dev/null | awk '{print $1}')
-h_stdin=$(cat "$gtarget" | "$ABCPWN_BIN" --no-banner hash - 2>/dev/null | awk '{print $1}')
+h_stdin=$("$ABCPWN_BIN" --no-banner hash - <"$gtarget" 2>/dev/null | awk '{print $1}')
 [ -n "$h_file" ] || { echo "[-] hash of file produced no digest"; exit 1; }
 [ "$h_file" = "$h_stdin" ] || { echo "[-] hash via stdin ($h_stdin) != file ($h_file)"; exit 1; }
 

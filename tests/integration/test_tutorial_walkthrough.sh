@@ -24,7 +24,7 @@ trap 'rm -rf "$tmp"' EXIT
 # under test, and run from a scratch directory.
 ln -s "$ABCPWN_BIN" "$tmp/abcpwn"
 export PATH="$tmp:$PATH"
-cd "$tmp"
+cd "$tmp" || { echo "[-] cannot cd into scratch dir $tmp" >&2; exit 1; }
 
 fail=0
 n=0
