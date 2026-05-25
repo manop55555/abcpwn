@@ -125,14 +125,14 @@ jobs:
 
       - name: Attest provenance
         # Repo is now public (since commit 620fb41) so the
-        # actions/attest-build-provenance@v1 action is free and
+        # actions/attest-build-provenance@v4 action is free and
         # functional - SLSA provenance lands in the release
         # attestations. continue-on-error stays as a safety belt
         # in case OIDC configuration needs tuning per-run; the
         # release flow no longer depends on attest succeeding,
         # but it should under normal conditions.
         continue-on-error: true
-        uses: actions/attest-build-provenance@v1
+        uses: actions/attest-build-provenance@v4
         with:
           subject-path: abcpwn-${{ matrix.artifact }}.tar.gz
 
