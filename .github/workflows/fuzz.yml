@@ -73,7 +73,7 @@ jobs:
             tests/fuzz/seeds/${{ matrix.seeds }}
 
       - name: Upload crashes (on failure)
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: fuzz-crashes-${{ matrix.harness }}-${{ github.run_id }}
