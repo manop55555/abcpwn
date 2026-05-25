@@ -66,6 +66,9 @@ add_test(NAME test_got_plt
 add_test(NAME test_search_vaddr
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_search_vaddr.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_cyclic_large_n
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_cyclic_large_n.sh"
+            "$<TARGET_FILE:abcpwn>")
 add_test(NAME test_disasm_gadget_caps
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_disasm_gadget_caps.sh"
             "$<TARGET_FILE:abcpwn>")
