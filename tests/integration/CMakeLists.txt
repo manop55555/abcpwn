@@ -63,6 +63,9 @@ add_test(NAME test_exit_codes
 add_test(NAME test_got_plt
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_got_plt.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_search_vaddr
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_search_vaddr.sh"
+            "$<TARGET_FILE:abcpwn>")
 add_test(NAME test_disasm_gadget_caps
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_disasm_gadget_caps.sh"
             "$<TARGET_FILE:abcpwn>")

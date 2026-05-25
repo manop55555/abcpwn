@@ -123,8 +123,12 @@ TEST_CASE("SearchCommand finds the ELF magic with --hex", "[recon][search]") {
     cmd.as_hex = true;
     auto r = cmd.run(ctx);
     REQUIRE(r);
-    REQUIRE_FALSE(r->raw_lines.empty());
-    REQUIRE(r->raw_lines[0].find("0x0 ") == 0);
+    // DEF-6: matches are now structured findings carrying the file offset
+    // (and, for mapped sections, a vaddr). The ELF magic sits at offset 0.
+    REQUIRE_FALSE(r->sections.empty());
+    REQUIRE_FALSE(r->sections[0].findings.empty());
+    REQUIRE(r->sections[0].findings[0].offset == 0);
+    REQUIRE(r->sections[0].findings[0].title.find("0x0") == 0);
 }
 
 TEST_CASE("sha256_hex matches known test vector", "[recon][hash]") {
