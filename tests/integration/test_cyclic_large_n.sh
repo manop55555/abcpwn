@@ -13,11 +13,14 @@ set -euo pipefail
 ABCPWN_BIN="${1:?abcpwn binary path required}"
 [ -x "$ABCPWN_BIN" ] || { echo "[-] $ABCPWN_BIN not executable" >&2; exit 1; }
 
-# Hard-cap virtual memory at 1 GiB and wall time at 5 s: the streaming
-# generator needs only kilobytes, while the old eager generator would blow
-# past 1 GiB (and the OOM killer) for n >= 7.
+# Wall-time cap of 5 s: the streaming generator returns in milliseconds,
+# while the old eager generator tried to allocate 26^n bytes (~8 GB at n=7,
+# ~208 GB at n=8) and would OOM / time out long before 5 s. (No ulimit -v
+# here: ASan/TSan builds reserve a huge virtual address space for shadow
+# memory, so a virtual-memory cap would kill the instrumented binary at
+# startup rather than testing cyclic.)
 for n in 7 8; do
-    out=$(timeout 5 bash -c "ulimit -v 1048576; exec '$ABCPWN_BIN' --no-banner cyclic -n $n 16" 2>/dev/null) \
+    out=$(timeout 5 "$ABCPWN_BIN" --no-banner cyclic -n "$n" 16 2>/dev/null) \
         || { echo "[-] cyclic -n $n 16 failed (OOM / timeout / nonzero); DEF-3 regression" >&2; exit 1; }
     [ "${#out}" -ge 16 ] \
         || { echo "[-] cyclic -n $n 16 produced ${#out} bytes, expected >= 16" >&2; exit 1; }
