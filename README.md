@@ -25,7 +25,7 @@
 
 ## Overview
 
-abcpwn is a native C++20 command-line toolkit for binary exploitation. It
+abcpwn is a native C++ command-line toolkit for binary exploitation. It
 provides offline analysis and exploit-primitive generation -- ELF/PE/Mach-O
 inspection, ROP gadget search, format-string payloads, shellcode, glibc heap
 and seccomp helpers -- from a single statically self-contained binary. It is
