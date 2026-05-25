@@ -59,7 +59,11 @@ core::Result<core::CommandResult> DisasmCommand::run(const core::Context& ctx) {
 
     const auto a = arch_from_string(arch_name);
     if (!a) {
-        return core::err(core::ErrorCode::Unsupported, "disasm: unknown arch '" + arch_name + "'");
+        // An unrecognized arch name is malformed input (InvalidInput, 8),
+        // not a recognized-but-unimplemented arch (Unsupported, 10) --
+        // matches ERROR_CODES.md "--arch passed an unknown architecture
+        // name" (DEF-9).
+        return core::err(core::ErrorCode::InvalidInput, "disasm: unknown arch '" + arch_name + "'");
     }
     DisasmOptions opts;
     opts.arch = *a;
