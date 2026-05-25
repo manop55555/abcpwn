@@ -129,7 +129,7 @@ jobs:
         run: ctest --preset debug --output-on-failure
 
       - name: Upload build on failure
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         if: failure()
         with:
           name: build-${{ matrix.name }}-${{ github.run_id }}
