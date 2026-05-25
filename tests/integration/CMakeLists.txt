@@ -60,6 +60,9 @@ add_test(NAME test_syms_static
 add_test(NAME test_exit_codes
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_exit_codes.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_got_plt
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_got_plt.sh"
+            "$<TARGET_FILE:abcpwn>")
 add_test(NAME test_disasm_gadget_caps
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_disasm_gadget_caps.sh"
             "$<TARGET_FILE:abcpwn>")
