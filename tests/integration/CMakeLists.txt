@@ -32,6 +32,10 @@ add_test(NAME test_docs
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_docs.sh"
             "$<TARGET_FILE:abcpwn>"
             "${CMAKE_SOURCE_DIR}")
+add_test(NAME test_docs_flags
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_docs_flags.sh"
+            "$<TARGET_FILE:abcpwn>"
+            "${CMAKE_SOURCE_DIR}")
 add_test(NAME test_about_network
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_about_network.sh"
             "$<TARGET_FILE:abcpwn>")

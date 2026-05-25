@@ -45,27 +45,30 @@ abcpwn --format json info ./challenge | jq .findings
 ### `syms` - list symbols (dynamic, static, imports, exports)
 
 ```
-abcpwn syms <target> [--type funcs|objects|imports|exports|all]
+abcpwn syms <target> [--source dynamic|static|all] [--filter REGEX] [--dangerous]
 ```
 
-List symbols with optional filtering. `--type` defaults to a
-sensible subset for triage.
+Lists symbols from the dynamic (`.dynsym`) and static (`.symtab`)
+tables with their addresses. `--source` selects the table (default
+`all`), `--filter` is a regex over symbol names, and `--dangerous`
+shows only unsafe imports such as `gets` / `strcpy`.
 
 ```bash
-abcpwn syms ./challenge --type funcs
+abcpwn syms ./challenge --filter '^main$'
+abcpwn syms ./challenge --dangerous
 ```
 
 ### `strings` - list printable strings
 
 ```
-abcpwn strings <target> [--min-len N]
+abcpwn strings <target> [-n|--min-length N] [--max-results N]
 ```
 
 Like `strings(1)` but section-aware: groups output by which section
 each hit landed in.
 
 ```bash
-abcpwn strings ./challenge --min-len 8
+abcpwn strings ./challenge --min-length 8
 ```
 
 ### `search` - search for ASCII or hex patterns
@@ -85,14 +88,14 @@ abcpwn search ./challenge 'admin'
 ### `hash` - compute file hashes
 
 ```
-abcpwn hash <files>... [--algo sha256|sha1|md5]
+abcpwn hash <files>... [-a|--algorithm sha256]
 ```
 
-Default algorithm is SHA-256. Multiple files are hashed in parallel
-when the input list is large.
+Computes SHA-256, the only algorithm in this build. Multiple files
+may be passed.
 
 ```bash
-abcpwn hash ./libc.so.6 --algo sha256
+abcpwn hash ./libc.so.6
 ```
 
 ## Group: encoding
@@ -100,27 +103,29 @@ abcpwn hash ./libc.so.6 --algo sha256
 ### `pack` - pack an integer into raw bytes
 
 ```
-abcpwn pack <value> [--width 8|16|32|64] [--endian little|big]
+abcpwn pack <value> [-w|--width 1|2|4|8] [--be]
 ```
 
-Default is 64-bit little-endian. Output is hex; pipe through `unhex`
-for raw bytes.
+Packs an integer into raw bytes. `--width` is the byte count (default
+8); `--be` selects big-endian (default little). Output is hex; pipe
+through `unhex` for raw bytes.
 
 ```bash
 abcpwn pack 0xdeadbeef
-abcpwn pack 0xcafebabe --width 32 --endian big
+abcpwn pack 0xcafebabe --width 4 --be
 ```
 
 ### `unpack` - decode raw bytes into an integer
 
 ```
-abcpwn unpack <hex> [--width 8|16|32|64] [--endian little|big]
+abcpwn unpack <hex> [--be]
 ```
 
-Inverse of `pack`.
+Inverse of `pack`: decodes hex-encoded bytes into an integer. `--be`
+selects big-endian (default little); the width is the input length.
 
 ```bash
-abcpwn unpack efbeadde --width 32
+abcpwn unpack efbeadde
 ```
 
 ### `hex` - encode raw input as hex
@@ -223,7 +228,7 @@ abcpwn constgrep AT_RANDOM
 ### `asm` - assemble source text
 
 ```
-abcpwn asm <source> [--arch ...] [--syntax intel|att]
+abcpwn asm <source> [--arch ...] [--base-address HEX] [--be] [--thumb]
 ```
 
 Requires a source build configured with `ABCPWN_WITH_KEYSTONE=ON`
@@ -259,11 +264,11 @@ abcpwn disasm 7c0802a6 --arch ppc      # PPC defaults to big-endian
 ### `phd` - pretty hex dump
 
 ```
-abcpwn phd <input> [--offset N] [--length N] [--width 16|32]
+abcpwn phd <input> [--input-hex] [--offset N] [--length N] [--width 16|32]
 ```
 
 Offset / hex / ASCII columns. Input is a file path; pass a hex
-literal with the `--hex` flag to dump constructed bytes.
+literal with the `--input-hex` flag to dump constructed bytes.
 
 ```bash
 abcpwn phd ./challenge --offset 0x1000 --length 256
@@ -361,14 +366,15 @@ abcpwn one-gadget ./libc.so.6
 ### `srop` - sigreturn frame builder
 
 ```
-abcpwn srop --arch <arch> [field=value ...]
+abcpwn srop [--arch <arch>] [--rip HEX] [--rsp HEX] [--syscall N [--syscall-arg V ...]]
 ```
 
-Builds an `rt_sigreturn` frame for SROP. Supports x86_64 and i386 in
-v0.1.
+Builds an `rt_sigreturn` frame for SROP (x86_64 default). Set register
+values with `--rip` / `--rsp`; `--syscall` builds a syscall sigframe
+with that number in rax, with `--syscall-arg` values appended.
 
 ```bash
-abcpwn srop --arch x86_64 rip=0x4011aa rsp=0x404300
+abcpwn srop --arch x86_64 --rip 0x4011aa --rsp 0x404300
 ```
 
 ### `ret2dl` - ret2dlresolve structural inputs
@@ -396,8 +402,8 @@ abcpwn dynelf --leak <addr>=<hex-bytes> [--leak ...]
 Parses one or more `addr=hex` leak pairs into a structured summary
 that downstream tooling (`abcpwn libc id`, or an external
 libc-database client) can consume. Libc identification itself is
-not implemented in this command; the previous `--libc-db` flag did
-nothing and has been removed.
+not implemented in this command; feed the parsed pairs to
+`abcpwn libc id` or an external libc-database client.
 
 ```bash
 abcpwn dynelf --leak 0x7f0011aabbb0=66756e6300 \
@@ -407,12 +413,13 @@ abcpwn dynelf --leak 0x7f0011aabbb0=66756e6300 \
 ### `aslr-bypass` - ASLR / PIE helpers
 
 ```
-abcpwn aslr-bypass <strategy> [...]
+abcpwn aslr-bypass [--partial-overwrite] [--brute-force] [--canary-leak] [--entropy-bits N]
 ```
 
-`strategy` is one of: `partial-overwrite`, `brute-force-byte`,
-`canary-leak`. Each strategy has its own option set; see
-`abcpwn aslr-bypass <strategy> --help`.
+Selects a helper with a flag: `--partial-overwrite` describes the
+1/2-byte partial-overwrite technique, `--brute-force` reports the
+expected number of attempts (tune ASLR entropy with `--entropy-bits`,
+default 28), and `--canary-leak` prints a canary-leak template.
 
 ## Group: shellcode
 
@@ -444,7 +451,7 @@ abcpwn shellcode --preset sh --arch x86_64 --bad-chars 000a
 
 ```
 abcpwn fmt --find-offset <leak>                        # find offset
-abcpwn fmt --write <addr>=<value> [...] --offset N     # build payload
+abcpwn fmt --write <addr>=<value> [...] --arg-position N  # build payload
 ```
 
 `--find-offset` analyzes a captured `%X.%X.%X...` leak and tells you
@@ -454,7 +461,7 @@ given addresses.
 
 ```bash
 abcpwn fmt --find-offset 'AAAA%X.%X.%X.%X'
-abcpwn fmt --write 0x404020=0x4011aa --offset 6
+abcpwn fmt --write 0x404020=0x4011aa --arg-position 6
 ```
 
 ## Group: got/plt
@@ -478,7 +485,7 @@ abcpwn got ./challenge --overwrite puts=0x4011aa
 ### `heap` - glibc heap exploitation primitive helper
 
 ```
-abcpwn heap <technique> --libc <libc.so.6> [--target-addr <addr>]
+abcpwn heap <technique> [--libc-version <ver>] [--target-address <addr>]
 ```
 
 `technique` is one of `tcache-poison`, `fastbin`, `house-of-force`,
@@ -488,19 +495,19 @@ version detected (a static technique x libc-era matrix), the
 payload shape, and the safe-linking behavior if applicable.
 
 ```bash
-abcpwn heap tcache-poison --libc ./libc.so.6 --target-addr 0x404300
+abcpwn heap tcache-poison --libc-version 2.34 --target-address 0x404300
 ```
 
 ### `safe-link` - encode / decode glibc safe-linking
 
 ```
-abcpwn safe-link <value> <pos>
-                 [--decode]
-                 [--align <bytes>]
+abcpwn safe-link <value> <pos> [--encode|--decode]
 ```
 
-Implements the glibc 2.32+ safe-linking transform: `pos ^ (value >> 12)`.
-`--decode` recovers `value` given the encoded fd and `pos`.
+Implements the glibc 2.32+ safe-linking transform:
+`value ^ (pos >> 12)` (the stored fd is the pointer XOR'd with the
+chunk address shifted right by 12). `--encode` (default) computes the
+obfuscated fd; `--decode` recovers `value` given the encoded fd and `pos`.
 
 ```bash
 abcpwn safe-link 0x404300 0x55aabbcc
@@ -512,7 +519,7 @@ abcpwn safe-link 0x12340000 0x55aabbcc --decode
 ### `iofile` - FILE-stream exploitation helper
 
 ```
-abcpwn iofile <technique> --libc <libc.so.6> [...]
+abcpwn iofile <technique> [--libc-version <ver>]
 ```
 
 `technique` is one of `fsop-leak`, `fsop-exec`, `vtable-overwrite`.
@@ -521,13 +528,13 @@ technique. Output documents which `_IO_*` fields are touched and
 which `_IO_jump_t` entry is hijacked.
 
 ```bash
-abcpwn iofile fsop-exec --libc ./libc.so.6
+abcpwn iofile fsop-exec --libc-version 2.34
 ```
 
 ### `vtable` - C++ vtable analysis and hijack helper
 
 ```
-abcpwn vtable <target> [--class <name>] [--list] [--hijack <slot>=<addr>]
+abcpwn vtable <target> [--list] [--analyze N] [--hijack N --hijack-target HEX]
 ```
 
 Parses Itanium C++ ABI `_ZTV*` symbols to list virtual tables; with
@@ -535,7 +542,7 @@ Parses Itanium C++ ABI `_ZTV*` symbols to list virtual tables; with
 
 ```bash
 abcpwn vtable ./challenge --list
-abcpwn vtable ./challenge --class MyClass --hijack 2=0x4011aa
+abcpwn vtable ./challenge --hijack 2 --hijack-target 0x4011aa
 ```
 
 ## Group: sandbox
@@ -647,12 +654,12 @@ abcpwn diff ./challenge ./challenge.patched
 ### `patch` - apply byte / NOP / asm patches
 
 ```
-abcpwn patch <target> [--byte 0xOFF=BYTES] [--nop A:B] [--asm-at 0xOFF='...']
+abcpwn patch <target> [--byte 0xOFF=BYTES] [--nop A:B] [--in-place] [--backup]
 ```
 
-`--byte` writes `BYTES` at `OFF`. `--nop` fills `[A, B)` with 0x90.
-`--asm-at` assembles and inlines (requires Keystone). Output goes to
-`<target>.patched`.
+`--byte` writes `BYTES` at `OFF`. `--nop` fills `[A, B)` with 0x90. By
+default the result is written to `<target>.patched`; `--in-place` edits
+the target directly and `--backup` keeps a copy first.
 
 ```bash
 abcpwn patch ./challenge --byte 0x1234=9090
