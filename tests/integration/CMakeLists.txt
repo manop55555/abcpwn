@@ -54,6 +54,9 @@ add_test(NAME test_cli_exit_codes
 add_test(NAME test_corrupt_elf
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_corrupt_elf.sh"
             "$<TARGET_FILE:abcpwn>")
+add_test(NAME test_syms_static
+    COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_syms_static.sh"
+            "$<TARGET_FILE:abcpwn>")
 add_test(NAME test_disasm_gadget_caps
     COMMAND bash "${CMAKE_CURRENT_SOURCE_DIR}/test_disasm_gadget_caps.sh"
             "$<TARGET_FILE:abcpwn>")
