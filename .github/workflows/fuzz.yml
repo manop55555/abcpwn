@@ -35,7 +35,7 @@ jobs:
       - uses: actions/checkout@v5
 
       - name: Restore fuzz corpus
-        uses: actions/cache@v4
+        uses: actions/cache@v5
         with:
           path: tests/fuzz/corpus/${{ matrix.harness }}/
           key: fuzz-corpus-${{ matrix.harness }}-${{ github.run_id }}
@@ -94,7 +94,7 @@ jobs:
       # once the LIEF findings are resolved (see ROADMAP).
 
       - name: Save corpus
-        uses: actions/cache/save@v4
+        uses: actions/cache/save@v5
         if: always()
         with:
           path: tests/fuzz/corpus/${{ matrix.harness }}/
